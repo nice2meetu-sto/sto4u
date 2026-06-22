@@ -1,0 +1,1302 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>서울관광재단 인력현황 관리 시스템</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --main: #534AB7;
+    --valid: #3B6D11;
+    --warn: #A32D2D;
+    --border: #e2e4ea;
+    --bg: #f5f6f9;
+    --card: #ffffff;
+    --text: #2b2d36;
+    --muted: #7b7f8e;
+    --main-soft: #ece9f8;
+    --shadow: 0 1px 3px rgba(40, 42, 60, 0.06), 0 4px 16px rgba(40, 42, 60, 0.05);
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Noto Sans KR", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  a { color: var(--main); }
+
+  /* ---------- Layout ---------- */
+  .app {
+    max-width: 1320px;
+    margin: 0 auto;
+    padding: 20px 20px 64px;
+  }
+
+  header.topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+  }
+  .topbar .brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .topbar .brand .logo {
+    width: 38px; height: 38px;
+    border-radius: 10px;
+    background: var(--main);
+    color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 16px;
+  }
+  .topbar h1 {
+    font-size: 18px;
+    margin: 0;
+    font-weight: 700;
+  }
+  .topbar .sub {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+  .topbar .sync {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .topbar .sync .dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--muted);
+    display: inline-block;
+  }
+  .topbar .sync.ok .dot { background: var(--valid); }
+  .topbar .sync.err .dot { background: var(--warn); }
+  .topbar .sync.demo .dot { background: #d99a00; }
+
+  /* ---------- Buttons / inputs ---------- */
+  button {
+    font-family: inherit;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    background: var(--card);
+    color: var(--text);
+    border-radius: 8px;
+    padding: 8px 14px;
+    font-size: 13px;
+    transition: all .12s ease;
+  }
+  button:hover { border-color: #c9ccd8; }
+  button.primary {
+    background: var(--main);
+    border-color: var(--main);
+    color: #fff;
+  }
+  button.primary:hover { background: #463ea0; }
+  button:disabled { opacity: .5; cursor: default; }
+
+  input[type="date"], input[type="text"], select {
+    font-family: inherit;
+    font-size: 13px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 10px;
+    background: var(--card);
+    color: var(--text);
+  }
+  input:focus, select:focus, button:focus-visible {
+    outline: 2px solid var(--main-soft);
+    border-color: var(--main);
+  }
+
+  /* ---------- Cards ---------- */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    box-shadow: var(--shadow);
+  }
+
+  .controls {
+    padding: 16px 18px;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    flex-wrap: wrap;
+  }
+  .controls .group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .controls label { font-size: 12px; color: var(--muted); font-weight: 500; }
+  .controls .slider-wrap {
+    flex: 1 1 320px;
+    min-width: 260px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .controls input[type="range"] {
+    flex: 1;
+    accent-color: var(--main);
+    cursor: pointer;
+  }
+  .controls .asof-badge {
+    background: var(--main-soft);
+    color: var(--main);
+    font-weight: 700;
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: 13px;
+    white-space: nowrap;
+  }
+
+  /* ---------- Tabs ---------- */
+  .tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 14px;
+    border-bottom: 1px solid var(--border);
+  }
+  .tabs button {
+    border: none;
+    background: none;
+    border-radius: 8px 8px 0 0;
+    padding: 10px 18px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--muted);
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+  }
+  .tabs button:hover { color: var(--text); }
+  .tabs button.active {
+    color: var(--main);
+    border-bottom-color: var(--main);
+    font-weight: 700;
+  }
+
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  /* ---------- Tables ---------- */
+  .table-scroll {
+    overflow-x: auto;
+    border-radius: 14px;
+  }
+  table.grid {
+    border-collapse: collapse;
+    width: 100%;
+    background: var(--card);
+    font-size: 12.5px;
+    min-width: 720px;
+  }
+  table.grid th, table.grid td {
+    border: 1px solid var(--border);
+    padding: 7px 9px;
+    text-align: center;
+    white-space: nowrap;
+  }
+  table.grid thead th {
+    background: #f0f1f6;
+    color: #41434f;
+    font-weight: 700;
+    position: sticky;
+    top: 0;
+  }
+  table.grid thead tr.group th { background: #e9eaf2; }
+  table.grid td.dept, table.grid th.dept {
+    text-align: left;
+    font-weight: 500;
+    position: sticky;
+    left: 0;
+    background: var(--card);
+    z-index: 1;
+  }
+  table.grid td.dept.clickable {
+    color: var(--main);
+    cursor: pointer;
+    text-decoration: underline;
+    text-decoration-color: rgba(83,74,183,.35);
+  }
+  table.grid td.dept.clickable:hover { color: #463ea0; }
+  table.grid tr.total td {
+    background: var(--main-soft);
+    font-weight: 700;
+  }
+  table.grid tr.total td.dept { background: var(--main-soft); }
+  table.grid td.zero { color: #c2c5d0; }
+  table.grid td.num { font-variant-numeric: tabular-nums; }
+  table.grid td.cur { font-weight: 700; color: var(--main); }
+  table.grid td.warn-num { color: var(--warn); font-weight: 600; }
+  table.grid tbody tr:hover td:not(.dept) { background: #fafbfd; }
+  table.grid .sep-left { border-left: 2px solid #cdd0db; }
+
+  /* ---------- Roster tab ---------- */
+  .roster-toolbar {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+  .roster-toolbar .count {
+    font-size: 13px;
+    color: var(--muted);
+    margin-left: auto;
+  }
+  .roster-toolbar input[type="text"] { width: 220px; }
+  table.list {
+    border-collapse: collapse;
+    width: 100%;
+    background: var(--card);
+    font-size: 13px;
+  }
+  table.list th, table.list td {
+    border-bottom: 1px solid var(--border);
+    padding: 9px 12px;
+    text-align: left;
+    white-space: nowrap;
+  }
+  table.list thead th {
+    background: #f0f1f6;
+    font-weight: 700;
+    cursor: pointer;
+    user-select: none;
+    position: sticky; top: 0;
+  }
+  table.list thead th:hover { background: #e9eaf2; }
+  table.list thead th .arrow { color: var(--main); font-size: 10px; }
+  table.list tbody tr:hover { background: #fafbfd; }
+  .status-pill {
+    display: inline-block;
+    padding: 2px 9px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .status-재직 { background: #e7f1df; color: var(--valid); }
+  .status-휴직 { background: #fdeaea; color: var(--warn); }
+  .status-휴가 { background: #fff3df; color: #9a6a00; }
+  .status-파견 { background: #e9e7f7; color: var(--main); }
+  .status-기타 { background: #eef0f4; color: var(--muted); }
+
+  /* ---------- Modal ---------- */
+  .modal-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(30, 31, 45, .42);
+    z-index: 50;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .modal-backdrop.open { display: flex; }
+  .modal {
+    background: var(--card);
+    border-radius: 16px;
+    width: 100%;
+    max-width: 760px;
+    max-height: 84vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 20px 60px rgba(20,22,40,.3);
+    overflow: hidden;
+  }
+  .modal header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+  }
+  .modal header h3 { margin: 0; font-size: 16px; }
+  .modal header .meta { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .modal header button { border: none; background: none; font-size: 22px; color: var(--muted); padding: 0 6px; }
+  .modal .body { overflow: auto; padding: 4px 0; }
+
+  /* ---------- Misc ---------- */
+  .empty {
+    padding: 48px 20px;
+    text-align: center;
+    color: var(--muted);
+  }
+  .banner {
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 12.5px;
+    margin-bottom: 14px;
+    display: none;
+  }
+  .banner.show { display: block; }
+  .banner.info { background: #eef3ff; color: #2c4a8c; border: 1px solid #d3deff; }
+  .banner.warn { background: #fdeaea; color: var(--warn); border: 1px solid #f3cccc; }
+  .banner.ok { background: #e7f1df; color: var(--valid); border: 1px solid #cfe4be; }
+  .hint { font-size: 11px; color: var(--muted); }
+  .footer-note { margin-top: 24px; font-size: 11px; color: var(--muted); text-align: center; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ============ Top bar ============ -->
+  <header class="topbar">
+    <div class="brand">
+      <div class="logo">STO</div>
+      <div>
+        <h1>서울관광재단 인력현황 관리 시스템</h1>
+        <div class="sub">2023.12.30 기준 명부 + 인사발령 리플레이 · 임의 기준일 현원 재구성</div>
+      </div>
+    </div>
+    <div style="display:flex; align-items:center; gap:14px;">
+      <div id="syncInfo" class="sync"><span class="dot"></span><span id="syncText">초기화 중…</span></div>
+      <button id="refreshBtn" class="primary">↻ 새로고침</button>
+    </div>
+  </header>
+
+  <div id="dataBanner" class="banner"></div>
+
+  <!-- ============ Controls ============ -->
+  <div class="card controls">
+    <div class="group">
+      <label for="datePicker">조회 기준일</label>
+      <input type="date" id="datePicker" />
+    </div>
+    <div class="group">
+      <button id="prevOrderBtn" title="이전 발령일로">◀ 발령</button>
+      <button id="nextOrderBtn" title="다음 발령일로">발령 ▶</button>
+    </div>
+    <div class="slider-wrap">
+      <label for="timeline">타임라인</label>
+      <input type="range" id="timeline" min="0" max="0" value="0" step="1" />
+      <span id="asofBadge" class="asof-badge">—</span>
+    </div>
+  </div>
+
+  <!-- ============ Tabs ============ -->
+  <nav class="tabs">
+    <button class="tab-btn active" data-tab="daily">① 일일</button>
+    <button class="tab-btn" data-tab="grade">② 직급별</button>
+    <button class="tab-btn" data-tab="roster">③ 전체 재직자</button>
+  </nav>
+
+  <!-- ① 일일 -->
+  <section class="panel active" id="panel-daily">
+    <div class="card table-scroll">
+      <table class="grid" id="dailyTable"></table>
+    </div>
+    <p class="hint" style="margin-top:8px;">· 현재인원 = 합계 소계 − 사고내역 계 &nbsp;|&nbsp; 사고내역(휴직·휴가·파견·기타) 인원은 정원외 버킷 <b>인재경영팀(임)</b>으로 집계(모드 A). 부서명을 클릭하면 해당 기준일 구성원 명단을 볼 수 있습니다.</p>
+  </section>
+
+  <!-- ② 직급별 -->
+  <section class="panel" id="panel-grade">
+    <div class="card table-scroll">
+      <table class="grid" id="gradeTable"></table>
+    </div>
+    <p class="hint" style="margin-top:8px;">· 소계 = 임원 + 1급~6급 + 전문직(정원 내) &nbsp;|&nbsp; 총계 = 소계 + 기간제(정원 외). 기간제는 직급과 무관하게 별도 집계합니다.</p>
+  </section>
+
+  <!-- ③ 전체 재직자 -->
+  <section class="panel" id="panel-roster">
+    <div class="roster-toolbar">
+      <input type="text" id="rosterSearch" placeholder="이름 / 부서 / 직급 검색" />
+      <select id="filterEmp"><option value="">고용형태 전체</option></select>
+      <select id="filterStatus"><option value="">상태 전체</option></select>
+      <select id="filterDept"><option value="">부서 전체</option></select>
+      <button id="downloadBtn">⤓ 엑셀(CSV) 다운로드</button>
+      <span class="count" id="rosterCount">—</span>
+    </div>
+    <div class="card table-scroll">
+      <table class="list" id="rosterTable"></table>
+    </div>
+  </section>
+
+  <p class="footer-note">단일 HTML + 순수 JS · GitHub Pages 호스팅 · Google Apps Script GET JSON API 연동 · 모든 날짜 KST 기준</p>
+</div>
+
+<!-- ============ Modal ============ -->
+<div class="modal-backdrop" id="modalBackdrop">
+  <div class="modal">
+    <header>
+      <div>
+        <h3 id="modalTitle">부서 구성원</h3>
+        <div class="meta" id="modalMeta"></div>
+      </div>
+      <button id="modalClose" aria-label="닫기">×</button>
+    </header>
+    <div class="body">
+      <table class="list" id="modalTable"></table>
+    </div>
+  </div>
+</div>
+
+<script>
+"use strict";
+
+/* ============================================================
+ * 0. 설정 / 상수
+ * ============================================================ */
+
+// Apps Script 웹앱 배포 URL을 여기에 붙여넣으세요. (action=data 로 호출됨)
+// 비워두면 내장 데모 데이터로 동작합니다.
+const SCRIPT_URL = "";
+
+// 기초명부 스냅샷 기준일 (이 날짜 이전 발령은 없음)
+const BASE_DATE = "2023-12-30";
+
+// 사고내역(휴직·휴가·파견·기타) 인원의 집계 위치 — 모드 A 확정
+const HOLD_BUCKET_MODE = "A";              // A: 정원외 버킷으로 이동 / B(미사용): 원소속 유지
+const HOLD_BUCKET_DEPT  = "인재경영팀(임)";
+
+// 변동구분 동의어 → 표준어 매핑 (표기 흔들림 흡수)
+const ORDER_TYPE_SYNONYMS = {
+  "입사": "입사", "신규": "입사", "신규입사": "입사", "채용": "입사",
+  "퇴사": "퇴사", "퇴직": "퇴사", "면직": "퇴사",
+  "부서이동": "부서이동", "전보": "부서이동", "부서변경": "부서이동",
+  "조직개편": "부서이동", "조직개편(부서이동)": "부서이동", "팀변경": "부서이동",
+  "근무지이동": "근무지이동", "근무지변경": "근무지이동", "전보(근무지)": "근무지이동",
+  "승급": "승급", "승격": "승급", "직급변경": "승급",
+  "휴직": "휴직",
+  "파견": "파견", "파견(외부)": "파견",
+  "복직": "복직", "복귀": "복직", "파견복귀": "복직", "복귀(복직)": "복직", "휴직복귀": "복직"
+};
+
+// 상태 표준화
+const STATUS_SYNONYMS = {
+  "재직": "재직", "정상": "재직", "근무": "재직",
+  "휴직": "휴직",
+  "휴가": "휴가",
+  "파견": "파견",
+  "기타": "기타"
+};
+
+// 고용형태 표준화 (일일표 컬럼)
+const EMP_SYNONYMS = {
+  "일반직": "일반직", "정규직": "일반직",
+  "전문직": "전문직",
+  "기간제": "기간제", "계약직": "기간제",
+  "파견": "파견", "파견직": "파견", "파견근로자": "파견"
+};
+
+// 표시 순서
+const EMP_ORDER    = ["일반직", "전문직", "기간제", "파견"];     // 일일표 고용형태 컬럼
+const GENDERS      = ["남", "여"];
+const GRADE_ORDER  = ["임원", "1급", "2급", "3급", "4급", "5급", "6급", "전문직"]; // 직급별표 컬럼
+const HOLD_ORDER   = ["휴직", "휴가", "파견", "기타"];            // 사고내역 컬럼
+
+// 부서 표시 순서를 강제하고 싶으면 여기에 나열 (비워두면 데이터 등장 순서)
+const DEPT_ORDER = [];
+
+/* ============================================================
+ * 1. 전역 상태 (메모리 only — 브라우저 스토리지 사용 안 함)
+ * ============================================================ */
+const state = {
+  base: [],        // 기초명부 (원본)
+  orders: [],      // 인사발령 (원본 + __idx)
+  quota: [],       // 정원 (선택)
+  lastSync: null,  // 마지막 동기화 시각
+  source: "none",  // "remote" | "demo"
+  asOf: BASE_DATE, // 현재 조회 기준일
+  orderDates: [],  // 슬라이더용 정렬된 고유 발령일
+  activeTab: "daily",
+  rosterCache: []  // 현재 기준일 명부 (재정렬/검색용)
+};
+
+/* ============================================================
+ * 2. 날짜 유틸 — 모든 날짜는 'yyyy-MM-dd' 문자열로 비교 (KST, 오프셋 무관)
+ * ============================================================ */
+function toISODate(v) {
+  if (v === null || v === undefined || v === "") return "";
+  if (v instanceof Date) {
+    // KST 기준 yyyy-MM-dd
+    const kst = new Date(v.getTime() + 9 * 3600 * 1000);
+    return kst.toISOString().slice(0, 10);
+  }
+  const s = String(v).trim();
+  // 이미 yyyy-MM-dd... 형태면 앞 10자
+  const m = s.match(/^(\d{4})[-./](\d{1,2})[-./](\d{1,2})/);
+  if (m) {
+    const y = m[1], mo = m[2].padStart(2, "0"), d = m[3].padStart(2, "0");
+    return `${y}-${mo}-${d}`;
+  }
+  // ISO with time
+  if (/^\d{4}-\d{2}-\d{2}T/.test(s)) return s.slice(0, 10);
+  return s;
+}
+function nowKSTString() {
+  try {
+    return new Date().toLocaleString("ko-KR", { timeZone: "Asia/Seoul", hour12: false });
+  } catch (e) {
+    return new Date().toISOString();
+  }
+}
+
+/* ============================================================
+ * 3. 정규화 헬퍼
+ * ============================================================ */
+function normOrderType(v) {
+  const k = String(v || "").trim();
+  return ORDER_TYPE_SYNONYMS[k] || k;
+}
+function normStatus(v) {
+  const k = String(v || "").trim();
+  if (!k) return "재직";
+  return STATUS_SYNONYMS[k] || k;
+}
+function normEmp(v) {
+  const k = String(v || "").trim();
+  return EMP_SYNONYMS[k] || k;
+}
+function gradeBucketOf(jikgup) {
+  const k = String(jikgup || "").trim();
+  if (k === "임원" || /대표|본부장/.test(k)) return "임원";
+  const m = k.match(/^([1-6])급/);
+  if (m) return m[1] + "급";
+  if (k.startsWith("전문직")) return "전문직";
+  return k; // 알 수 없는 직급은 그대로
+}
+
+/* ============================================================
+ * 4. 핵심 알고리즘 — 기준일 명부 재구성 (발령 리플레이)
+ * ============================================================ */
+function rosterAsOf(baseDate) {
+  const baseIso = toISODate(baseDate);
+  // 4-1. 기초명부 deepcopy → 사원코드 맵
+  const roster = new Map();
+  for (const p of state.base) {
+    const code = String(p["사원코드"]).trim();
+    roster.set(code, {
+      사원코드: code,
+      사원명: p["사원명"] || "",
+      부서: p["부서"] || "",
+      직급: p["직급"] || "",
+      고용형태: normEmp(p["고용형태"]),
+      성별: p["성별"] || "",
+      근무지: p["근무지"] || "",
+      입사일: toISODate(p["입사일"]),
+      상태: normStatus(p["상태"])
+    });
+  }
+
+  // 4-2. 기준일까지의 발령을 발령일 asc, 입력순(__idx) 으로 정렬
+  const orders = state.orders
+    .filter(o => toISODate(o["발령일"]) && toISODate(o["발령일"]) <= baseIso)
+    .slice()
+    .sort((a, b) => {
+      const da = toISODate(a["발령일"]), db = toISODate(b["발령일"]);
+      if (da < db) return -1;
+      if (da > db) return 1;
+      return (a.__idx || 0) - (b.__idx || 0);
+    });
+
+  // 4-3. 순차 적용
+  for (const o of orders) {
+    const code = String(o["사원코드"]).trim();
+    const type = normOrderType(o["변동구분"]);
+    const newEmp = o["변경고용형태"] ? normEmp(o["변경고용형태"]) : null;
+
+    switch (type) {
+      case "입사": {
+        roster.set(code, {
+          사원코드: code,
+          사원명: o["사원명"] || "",
+          부서: o["변경부서"] || o["부서"] || "",
+          직급: o["변경직급"] || o["직급"] || "",
+          고용형태: newEmp || normEmp(o["고용형태"]) || "일반직",
+          성별: o["성별"] || o["변경성별"] || "",
+          근무지: o["변경근무지"] || o["근무지"] || "",
+          입사일: toISODate(o["발령일"]),
+          상태: "재직"
+        });
+        break;
+      }
+      case "퇴사":
+        roster.delete(code);
+        break;
+      case "부서이동":
+        if (roster.has(code)) roster.get(code).부서 = o["변경부서"] || roster.get(code).부서;
+        break;
+      case "근무지이동":
+        if (roster.has(code)) roster.get(code).근무지 = o["변경근무지"] || roster.get(code).근무지;
+        break;
+      case "승급":
+        if (roster.has(code)) roster.get(code).직급 = o["변경직급"] || roster.get(code).직급;
+        break;
+      case "휴직":
+        if (roster.has(code)) roster.get(code).상태 = "휴직";
+        break;
+      case "파견":
+        if (roster.has(code)) roster.get(code).상태 = "파견";
+        break;
+      case "복직":
+        if (roster.has(code)) roster.get(code).상태 = "재직";
+        break;
+      default:
+        // 알 수 없는 변동구분: 무시 (필드 갱신만 시도)
+        break;
+    }
+    // 변경고용형태가 함께 들어오면 입사 외 케이스에서도 갱신
+    if (newEmp && type !== "입사" && roster.has(code)) {
+      roster.get(code).고용형태 = newEmp;
+    }
+  }
+
+  return Array.from(roster.values());
+}
+
+// 모드 A: 사고내역(상태≠재직) 인원의 집계상 소속 부서
+function effectiveDept(person) {
+  if (HOLD_BUCKET_MODE === "A" && person.상태 !== "재직") return HOLD_BUCKET_DEPT;
+  return person.부서 || "(미지정)";
+}
+
+/* ============================================================
+ * 5. 부서 표시 순서
+ * ============================================================ */
+function deptOrder(roster) {
+  if (DEPT_ORDER.length) {
+    const set = new Set(DEPT_ORDER);
+    const extra = [];
+    for (const p of roster) {
+      const d = effectiveDept(p);
+      if (!set.has(d) && !extra.includes(d)) extra.push(d);
+    }
+    return [...DEPT_ORDER, ...extra];
+  }
+  // 데이터 등장 순서 (기초명부 → 발령 신규부서). 사고버킷은 마지막 직전에.
+  const order = [];
+  const seen = new Set();
+  const pushDept = (d) => { if (d && d !== HOLD_BUCKET_DEPT && !seen.has(d)) { seen.add(d); order.push(d); } };
+  for (const p of state.base) pushDept(p["부서"]);
+  for (const p of roster) pushDept(p.부서);
+  // 사고버킷이 실제 사용되면 마지막에 추가
+  const usesBucket = roster.some(p => effectiveDept(p) === HOLD_BUCKET_DEPT);
+  if (usesBucket) order.push(HOLD_BUCKET_DEPT);
+  return order;
+}
+
+/* ============================================================
+ * 6. 피벗 ① — 일일표
+ * ============================================================ */
+function buildDailyPivot(roster) {
+  const depts = deptOrder(roster);
+  const blank = () => {
+    const row = { emp: {}, hold: {}, holdTotal: 0 };
+    for (const e of EMP_ORDER) row.emp[e] = { 남: 0, 여: 0 };
+    for (const h of HOLD_ORDER) row.hold[h] = 0;
+    return row;
+  };
+  const rows = new Map();
+  for (const d of depts) rows.set(d, blank());
+
+  for (const p of roster) {
+    const d = effectiveDept(p);
+    if (!rows.has(d)) rows.set(d, blank());
+    const row = rows.get(d);
+    const emp = EMP_ORDER.includes(p.고용형태) ? p.고용형태 : "일반직";
+    const g = p.성별 === "여" ? "여" : (p.성별 === "남" ? "남" : "남");
+    row.emp[emp][g]++;
+    if (p.상태 !== "재직") {
+      const h = HOLD_ORDER.includes(p.상태) ? p.상태 : "기타";
+      row.hold[h]++;
+      row.holdTotal++;
+    }
+  }
+
+  // 부서별 소계 + 총합 계산
+  const out = [];
+  const totalRow = blank();
+  for (const d of depts) {
+    const row = rows.get(d);
+    let sumM = 0, sumF = 0;
+    for (const e of EMP_ORDER) { sumM += row.emp[e].남; sumF += row.emp[e].여; }
+    const subtotal = sumM + sumF;
+    const current = subtotal - row.holdTotal;
+    out.push({ dept: d, row, subM: sumM, subF: sumF, subtotal, current });
+    // 누적
+    for (const e of EMP_ORDER) { totalRow.emp[e].남 += row.emp[e].남; totalRow.emp[e].여 += row.emp[e].여; }
+    for (const h of HOLD_ORDER) totalRow.hold[h] += row.hold[h];
+    totalRow.holdTotal += row.holdTotal;
+  }
+  let tM = 0, tF = 0;
+  for (const e of EMP_ORDER) { tM += totalRow.emp[e].남; tF += totalRow.emp[e].여; }
+  const total = {
+    dept: "합계", row: totalRow, subM: tM, subF: tF,
+    subtotal: tM + tF, current: (tM + tF) - totalRow.holdTotal
+  };
+  return { rows: out, total };
+}
+
+/* ============================================================
+ * 7. 피벗 ② — 직급별표
+ * ============================================================ */
+function buildGradePivot(roster) {
+  const depts = deptOrder(roster);
+  const blank = () => {
+    const row = { grade: {}, gigan: { 남: 0, 여: 0 } };
+    for (const g of GRADE_ORDER) row.grade[g] = { 남: 0, 여: 0 };
+    return row;
+  };
+  const rows = new Map();
+  for (const d of depts) rows.set(d, blank());
+
+  for (const p of roster) {
+    const d = effectiveDept(p);
+    if (!rows.has(d)) rows.set(d, blank());
+    const row = rows.get(d);
+    const g = p.성별 === "여" ? "여" : "남";
+    if (p.고용형태 === "기간제") {
+      row.gigan[g]++;                       // 정원 외
+    } else {
+      const gb = gradeBucketOf(p.직급);
+      if (!row.grade[gb]) row.grade[gb] = { 남: 0, 여: 0 };
+      row.grade[gb][g]++;                   // 정원 내
+    }
+  }
+
+  const calc = (row) => {
+    let subM = 0, subF = 0;
+    for (const g of GRADE_ORDER) { subM += row.grade[g].남; subF += row.grade[g].여; }
+    const subtotal = { 남: subM, 여: subF, 계: subM + subF };
+    const gigan = { 남: row.gigan.남, 여: row.gigan.여, 계: row.gigan.남 + row.gigan.여 };
+    const total = { 남: subM + gigan.남, 여: subF + gigan.여, 계: subtotal.계 + gigan.계 };
+    return { subtotal, gigan, total };
+  };
+
+  const out = [];
+  const totalRow = blank();
+  for (const d of depts) {
+    const row = rows.get(d);
+    out.push({ dept: d, row, ...calc(row) });
+    for (const g of GRADE_ORDER) { totalRow.grade[g].남 += row.grade[g].남; totalRow.grade[g].여 += row.grade[g].여; }
+    totalRow.gigan.남 += row.gigan.남; totalRow.gigan.여 += row.gigan.여;
+  }
+  const total = { dept: "합계", row: totalRow, ...calc(totalRow) };
+  return { rows: out, total };
+}
+
+/* ============================================================
+ * 8. 렌더링 — 일일표
+ * ============================================================ */
+function numCell(v, cls) {
+  const z = (v === 0) ? " zero" : "";
+  return `<td class="num${z}${cls ? " " + cls : ""}">${v}</td>`;
+}
+function deptCell(name, clickable) {
+  const cls = "dept" + (clickable ? " clickable" : "");
+  const attr = clickable ? ` data-dept="${escapeAttr(name)}"` : "";
+  return `<td class="${cls}"${attr}>${escapeHtml(name)}</td>`;
+}
+
+function renderDaily() {
+  const roster = state.rosterCache;
+  const pivot = buildDailyPivot(roster);
+  const t = document.getElementById("dailyTable");
+
+  let head = `<thead>
+    <tr class="group">
+      <th class="dept" rowspan="2">부서</th>`;
+  for (const e of EMP_ORDER) head += `<th colspan="3" class="sep-left">${e}</th>`;
+  head += `<th colspan="3" class="sep-left">합계</th>`;
+  head += `<th colspan="5" class="sep-left">사고내역</th>`;
+  head += `<th rowspan="2" class="sep-left">현재인원</th></tr><tr>`;
+  for (let i = 0; i < EMP_ORDER.length; i++) head += `<th class="sep-left">남</th><th>여</th><th>소계</th>`;
+  head += `<th class="sep-left">남</th><th>여</th><th>소계</th>`;
+  for (const h of HOLD_ORDER) head += `<th class="sep-left">${h}</th>`;
+  head += `<th class="sep-left">계</th></tr></thead>`;
+
+  const renderRow = (r, isTotal) => {
+    let html = `<tr class="${isTotal ? "total" : ""}">`;
+    html += deptCell(r.dept, !isTotal);
+    for (const e of EMP_ORDER) {
+      const c = r.row.emp[e];
+      html += numCell(c.남, "sep-left") + numCell(c.여) + numCell(c.남 + c.여);
+    }
+    html += numCell(r.subM, "sep-left") + numCell(r.subF) + numCell(r.subtotal);
+    for (let i = 0; i < HOLD_ORDER.length; i++) {
+      const h = HOLD_ORDER[i];
+      const v = r.row.hold[h];
+      html += `<td class="num${v === 0 ? " zero" : " warn-num"}${i === 0 ? " sep-left" : ""}">${v}</td>`;
+    }
+    html += `<td class="num sep-left${r.row.holdTotal === 0 ? " zero" : " warn-num"}">${r.row.holdTotal}</td>`;
+    html += `<td class="num cur sep-left">${r.current}</td>`;
+    html += `</tr>`;
+    return html;
+  };
+
+  let body = "<tbody>";
+  for (const r of pivot.rows) body += renderRow(r, false);
+  body += renderRow(pivot.total, true);
+  body += "</tbody>";
+
+  t.innerHTML = head + body;
+  bindDeptClicks(t);
+}
+
+/* ============================================================
+ * 9. 렌더링 — 직급별표
+ * ============================================================ */
+function renderGrade() {
+  const roster = state.rosterCache;
+  const pivot = buildGradePivot(roster);
+  const t = document.getElementById("gradeTable");
+
+  let head = `<thead><tr class="group"><th class="dept" rowspan="2">부서</th>`;
+  for (const g of GRADE_ORDER) head += `<th colspan="3" class="sep-left">${g}</th>`;
+  head += `<th colspan="3" class="sep-left">소계</th>`;
+  head += `<th colspan="3" class="sep-left">기간제</th>`;
+  head += `<th colspan="3" class="sep-left">총계</th></tr><tr>`;
+  for (let i = 0; i < GRADE_ORDER.length; i++) head += `<th class="sep-left">남</th><th>여</th><th>계</th>`;
+  head += `<th class="sep-left">남</th><th>여</th><th>계</th>`;
+  head += `<th class="sep-left">남</th><th>여</th><th>계</th>`;
+  head += `<th class="sep-left">남</th><th>여</th><th>계</th></tr></thead>`;
+
+  const trio = (o, sep) => numCell(o.남, sep ? "sep-left" : "") + numCell(o.여) + numCell(o.계, "cur");
+  const trioG = (cell, sep) => numCell(cell.남, sep ? "sep-left" : "") + numCell(cell.여) + numCell(cell.남 + cell.여);
+
+  const renderRow = (r, isTotal) => {
+    let html = `<tr class="${isTotal ? "total" : ""}">`;
+    html += deptCell(r.dept, !isTotal);
+    for (const g of GRADE_ORDER) html += trioG(r.row.grade[g], true);
+    html += trio(r.subtotal, true);
+    html += trio(r.gigan, true);
+    html += trio(r.total, true);
+    html += `</tr>`;
+    return html;
+  };
+
+  let body = "<tbody>";
+  for (const r of pivot.rows) body += renderRow(r, false);
+  body += renderRow(pivot.total, true);
+  body += "</tbody>";
+
+  t.innerHTML = head + body;
+  bindDeptClicks(t);
+}
+
+/* ============================================================
+ * 10. 렌더링 — 전체 재직자
+ * ============================================================ */
+let rosterSort = { key: "사원코드", dir: 1 };
+const ROSTER_COLS = [
+  { key: "사원코드", label: "사원코드" },
+  { key: "사원명", label: "사원명" },
+  { key: "부서", label: "부서" },
+  { key: "직급", label: "직급" },
+  { key: "고용형태", label: "고용형태" },
+  { key: "근무지", label: "근무지" },
+  { key: "입사일", label: "입사일" },
+  { key: "상태", label: "상태" }
+];
+
+function getFilteredRoster() {
+  const q = document.getElementById("rosterSearch").value.trim().toLowerCase();
+  const fe = document.getElementById("filterEmp").value;
+  const fs = document.getElementById("filterStatus").value;
+  const fd = document.getElementById("filterDept").value;
+  let list = state.rosterCache.filter(p => {
+    if (fe && p.고용형태 !== fe) return false;
+    if (fs && p.상태 !== fs) return false;
+    if (fd && p.부서 !== fd) return false;
+    if (q) {
+      const hay = `${p.사원명} ${p.부서} ${p.직급} ${p.사원코드} ${p.근무지}`.toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    return true;
+  });
+  const k = rosterSort.key, dir = rosterSort.dir;
+  list.sort((a, b) => {
+    const va = a[k] ?? "", vb = b[k] ?? "";
+    return String(va).localeCompare(String(vb), "ko") * dir;
+  });
+  return list;
+}
+
+function renderRoster() {
+  const list = getFilteredRoster();
+  const t = document.getElementById("rosterTable");
+  let head = "<thead><tr>";
+  for (const c of ROSTER_COLS) {
+    const arrow = rosterSort.key === c.key ? `<span class="arrow">${rosterSort.dir > 0 ? "▲" : "▼"}</span>` : "";
+    head += `<th data-key="${c.key}">${c.label} ${arrow}</th>`;
+  }
+  head += "</tr></thead>";
+  let body = "<tbody>";
+  if (!list.length) {
+    body += `<tr><td colspan="${ROSTER_COLS.length}"><div class="empty">조건에 맞는 인원이 없습니다.</div></td></tr>`;
+  } else {
+    for (const p of list) {
+      body += "<tr>";
+      body += `<td>${escapeHtml(p.사원코드)}</td>`;
+      body += `<td>${escapeHtml(p.사원명)}</td>`;
+      body += `<td>${escapeHtml(p.부서)}</td>`;
+      body += `<td>${escapeHtml(p.직급)}</td>`;
+      body += `<td>${escapeHtml(p.고용형태)}</td>`;
+      body += `<td>${escapeHtml(p.근무지)}</td>`;
+      body += `<td>${escapeHtml(p.입사일)}</td>`;
+      body += `<td><span class="status-pill status-${escapeAttr(p.상태)}">${escapeHtml(p.상태)}</span></td>`;
+      body += "</tr>";
+    }
+  }
+  body += "</tbody>";
+  t.innerHTML = head + body;
+
+  document.getElementById("rosterCount").textContent =
+    `${list.length}명 표시 / 전체 ${state.rosterCache.length}명 (기준일 ${state.asOf})`;
+
+  t.querySelectorAll("thead th").forEach(th => {
+    th.onclick = () => {
+      const key = th.getAttribute("data-key");
+      if (rosterSort.key === key) rosterSort.dir *= -1;
+      else { rosterSort.key = key; rosterSort.dir = 1; }
+      renderRoster();
+    };
+  });
+}
+
+function refreshRosterFilters() {
+  const emps = new Set(), stats = new Set(), depts = new Set();
+  for (const p of state.rosterCache) { emps.add(p.고용형태); stats.add(p.상태); depts.add(p.부서); }
+  fillSelect("filterEmp", "고용형태 전체", [...emps].filter(Boolean).sort());
+  fillSelect("filterStatus", "상태 전체", [...stats].filter(Boolean).sort());
+  fillSelect("filterDept", "부서 전체", [...depts].filter(Boolean).sort((a,b)=>a.localeCompare(b,"ko")));
+}
+function fillSelect(id, allLabel, values) {
+  const el = document.getElementById(id);
+  const prev = el.value;
+  el.innerHTML = `<option value="">${allLabel}</option>` +
+    values.map(v => `<option value="${escapeAttr(v)}">${escapeHtml(v)}</option>`).join("");
+  if (values.includes(prev)) el.value = prev;
+}
+
+/* ============================================================
+ * 11. 부서 명단 모달
+ * ============================================================ */
+function bindDeptClicks(table) {
+  table.querySelectorAll("td.dept.clickable").forEach(td => {
+    td.onclick = () => openDeptModal(td.getAttribute("data-dept"));
+  });
+}
+function openDeptModal(dept) {
+  const members = state.rosterCache
+    .filter(p => effectiveDept(p) === dept)
+    .sort((a, b) => String(a.사원코드).localeCompare(String(b.사원코드)));
+  document.getElementById("modalTitle").textContent = dept;
+  document.getElementById("modalMeta").textContent = `기준일 ${state.asOf} · ${members.length}명`;
+  const t = document.getElementById("modalTable");
+  let head = "<thead><tr><th>사원코드</th><th>사원명</th><th>실소속부서</th><th>직급</th><th>고용형태</th><th>성별</th><th>근무지</th><th>상태</th></tr></thead>";
+  let body = "<tbody>";
+  if (!members.length) {
+    body += `<tr><td colspan="8"><div class="empty">구성원이 없습니다.</div></td></tr>`;
+  } else {
+    for (const p of members) {
+      body += "<tr>";
+      body += `<td>${escapeHtml(p.사원코드)}</td><td>${escapeHtml(p.사원명)}</td>`;
+      body += `<td>${escapeHtml(p.부서)}</td><td>${escapeHtml(p.직급)}</td>`;
+      body += `<td>${escapeHtml(p.고용형태)}</td><td>${escapeHtml(p.성별)}</td>`;
+      body += `<td>${escapeHtml(p.근무지)}</td>`;
+      body += `<td><span class="status-pill status-${escapeAttr(p.상태)}">${escapeHtml(p.상태)}</span></td>`;
+      body += "</tr>";
+    }
+  }
+  body += "</tbody>";
+  t.innerHTML = head + body;
+  document.getElementById("modalBackdrop").classList.add("open");
+}
+function closeModal() { document.getElementById("modalBackdrop").classList.remove("open"); }
+
+/* ============================================================
+ * 12. CSV 다운로드 (UTF-8 BOM → 엑셀 한글 호환)
+ * ============================================================ */
+function downloadRosterCSV() {
+  const list = getFilteredRoster();
+  const headers = ROSTER_COLS.map(c => c.label);
+  const rows = list.map(p => ROSTER_COLS.map(c => csvCell(p[c.key])));
+  const csv = "﻿" + [headers.map(csvCell).join(","), ...rows.map(r => r.join(","))].join("\r\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `재직자명부_${state.asOf}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+function csvCell(v) {
+  const s = String(v ?? "");
+  if (/[",\r\n]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
+  return s;
+}
+
+/* ============================================================
+ * 13. 기준일 변경 / 타임라인
+ * ============================================================ */
+function setAsOf(iso, syncSlider) {
+  state.asOf = iso;
+  document.getElementById("datePicker").value = iso;
+  document.getElementById("asofBadge").textContent = iso;
+  if (syncSlider) {
+    const idx = state.orderDates.findIndex(d => d >= iso);
+    const sliderVal = idx === -1 ? state.orderDates.length - 1 : idx;
+    document.getElementById("timeline").value = Math.max(0, sliderVal);
+  }
+  recompute();
+}
+function recompute() {
+  state.rosterCache = rosterAsOf(state.asOf);
+  renderDaily();
+  renderGrade();
+  refreshRosterFilters();
+  renderRoster();
+}
+function buildTimeline() {
+  const set = new Set([BASE_DATE]);
+  for (const o of state.orders) {
+    const d = toISODate(o["발령일"]);
+    if (d) set.add(d);
+  }
+  state.orderDates = [...set].sort();
+  const slider = document.getElementById("timeline");
+  slider.min = 0;
+  slider.max = Math.max(0, state.orderDates.length - 1);
+  const picker = document.getElementById("datePicker");
+  picker.min = BASE_DATE;
+}
+
+/* ============================================================
+ * 14. 데이터 로딩
+ * ============================================================ */
+async function loadData() {
+  const banner = document.getElementById("dataBanner");
+  setSync("loading", "동기화 중…");
+  if (!SCRIPT_URL) {
+    state.base = DEMO.base;
+    state.orders = DEMO.orders.map((o, i) => ({ ...o, __idx: i }));
+    state.quota = DEMO.quota || [];
+    state.source = "demo";
+    state.lastSync = new Date();
+    setSync("demo", `데모 데이터 · ${nowKSTString()}`);
+    showBanner("info", "⚠ SCRIPT_URL 이 비어 있어 <b>내장 데모 데이터</b>로 동작 중입니다. 실데이터 연동은 코드 상단 SCRIPT_URL 에 Apps Script 배포 URL을 입력하세요.");
+    afterLoad();
+    return;
+  }
+  try {
+    const res = await fetch(SCRIPT_URL + (SCRIPT_URL.includes("?") ? "&" : "?") + "action=data", {
+      method: "GET", redirect: "follow"
+    });
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    const json = await res.json();
+    state.base = json.base || [];
+    state.orders = (json.orders || []).map((o, i) => ({ ...o, __idx: i }));
+    state.quota = json.quota || [];
+    state.source = "remote";
+    state.lastSync = new Date();
+    setSync("ok", `동기화 완료 · ${nowKSTString()}`);
+    hideBanner();
+    afterLoad();
+  } catch (err) {
+    setSync("err", "동기화 실패");
+    showBanner("warn", "❌ 데이터를 불러오지 못했습니다: " + escapeHtml(err.message) +
+      "<br>· Apps Script 배포 권한(액세스=전체)·CORS·URL을 확인하세요. 임시로 데모 데이터를 표시합니다.");
+    // 폴백: 데모
+    state.base = DEMO.base;
+    state.orders = DEMO.orders.map((o, i) => ({ ...o, __idx: i }));
+    state.quota = DEMO.quota || [];
+    state.source = "demo";
+    afterLoad();
+  }
+}
+function afterLoad() {
+  buildTimeline();
+  // 기본 조회일: 오늘(KST)과 데이터 범위 중 적절히
+  const today = toISODate(new Date());
+  const initial = today < BASE_DATE ? BASE_DATE : today;
+  setAsOf(initial, true);
+}
+
+/* ============================================================
+ * 15. UI 헬퍼
+ * ============================================================ */
+function setSync(kind, text) {
+  const el = document.getElementById("syncInfo");
+  el.className = "sync " + ({ ok: "ok", err: "err", demo: "demo", loading: "" }[kind] || "");
+  document.getElementById("syncText").textContent = text;
+}
+function showBanner(kind, html) {
+  const b = document.getElementById("dataBanner");
+  b.className = "banner show " + kind;
+  b.innerHTML = html;
+}
+function hideBanner() { document.getElementById("dataBanner").className = "banner"; }
+function escapeHtml(s) {
+  return String(s ?? "").replace(/[&<>"']/g, m => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[m]));
+}
+function escapeAttr(s) { return escapeHtml(s); }
+
+/* ============================================================
+ * 16. 이벤트 바인딩
+ * ============================================================ */
+function bindEvents() {
+  document.querySelectorAll(".tab-btn").forEach(btn => {
+    btn.onclick = () => {
+      document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+      document.querySelectorAll(".panel").forEach(p => p.classList.remove("active"));
+      btn.classList.add("active");
+      state.activeTab = btn.getAttribute("data-tab");
+      document.getElementById("panel-" + state.activeTab).classList.add("active");
+    };
+  });
+  document.getElementById("datePicker").onchange = (e) => {
+    if (e.target.value) setAsOf(e.target.value, true);
+  };
+  document.getElementById("timeline").oninput = (e) => {
+    const d = state.orderDates[+e.target.value];
+    if (d) setAsOf(d, false);
+  };
+  document.getElementById("prevOrderBtn").onclick = () => stepOrderDate(-1);
+  document.getElementById("nextOrderBtn").onclick = () => stepOrderDate(1);
+  document.getElementById("refreshBtn").onclick = () => loadData();
+  document.getElementById("rosterSearch").oninput = () => renderRoster();
+  document.getElementById("filterEmp").onchange = () => renderRoster();
+  document.getElementById("filterStatus").onchange = () => renderRoster();
+  document.getElementById("filterDept").onchange = () => renderRoster();
+  document.getElementById("downloadBtn").onclick = () => downloadRosterCSV();
+  document.getElementById("modalClose").onclick = closeModal;
+  document.getElementById("modalBackdrop").onclick = (e) => {
+    if (e.target.id === "modalBackdrop") closeModal();
+  };
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeModal(); });
+}
+function stepOrderDate(dir) {
+  const slider = document.getElementById("timeline");
+  let idx = state.orderDates.indexOf(state.asOf);
+  if (idx === -1) {
+    // 현재 기준일에 가장 가까운 발령일 인덱스
+    idx = state.orderDates.findIndex(d => d >= state.asOf);
+    if (idx === -1) idx = state.orderDates.length - 1;
+  }
+  const next = Math.min(state.orderDates.length - 1, Math.max(0, idx + dir));
+  slider.value = next;
+  setAsOf(state.orderDates[next], false);
+}
+
+/* ============================================================
+ * 17. 내장 데모 데이터 (SCRIPT_URL 미설정 시)
+ *     실데이터 구조와 동일한 형태의 소규모 샘플.
+ * ============================================================ */
+const DEMO = {
+  base: [
+    { 사원코드:"E001", 사원명:"김대표", 부서:"대표이사", 직급:"임원", 고용형태:"일반직", 성별:"남", 근무지:"본사", 입사일:"2010-01-01", 상태:"재직" },
+    { 사원코드:"E002", 사원명:"이본부", 부서:"경영본부", 직급:"1급", 고용형태:"일반직", 성별:"여", 근무지:"본사", 입사일:"2012-03-01", 상태:"재직" },
+    { 사원코드:"E003", 사원명:"박직원", 부서:"인재경영팀", 직급:"5급", 고용형태:"일반직", 성별:"여", 근무지:"본사", 입사일:"2018-05-01", 상태:"휴직" },
+    { 사원코드:"E004", 사원명:"최계약", 부서:"관광사업팀", 직급:"5급", 고용형태:"기간제", 성별:"남", 근무지:"센터A", 입사일:"2021-02-01", 상태:"재직" },
+    { 사원코드:"E005", 사원명:"정전문", 부서:"마케팅팀", 직급:"전문직 나", 고용형태:"전문직", 성별:"여", 근무지:"본사", 입사일:"2019-07-01", 상태:"재직" },
+    { 사원코드:"E006", 사원명:"강사원", 부서:"관광사업팀", 직급:"6급", 고용형태:"일반직", 성별:"남", 근무지:"센터A", 입사일:"2022-09-01", 상태:"재직" }
+  ],
+  orders: [
+    { 발령일:"2024-01-15", 사원코드:"E007", 사원명:"신입사", 변동구분:"입사", 변경부서:"관광사업팀", 변경직급:"6급", 변경고용형태:"일반직", 성별:"남", 변경근무지:"센터A", 비고:"신규채용" },
+    { 발령일:"2024-02-01", 사원코드:"E006", 사원명:"강사원", 변동구분:"전보", 변경부서:"마케팅팀", 비고:"전보(부서이동 동의어)" },
+    { 발령일:"2024-03-01", 사원코드:"E002", 사원명:"이본부", 변동구분:"승격", 변경직급:"임원", 비고:"승급 동의어" },
+    { 발령일:"2024-04-01", 사원코드:"E004", 사원명:"최계약", 변동구분:"퇴직", 비고:"계약만료(퇴사 동의어)" },
+    { 발령일:"2024-05-01", 사원코드:"E003", 사원명:"박직원", 변동구분:"복귀", 비고:"휴직 복귀(복직 동의어)" },
+    { 발령일:"2024-06-01", 사원코드:"E005", 사원명:"정전문", 변동구분:"휴직", 비고:"육아휴직" },
+    { 발령일:"2024-07-01", 사원코드:"E001", 사원명:"김대표", 변동구분:"근무지이동", 변경근무지:"센터B", 비고:"근무지 변경" }
+  ],
+  quota: []
+};
+
+/* ============================================================
+ * 18. 자체 검증 테스트 (알고리즘 정상 여부 콘솔 출력)
+ * ============================================================ */
+function runSelfTests() {
+  const results = [];
+  const assert = (name, cond, detail) => results.push({ name, ok: !!cond, detail });
+
+  // 데모 데이터로 테스트 (state 가 데모일 때만 의미 있음)
+  const savedBase = state.base, savedOrders = state.orders;
+  state.base = DEMO.base;
+  state.orders = DEMO.orders.map((o, i) => ({ ...o, __idx: i }));
+
+  // (1) 기준일 2023-12-30: 발령 미적용 스냅샷
+  const r0 = rosterAsOf("2023-12-30");
+  assert("base: 총 6명", r0.length === 6, r0.length);
+  const d0 = buildDailyPivot(r0);
+  assert("base: 합계 6", d0.total.subtotal === 6, d0.total.subtotal);
+  assert("base: 휴직 1", d0.total.row.hold["휴직"] === 1, d0.total.row.hold["휴직"]);
+  assert("base: 현재인원 5", d0.total.current === 5, d0.total.current);
+  const g0 = buildGradePivot(r0);
+  assert("base: 직급 소계 5 / 기간제 1 / 총계 6",
+    g0.total.subtotal.계 === 5 && g0.total.gigan.계 === 1 && g0.total.total.계 === 6,
+    `${g0.total.subtotal.계}/${g0.total.gigan.계}/${g0.total.total.계}`);
+  // 모드 A: 휴직자 E003 가 버킷 부서에 집계되는지
+  const bucketRow0 = d0.rows.find(r => r.dept === HOLD_BUCKET_DEPT);
+  assert("base: 휴직자 모드A 버킷 이동", bucketRow0 && bucketRow0.row.holdTotal === 1,
+    bucketRow0 ? bucketRow0.row.holdTotal : "no bucket");
+
+  // (2) 기준일 2024-12-31: 전 발령 적용
+  const r1 = rosterAsOf("2024-12-31");
+  const byCode = Object.fromEntries(r1.map(p => [p.사원코드, p]));
+  assert("all: 총 6명(E004퇴사·E007입사)", r1.length === 6, r1.length);
+  assert("all: E004 퇴사 제거", !byCode["E004"], !!byCode["E004"]);
+  assert("all: E007 입사 추가", !!byCode["E007"], !!byCode["E007"]);
+  assert("all: E001 근무지=센터B", byCode["E001"] && byCode["E001"].근무지 === "센터B", byCode["E001"]?.근무지);
+  assert("all: E002 승급 직급=임원", byCode["E002"] && byCode["E002"].직급 === "임원", byCode["E002"]?.직급);
+  assert("all: E006 전보 부서=마케팅팀", byCode["E006"] && byCode["E006"].부서 === "마케팅팀", byCode["E006"]?.부서);
+  assert("all: E003 복직 상태=재직", byCode["E003"] && byCode["E003"].상태 === "재직", byCode["E003"]?.상태);
+  assert("all: E005 휴직 상태=휴직", byCode["E005"] && byCode["E005"].상태 === "휴직", byCode["E005"]?.상태);
+  const d1 = buildDailyPivot(r1);
+  assert("all: 합계 6 / 휴직 1 / 현재 5",
+    d1.total.subtotal === 6 && d1.total.row.hold["휴직"] === 1 && d1.total.current === 5,
+    `${d1.total.subtotal}/${d1.total.row.hold["휴직"]}/${d1.total.current}`);
+
+  // (3) 기준일 경계: 2024-01-14 에는 E007 입사 미반영
+  const rMid = rosterAsOf("2024-01-14");
+  assert("boundary: 2024-01-14 E007 미반영", !rMid.find(p => p.사원코드 === "E007"), "E007 present");
+
+  // 복원
+  state.base = savedBase; state.orders = savedOrders;
+
+  const passed = results.filter(r => r.ok).length;
+  const failed = results.filter(r => !r.ok);
+  const style = failed.length ? "color:#A32D2D;font-weight:700" : "color:#3B6D11;font-weight:700";
+  console.log("%c[인력현황 자체검증] " + passed + "/" + results.length + " 통과", style);
+  if (failed.length) {
+    failed.forEach(f => console.warn("  ✗ " + f.name + " → 실제값:", f.detail));
+  } else {
+    console.log("%c  ✓ 발령 리플레이 / 동의어 매핑 / 모드 A / 피벗 계산 정상", "color:#3B6D11");
+  }
+  console.log("ℹ 실데이터(2023.12.30) 검수는 README 7번 표 숫자와 대조하세요.");
+  return { passed, total: results.length };
+}
+
+/* ============================================================
+ * 19. 시작
+ * ============================================================ */
+window.addEventListener("DOMContentLoaded", () => {
+  bindEvents();
+  runSelfTests();
+  loadData();
+});
+</script>
+</body>
+</html>
