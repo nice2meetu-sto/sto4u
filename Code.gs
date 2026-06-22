@@ -17,6 +17,7 @@
 var SHEET_BASE   = "기초명부";
 var SHEET_ORDERS = "인사발령";
 var SHEET_QUOTA  = "정원";
+var SHEET_DEPT   = "부서마스터";
 
 // 타임존 (날짜 직렬화 기준)
 var TZ = "Asia/Seoul";
@@ -47,6 +48,7 @@ function getData() {
     base:   readSheet(ss, SHEET_BASE),
     orders: readSheet(ss, SHEET_ORDERS),
     quota:  readSheet(ss, SHEET_QUOTA),
+    dept:   readSheet(ss, SHEET_DEPT),
     syncedAt: Utilities.formatDate(new Date(), TZ, "yyyy-MM-dd'T'HH:mm:ssXXX")
   };
 }

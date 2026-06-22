@@ -520,15 +520,17 @@ const DEPT_ORDER = [];
  * 1. 전역 상태 (메모리 only — 브라우저 스토리지 사용 안 함)
  * ============================================================ */
 const state = {
-  base: [],        // 기초명부 (원본)
-  orders: [],      // 인사발령 (원본 + __idx)
-  quota: [],       // 정원 (선택)
-  lastSync: null,  // 마지막 동기화 시각
-  source: "none",  // "remote" | "demo"
-  asOf: BASE_DATE, // 현재 조회 기준일
-  orderDates: [],  // 슬라이더용 정렬된 고유 발령일
+  base: [],         // 기초명부 (원본)
+  orders: [],       // 인사발령 (원본 + __idx)
+  quota: [],        // 정원 (선택)
+  dept: [],         // 부서마스터 (원본 행)
+  deptMaster: new Map(), // 부서코드 → [{적용일, 부서명, 본부, 표시순서, 비고}] (적용일 asc)
+  lastSync: null,   // 마지막 동기화 시각
+  source: "none",   // "remote" | "demo"
+  asOf: BASE_DATE,  // 현재 조회 기준일
+  orderDates: [],   // 슬라이더용 정렬된 고유 발령일
   activeTab: "daily",
-  rosterCache: []  // 현재 기준일 명부 (재정렬/검색용)
+  rosterCache: []   // 현재 기준일 명부 (재정렬/검색용)
 };
 
 /* ============================================================
@@ -598,6 +600,43 @@ function parseDept(raw) {
 }
 
 /* ============================================================
+ * 3-1. 부서 마스터 (유효일자 기반) — 부서코드 → 시점별 부서명/본부/표시순서
+ *   같은 부서코드에 적용일별로 여러 행. 조회일 기준 적용일 ≤ 조회일 중 최신 행을 사용.
+ *   → 팀명 변경·본부 이동·표시순서 변경을 "마스터 1줄"로 처리(역사 정확).
+ * ============================================================ */
+function buildDeptMaster(rows) {
+  const map = new Map();
+  for (const r of rows || []) {
+    const code = String(r["부서코드"] ?? "").trim();
+    if (!code) continue;
+    const ord = r["표시순서"];
+    map.has(code) || map.set(code, []);
+    map.get(code).push({
+      적용일: toISODate(r["적용일"]) || BASE_DATE,
+      부서명: String(r["부서명"] ?? "").trim(),
+      본부: String(r["본부"] ?? "").trim(),
+      표시순서: (ord === "" || ord == null) ? null : Number(ord),
+      비고: r["비고"] || ""
+    });
+  }
+  for (const arr of map.values()) {
+    arr.sort((a, b) => a.적용일 < b.적용일 ? -1 : a.적용일 > b.적용일 ? 1 : 0);
+  }
+  return map;
+}
+// 부서코드 + 조회일 → 그 시점의 부서 속성 (없으면 null)
+function resolveDept(code, asOf) {
+  const arr = state.deptMaster.get(String(code ?? "").trim());
+  if (!arr || !arr.length) return null;
+  let chosen = null;
+  for (const e of arr) {
+    if (e.적용일 <= asOf) chosen = e; else break;  // 적용일 asc 정렬 → 마지막 매칭이 최신
+  }
+  return chosen || arr[0];  // 조회일 이전 이력이 없으면 최초 이력으로 폴백
+}
+const usingMaster = () => state.deptMaster.size > 0;
+
+/* ============================================================
  * 4. 핵심 알고리즘 — 기준일 명부 재구성 (발령 리플레이)
  * ============================================================ */
 function rosterAsOf(baseDate) {
@@ -606,11 +645,14 @@ function rosterAsOf(baseDate) {
   const roster = new Map();
   for (const p of state.base) {
     const code = String(p["사원코드"]).trim();
+    const fb = parseDept(p["부서"]);  // 부서마스터 미사용 환경의 폴백(부서명#숫자 지원)
     roster.set(code, {
       사원코드: code,
       사원명: p["사원명"] || "",
-      본부: p["본부"] || "",
-      부서: p["부서"] || "",
+      부서코드: String(p["부서코드"] ?? "").trim(),
+      _fbDept: fb.name,
+      _fbBonbu: p["본부"] || "",
+      _fbOrder: fb.order,
       직급: p["직급"] || "",
       고용형태: normEmp(p["고용형태"]),
       성별: p["성별"] || "",
@@ -639,11 +681,14 @@ function rosterAsOf(baseDate) {
 
     switch (type) {
       case "입사": {
+        const fb = parseDept(o["변경부서"] || o["부서"]);
         roster.set(code, {
           사원코드: code,
           사원명: o["사원명"] || "",
-          본부: o["변경본부"] || o["본부"] || "",
-          부서: o["변경부서"] || o["부서"] || "",
+          부서코드: String(o["변경부서코드"] ?? o["부서코드"] ?? "").trim(),
+          _fbDept: fb.name,
+          _fbBonbu: o["변경본부"] || o["본부"] || "",
+          _fbOrder: fb.order,
           직급: o["변경직급"] || o["직급"] || "",
           고용형태: newEmp || normEmp(o["고용형태"]) || "일반직",
           성별: o["성별"] || o["변경성별"] || "",
@@ -657,7 +702,11 @@ function rosterAsOf(baseDate) {
         roster.delete(code);
         break;
       case "부서이동":
-        if (roster.has(code)) roster.get(code).부서 = o["변경부서"] || roster.get(code).부서;
+        if (roster.has(code)) {
+          const pr = roster.get(code);
+          if (o["변경부서코드"]) pr.부서코드 = String(o["변경부서코드"]).trim();
+          if (o["변경부서"]) { const pd = parseDept(o["변경부서"]); pr._fbDept = pd.name; if (pd.order != null) pr._fbOrder = pd.order; }
+        }
         break;
       case "근무지이동":
         if (roster.has(code)) roster.get(code).근무지 = o["변경근무지"] || roster.get(code).근무지;
@@ -682,13 +731,28 @@ function rosterAsOf(baseDate) {
     if (newEmp && type !== "입사" && roster.has(code)) {
       roster.get(code).고용형태 = newEmp;
     }
-    // 조직개편 등으로 변경본부가 함께 들어오면 갱신 (부서이동과 동시에 본부도 바뀌는 경우)
+    // 변경본부(폴백)도 함께 들어오면 갱신 (부서마스터 미사용 환경)
     if (o["변경본부"] && type !== "입사" && roster.has(code)) {
-      roster.get(code).본부 = o["변경본부"];
+      roster.get(code)._fbBonbu = o["변경본부"];
     }
   }
 
-  return Array.from(roster.values());
+  // 4-4. 부서 속성 확정: 부서코드가 있으면 부서마스터(조회일 기준) 우선, 없으면 폴백값
+  const result = Array.from(roster.values());
+  for (const p of result) {
+    const m = p.부서코드 ? resolveDept(p.부서코드, baseIso) : null;
+    if (m) {
+      p.부서 = m.부서명 || p._fbDept;
+      p.본부 = m.본부 || p._fbBonbu;
+      p.부서순서 = (m.표시순서 != null) ? m.표시순서 : p._fbOrder;
+    } else {
+      p.부서 = p._fbDept;
+      p.본부 = p._fbBonbu;
+      p.부서순서 = p._fbOrder;
+    }
+    delete p._fbDept; delete p._fbBonbu; delete p._fbOrder;
+  }
+  return result;
 }
 
 // 모드 A: 사고내역(상태≠재직) 인원의 집계상 소속 부서
@@ -712,19 +776,20 @@ function deptOrder(roster) {
     return [...DEPT_ORDER, ...extra];
   }
 
-  // 2순위: 본부순 그룹 → 본부 내 부서 등장순
-  // 부서 → 대표 본부, 부서 최초 등장 순서 수집
+  // 2순위: 본부순 그룹 → 본부 안에서 표시순서(부서순서) → 등장순
+  // 부서 → 대표 본부 / 표시순서 / 최초 등장순 수집
   const deptBonbu = new Map();
+  const deptNum = new Map();   // 부서 → 표시순서(작은 값 우선)
   const deptSeen = new Map();
   let idx = 0;
-  for (const p of state.base) {
-    const d = p["부서"];
-    if (d && !deptSeen.has(d)) deptSeen.set(d, idx++);
-  }
   for (const p of roster) {
     const d = effectiveDept(p);
     if (!deptSeen.has(d)) deptSeen.set(d, idx++);
     if (!deptBonbu.has(d)) deptBonbu.set(d, d === HOLD_BUCKET_DEPT ? null : (p.본부 || ""));
+    if (p.부서순서 != null && d !== HOLD_BUCKET_DEPT) {
+      const cur = deptNum.get(d);
+      if (cur == null || p.부서순서 < cur) deptNum.set(d, p.부서순서);
+    }
   }
 
   // 본부 표시 순서 (BONBU_ORDER 우선, 없으면 데이터 등장순)
@@ -754,6 +819,9 @@ function deptOrder(roster) {
     if (la !== lb) return la - lb;
     const ra = bonbuRank(deptBonbu.get(a) || ""), rb = bonbuRank(deptBonbu.get(b) || "");
     if (ra !== rb) return ra - rb;
+    const na = deptNum.has(a) ? deptNum.get(a) : Infinity;
+    const nb = deptNum.has(b) ? deptNum.get(b) : Infinity;
+    if (na !== nb) return na - nb;
     return (deptSeen.get(a) ?? 1e9) - (deptSeen.get(b) ?? 1e9);
   });
 }
@@ -964,6 +1032,7 @@ let rosterSort = { key: "사원코드", dir: 1 };
 const ROSTER_COLS = [
   { key: "사원코드", label: "사원코드" },
   { key: "사원명", label: "사원명" },
+  { key: "부서코드", label: "부서코드" },
   { key: "부서", label: "부서" },
   { key: "직급", label: "직급" },
   { key: "고용형태", label: "고용형태" },
@@ -1012,6 +1081,7 @@ function renderRoster() {
       body += "<tr>";
       body += `<td>${escapeHtml(p.사원코드)}</td>`;
       body += `<td>${escapeHtml(p.사원명)}</td>`;
+      body += `<td>${escapeHtml(p.부서코드)}</td>`;
       body += `<td>${escapeHtml(p.부서)}</td>`;
       body += `<td>${escapeHtml(p.직급)}</td>`;
       body += `<td>${escapeHtml(p.고용형태)}</td>`;
@@ -1067,15 +1137,15 @@ function openDeptModal(dept) {
   document.getElementById("modalTitle").textContent = dept;
   document.getElementById("modalMeta").textContent = `기준일 ${state.asOf} · ${members.length}명`;
   const t = document.getElementById("modalTable");
-  let head = "<thead><tr><th>사원코드</th><th>사원명</th><th>실소속부서</th><th>직급</th><th>고용형태</th><th>성별</th><th>근무지</th><th>상태</th></tr></thead>";
+  let head = "<thead><tr><th>사원코드</th><th>사원명</th><th>부서코드</th><th>실소속부서</th><th>직급</th><th>고용형태</th><th>성별</th><th>근무지</th><th>상태</th></tr></thead>";
   let body = "<tbody>";
   if (!members.length) {
-    body += `<tr><td colspan="8"><div class="empty">구성원이 없습니다.</div></td></tr>`;
+    body += `<tr><td colspan="9"><div class="empty">구성원이 없습니다.</div></td></tr>`;
   } else {
     for (const p of members) {
       body += "<tr>";
       body += `<td>${escapeHtml(p.사원코드)}</td><td>${escapeHtml(p.사원명)}</td>`;
-      body += `<td>${escapeHtml(p.부서)}</td><td>${escapeHtml(p.직급)}</td>`;
+      body += `<td>${escapeHtml(p.부서코드)}</td><td>${escapeHtml(p.부서)}</td><td>${escapeHtml(p.직급)}</td>`;
       body += `<td>${escapeHtml(p.고용형태)}</td><td>${escapeHtml(p.성별)}</td>`;
       body += `<td>${escapeHtml(p.근무지)}</td>`;
       body += `<td><span class="status-pill status-${escapeAttr(p.상태)}">${escapeHtml(p.상태)}</span></td>`;
@@ -1150,14 +1220,18 @@ function buildTimeline() {
 /* ============================================================
  * 14. 데이터 로딩
  * ============================================================ */
+function applyData(src, source) {
+  state.base = src.base || [];
+  state.orders = (src.orders || []).map((o, i) => ({ ...o, __idx: i }));
+  state.quota = src.quota || [];
+  state.dept = src.dept || [];
+  state.deptMaster = buildDeptMaster(state.dept);
+  state.source = source;
+}
 async function loadData() {
-  const banner = document.getElementById("dataBanner");
   setSync("loading", "동기화 중…");
   if (!SCRIPT_URL) {
-    state.base = DEMO.base;
-    state.orders = DEMO.orders.map((o, i) => ({ ...o, __idx: i }));
-    state.quota = DEMO.quota || [];
-    state.source = "demo";
+    applyData(DEMO, "demo");
     state.lastSync = new Date();
     setSync("demo", `데모 데이터 · ${nowKSTString()}`);
     showBanner("info", "⚠ SCRIPT_URL 이 비어 있어 <b>내장 데모 데이터</b>로 동작 중입니다. 실데이터 연동은 코드 상단 SCRIPT_URL 에 Apps Script 배포 URL을 입력하세요.");
@@ -1170,24 +1244,40 @@ async function loadData() {
     });
     if (!res.ok) throw new Error("HTTP " + res.status);
     const json = await res.json();
-    state.base = json.base || [];
-    state.orders = (json.orders || []).map((o, i) => ({ ...o, __idx: i }));
-    state.quota = json.quota || [];
-    state.source = "remote";
+    if (json.error) throw new Error(json.error);
+    applyData(json, "remote");
     state.lastSync = new Date();
     setSync("ok", `동기화 완료 · ${nowKSTString()}`);
-    hideBanner();
+    validateDeptCodes();
     afterLoad();
   } catch (err) {
     setSync("err", "동기화 실패");
     showBanner("warn", "❌ 데이터를 불러오지 못했습니다: " + escapeHtml(err.message) +
       "<br>· Apps Script 배포 권한(액세스=전체)·CORS·URL을 확인하세요. 임시로 데모 데이터를 표시합니다.");
-    // 폴백: 데모
-    state.base = DEMO.base;
-    state.orders = DEMO.orders.map((o, i) => ({ ...o, __idx: i }));
-    state.quota = DEMO.quota || [];
-    state.source = "demo";
+    applyData(DEMO, "demo");
     afterLoad();
+  }
+}
+// 부서코드 참조 무결성 검사: 명부/발령에서 쓰인 부서코드가 부서마스터에 있는지 확인
+function validateDeptCodes() {
+  if (!usingMaster()) {
+    hideBanner();
+    return;
+  }
+  const used = new Set();
+  for (const p of state.base) { const c = String(p["부서코드"] ?? "").trim(); if (c) used.add(c); }
+  for (const o of state.orders) {
+    const c = String(o["변경부서코드"] ?? "").trim(); if (c) used.add(c);
+  }
+  const missing = [...used].filter(c => !state.deptMaster.has(c));
+  const noCode = state.base.filter(p => !String(p["부서코드"] ?? "").trim()).length;
+  if (missing.length) {
+    showBanner("warn", `⚠ 부서마스터에 없는 부서코드 ${missing.length}건: <b>${missing.map(escapeHtml).join(", ")}</b>` +
+      `<br>· 해당 코드를 <b>부서마스터</b> 탭에 추가하거나 기초명부/인사발령의 코드를 수정하세요.`);
+  } else if (noCode) {
+    showBanner("info", `ℹ 기초명부 ${noCode}명에 부서코드가 비어 있어 해당 인원은 '부서명' 컬럼값으로 폴백 표시됩니다.`);
+  } else {
+    hideBanner();
   }
 }
 function afterLoad() {
@@ -1269,23 +1359,33 @@ function stepOrderDate(dir) {
  *     실데이터 구조와 동일한 형태의 소규모 샘플.
  * ============================================================ */
 const DEMO = {
+  // 부서마스터: 부서코드별 시점 속성. (D101 은 2024-07-01 팀명만 변경 → 발령 0줄)
+  dept: [
+    { 부서코드:"D000", 부서명:"대표이사",   본부:"대표이사실",        표시순서:1, 적용일:"2023-12-30" },
+    { 부서코드:"D101", 부서명:"기획조정팀", 본부:"기획경영본부",      표시순서:1, 적용일:"2023-12-30" },
+    { 부서코드:"D101", 부서명:"기획전략팀", 본부:"기획경영본부",      표시순서:1, 적용일:"2024-07-01", 비고:"팀명 변경(발령 없이 마스터 1줄)" },
+    { 부서코드:"D102", 부서명:"인재경영팀", 본부:"기획경영본부",      표시순서:2, 적용일:"2023-12-30" },
+    { 부서코드:"D201", 부서명:"마케팅팀",   본부:"국제관광MICE본부",  표시순서:1, 적용일:"2023-12-30" },
+    { 부서코드:"D301", 부서명:"관광사업팀", 본부:"관광산업본부",      표시순서:1, 적용일:"2023-12-30" },
+    { 부서코드:"D302", 부서명:"관광인재팀", 본부:"관광산업본부",      표시순서:2, 적용일:"2024-08-01", 비고:"신설" }
+  ],
   base: [
-    { 사원코드:"E001", 사원명:"김대표", 본부:"대표이사", 부서:"대표이사", 직급:"임원", 고용형태:"일반직", 성별:"남", 근무지:"본사", 입사일:"2010-01-01", 상태:"재직" },
-    { 사원코드:"E002", 사원명:"이기획", 본부:"경영본부", 부서:"경영기획팀", 직급:"1급", 고용형태:"일반직", 성별:"여", 근무지:"본사", 입사일:"2012-03-01", 상태:"재직" },
-    { 사원코드:"E003", 사원명:"박직원", 본부:"경영본부", 부서:"인재경영팀", 직급:"5급", 고용형태:"일반직", 성별:"여", 근무지:"본사", 입사일:"2018-05-01", 상태:"휴직" },
-    { 사원코드:"E004", 사원명:"최계약", 본부:"관광본부", 부서:"관광사업팀", 직급:"5급", 고용형태:"기간제", 성별:"남", 근무지:"센터A", 입사일:"2021-02-01", 상태:"재직" },
-    { 사원코드:"E005", 사원명:"정전문", 본부:"관광본부", 부서:"마케팅팀", 직급:"전문직 나", 고용형태:"전문직", 성별:"여", 근무지:"본사", 입사일:"2019-07-01", 상태:"재직" },
-    { 사원코드:"E006", 사원명:"강사원", 본부:"관광본부", 부서:"관광사업팀", 직급:"6급", 고용형태:"일반직", 성별:"남", 근무지:"센터A", 입사일:"2022-09-01", 상태:"재직" }
+    { 사원코드:"E001", 사원명:"김대표", 부서코드:"D000", 직급:"임원",      고용형태:"일반직", 성별:"남", 근무지:"본사",  입사일:"2010-01-01", 상태:"재직" },
+    { 사원코드:"E002", 사원명:"이기획", 부서코드:"D101", 직급:"1급",       고용형태:"일반직", 성별:"여", 근무지:"본사",  입사일:"2012-03-01", 상태:"재직" },
+    { 사원코드:"E003", 사원명:"박직원", 부서코드:"D102", 직급:"5급",       고용형태:"일반직", 성별:"여", 근무지:"본사",  입사일:"2018-05-01", 상태:"휴직" },
+    { 사원코드:"E004", 사원명:"최계약", 부서코드:"D301", 직급:"5급",       고용형태:"기간제", 성별:"남", 근무지:"센터A", 입사일:"2021-02-01", 상태:"재직" },
+    { 사원코드:"E005", 사원명:"정전문", 부서코드:"D201", 직급:"전문직 나", 고용형태:"전문직", 성별:"여", 근무지:"본사",  입사일:"2019-07-01", 상태:"재직" },
+    { 사원코드:"E006", 사원명:"강사원", 부서코드:"D301", 직급:"6급",       고용형태:"일반직", 성별:"남", 근무지:"센터A", 입사일:"2022-09-01", 상태:"재직" }
   ],
   orders: [
-    { 발령일:"2024-01-15", 사원코드:"E007", 사원명:"신입사", 변동구분:"입사", 변경본부:"관광본부", 변경부서:"관광사업팀", 변경직급:"6급", 변경고용형태:"일반직", 성별:"남", 변경근무지:"센터A", 비고:"신규채용" },
-    { 발령일:"2024-02-01", 사원코드:"E006", 사원명:"강사원", 변동구분:"전보", 변경부서:"마케팅팀", 비고:"전보(부서이동 동의어, 본부 동일)" },
-    { 발령일:"2024-03-01", 사원코드:"E002", 사원명:"이기획", 변동구분:"승격", 변경직급:"임원", 비고:"승급 동의어" },
-    { 발령일:"2024-04-01", 사원코드:"E004", 사원명:"최계약", 변동구분:"퇴직", 비고:"계약만료(퇴사 동의어)" },
-    { 발령일:"2024-05-01", 사원코드:"E003", 사원명:"박직원", 변동구분:"복귀", 비고:"휴직 복귀(복직 동의어)" },
-    { 발령일:"2024-06-01", 사원코드:"E005", 사원명:"정전문", 변동구분:"휴직", 비고:"육아휴직" },
+    { 발령일:"2024-01-15", 사원코드:"E007", 사원명:"신입사", 변동구분:"입사",       변경부서코드:"D301", 변경직급:"6급", 변경고용형태:"일반직", 성별:"남", 변경근무지:"센터A", 비고:"신규채용" },
+    { 발령일:"2024-02-01", 사원코드:"E006", 사원명:"강사원", 변동구분:"전보",       변경부서코드:"D201", 비고:"개인 부서이동(본부도 마스터에서 자동: 관광산업→국제관광MICE)" },
+    { 발령일:"2024-03-01", 사원코드:"E002", 사원명:"이기획", 변동구분:"승격",       변경직급:"임원", 비고:"승급 동의어" },
+    { 발령일:"2024-04-01", 사원코드:"E004", 사원명:"최계약", 변동구분:"퇴직",       비고:"계약만료(퇴사 동의어)" },
+    { 발령일:"2024-05-01", 사원코드:"E003", 사원명:"박직원", 변동구분:"복귀",       비고:"휴직 복귀(복직 동의어)" },
+    { 발령일:"2024-06-01", 사원코드:"E005", 사원명:"정전문", 변동구분:"휴직",       비고:"육아휴직" },
     { 발령일:"2024-07-01", 사원코드:"E001", 사원명:"김대표", 변동구분:"근무지이동", 변경근무지:"센터B", 비고:"근무지 변경" },
-    { 발령일:"2024-08-01", 사원코드:"E003", 사원명:"박직원", 변동구분:"조직개편", 변경본부:"관광본부", 변경부서:"관광인재팀", 비고:"조직개편: 본부+부서 동시 변경" }
+    { 발령일:"2024-08-01", 사원코드:"E003", 사원명:"박직원", 변동구분:"조직개편",   변경부서코드:"D302", 비고:"신설팀으로 개인 이동(부서코드 변경)" }
   ],
   quota: []
 };
@@ -1298,9 +1398,10 @@ function runSelfTests() {
   const assert = (name, cond, detail) => results.push({ name, ok: !!cond, detail });
 
   // 데모 데이터로 테스트 (state 가 데모일 때만 의미 있음)
-  const savedBase = state.base, savedOrders = state.orders;
+  const savedBase = state.base, savedOrders = state.orders, savedMaster = state.deptMaster;
   state.base = DEMO.base;
   state.orders = DEMO.orders.map((o, i) => ({ ...o, __idx: i }));
+  state.deptMaster = buildDeptMaster(DEMO.dept);
 
   // (1) 기준일 2023-12-30: 발령 미적용 스냅샷
   const r0 = rosterAsOf("2023-12-30");
@@ -1326,17 +1427,28 @@ function runSelfTests() {
   assert("all: E007 입사 추가", !!byCode["E007"], !!byCode["E007"]);
   assert("all: E001 근무지=센터B", byCode["E001"] && byCode["E001"].근무지 === "센터B", byCode["E001"]?.근무지);
   assert("all: E002 승급 직급=임원", byCode["E002"] && byCode["E002"].직급 === "임원", byCode["E002"]?.직급);
-  assert("all: E006 전보 부서=마케팅팀", byCode["E006"] && byCode["E006"].부서 === "마케팅팀", byCode["E006"]?.부서);
+  assert("all: E006 부서이동(D201) 부서=마케팅팀", byCode["E006"] && byCode["E006"].부서 === "마케팅팀", byCode["E006"]?.부서);
+  assert("all: E006 본부=국제관광MICE본부(마스터 자동)", byCode["E006"] && byCode["E006"].본부 === "국제관광MICE본부", byCode["E006"]?.본부);
   assert("all: E003 복직 상태=재직", byCode["E003"] && byCode["E003"].상태 === "재직", byCode["E003"]?.상태);
   assert("all: E005 휴직 상태=휴직", byCode["E005"] && byCode["E005"].상태 === "휴직", byCode["E005"]?.상태);
-  assert("all: E007 입사 본부=관광본부", byCode["E007"] && byCode["E007"].본부 === "관광본부", byCode["E007"]?.본부);
-  assert("all: E003 조직개편 본부=관광본부", byCode["E003"] && byCode["E003"].본부 === "관광본부", byCode["E003"]?.본부);
-  assert("all: E003 조직개편 부서=관광인재팀", byCode["E003"] && byCode["E003"].부서 === "관광인재팀", byCode["E003"]?.부서);
+  assert("all: E007 입사 본부=관광산업본부", byCode["E007"] && byCode["E007"].본부 === "관광산업본부", byCode["E007"]?.본부);
+  assert("all: E003 코드이동(D302) 본부=관광산업본부", byCode["E003"] && byCode["E003"].본부 === "관광산업본부", byCode["E003"]?.본부);
+  assert("all: E003 코드이동(D302) 부서=관광인재팀", byCode["E003"] && byCode["E003"].부서 === "관광인재팀", byCode["E003"]?.부서);
 
-  // (조직개편 역사 정확성) 2024-07-31 시점엔 E003 가 아직 경영본부/인재경영팀
+  // (마스터 팀명변경 — 발령 없이 마스터 1줄로 반영)
+  assert("master: 2024-06-30 E002 부서=기획조정팀(개명前)",
+    rosterAsOf("2024-06-30").find(p => p.사원코드 === "E002").부서 === "기획조정팀",
+    rosterAsOf("2024-06-30").find(p => p.사원코드 === "E002").부서);
+  assert("master: 2024-07-01 E002 부서=기획전략팀(개명後)",
+    byCode["E002"] && byCode["E002"].부서 === "기획전략팀", byCode["E002"]?.부서);
+  assert("master: resolveDept(D101, 2024-12-31)=기획전략팀",
+    resolveDept("D101", "2024-12-31").부서명 === "기획전략팀", resolveDept("D101", "2024-12-31").부서명);
+  assert("master: 표시순서 E003(D102)=2", byCode["E003"] && byCode["E003"].부서순서 === 2, byCode["E003"]?.부서순서);
+
+  // (조직개편 역사 정확성) 2024-07-31 시점엔 E003 가 아직 기획경영본부/인재경영팀
   const rPre = rosterAsOf("2024-07-31");
   const e3pre = rPre.find(p => p.사원코드 === "E003");
-  assert("history: 개편前 E003 본부=경영본부", e3pre && e3pre.본부 === "경영본부", e3pre?.본부);
+  assert("history: 개편前 E003 본부=기획경영본부", e3pre && e3pre.본부 === "기획경영본부", e3pre?.본부);
   assert("history: 개편前 E003 부서=인재경영팀", e3pre && e3pre.부서 === "인재경영팀", e3pre?.부서);
   const d1 = buildDailyPivot(r1);
   assert("all: 합계 6 / 휴직 1 / 현재 5",
@@ -1348,7 +1460,7 @@ function runSelfTests() {
   assert("boundary: 2024-01-14 E007 미반영", !rMid.find(p => p.사원코드 === "E007"), "E007 present");
 
   // 복원
-  state.base = savedBase; state.orders = savedOrders;
+  state.base = savedBase; state.orders = savedOrders; state.deptMaster = savedMaster;
 
   const passed = results.filter(r => r.ok).length;
   const failed = results.filter(r => !r.ok);
