@@ -585,6 +585,18 @@ function gradeBucketOf(jikgup) {
   return k; // 알 수 없는 직급은 그대로
 }
 
+// 부서명 뒤의 표시순서 숫자 파싱.
+//   "기획조정팀#1" → { name:"기획조정팀", order:1 }
+//   "예산팀 3"     → { name:"예산팀",     order:3 }   (구분자 #·.·-·_ 또는 공백 허용)
+//   "마케팅팀"     → { name:"마케팅팀",   order:null }
+// 화면에는 name(숫자 제거)만 표시하고, 정렬은 order(본부 안에서의 순서)를 사용한다.
+function parseDept(raw) {
+  const s = String(raw || "").trim();
+  const m = s.match(/^(.*\S)\s*[#.\-_]?\s*(\d+)\s*$/);
+  if (m && m[1]) return { name: m[1].trim(), order: parseInt(m[2], 10) };
+  return { name: s, order: null };
+}
+
 /* ============================================================
  * 4. 핵심 알고리즘 — 기준일 명부 재구성 (발령 리플레이)
  * ============================================================ */
