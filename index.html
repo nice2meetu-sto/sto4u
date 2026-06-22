@@ -508,6 +508,7 @@ const HOLD_ORDER   = ["휴직", "휴가", "파견", "기타"];            // 사
 // 비워두면 데이터 등장 순서.
 const BONBU_ORDER = [
   "대표이사실",
+  "직속부서",
   "기획경영본부",
   "국제관광MICE본부",
   "관광산업본부"
@@ -951,7 +952,6 @@ let rosterSort = { key: "사원코드", dir: 1 };
 const ROSTER_COLS = [
   { key: "사원코드", label: "사원코드" },
   { key: "사원명", label: "사원명" },
-  { key: "본부", label: "본부" },
   { key: "부서", label: "부서" },
   { key: "직급", label: "직급" },
   { key: "고용형태", label: "고용형태" },
@@ -1000,7 +1000,6 @@ function renderRoster() {
       body += "<tr>";
       body += `<td>${escapeHtml(p.사원코드)}</td>`;
       body += `<td>${escapeHtml(p.사원명)}</td>`;
-      body += `<td>${escapeHtml(p.본부)}</td>`;
       body += `<td>${escapeHtml(p.부서)}</td>`;
       body += `<td>${escapeHtml(p.직급)}</td>`;
       body += `<td>${escapeHtml(p.고용형태)}</td>`;
@@ -1056,15 +1055,15 @@ function openDeptModal(dept) {
   document.getElementById("modalTitle").textContent = dept;
   document.getElementById("modalMeta").textContent = `기준일 ${state.asOf} · ${members.length}명`;
   const t = document.getElementById("modalTable");
-  let head = "<thead><tr><th>사원코드</th><th>사원명</th><th>본부</th><th>실소속부서</th><th>직급</th><th>고용형태</th><th>성별</th><th>근무지</th><th>상태</th></tr></thead>";
+  let head = "<thead><tr><th>사원코드</th><th>사원명</th><th>실소속부서</th><th>직급</th><th>고용형태</th><th>성별</th><th>근무지</th><th>상태</th></tr></thead>";
   let body = "<tbody>";
   if (!members.length) {
-    body += `<tr><td colspan="9"><div class="empty">구성원이 없습니다.</div></td></tr>`;
+    body += `<tr><td colspan="8"><div class="empty">구성원이 없습니다.</div></td></tr>`;
   } else {
     for (const p of members) {
       body += "<tr>";
       body += `<td>${escapeHtml(p.사원코드)}</td><td>${escapeHtml(p.사원명)}</td>`;
-      body += `<td>${escapeHtml(p.본부)}</td><td>${escapeHtml(p.부서)}</td><td>${escapeHtml(p.직급)}</td>`;
+      body += `<td>${escapeHtml(p.부서)}</td><td>${escapeHtml(p.직급)}</td>`;
       body += `<td>${escapeHtml(p.고용형태)}</td><td>${escapeHtml(p.성별)}</td>`;
       body += `<td>${escapeHtml(p.근무지)}</td>`;
       body += `<td><span class="status-pill status-${escapeAttr(p.상태)}">${escapeHtml(p.상태)}</span></td>`;
