@@ -701,19 +701,6 @@ function rosterAsOf(baseDate) {
       case "퇴사":
         roster.delete(code);
         break;
-      case "부서이동":
-        if (roster.has(code)) {
-          const pr = roster.get(code);
-          if (o["변경부서코드"]) pr.부서코드 = String(o["변경부서코드"]).trim();
-          if (o["변경부서"]) { const pd = parseDept(o["변경부서"]); pr._fbDept = pd.name; if (pd.order != null) pr._fbOrder = pd.order; }
-        }
-        break;
-      case "근무지이동":
-        if (roster.has(code)) roster.get(code).근무지 = o["변경근무지"] || roster.get(code).근무지;
-        break;
-      case "승급":
-        if (roster.has(code)) roster.get(code).직급 = o["변경직급"] || roster.get(code).직급;
-        break;
       case "휴직":
         if (roster.has(code)) roster.get(code).상태 = "휴직";
         break;
@@ -723,17 +710,23 @@ function rosterAsOf(baseDate) {
       case "복직":
         if (roster.has(code)) roster.get(code).상태 = "재직";
         break;
+      case "부서이동":
+      case "근무지이동":
+      case "승급":
       default:
-        // 알 수 없는 변동구분: 무시 (필드 갱신만 시도)
+        // 필드 갱신은 아래 공통 블록에서 처리 (변동구분과 무관)
         break;
     }
-    // 변경고용형태가 함께 들어오면 입사 외 케이스에서도 갱신
-    if (newEmp && type !== "입사" && roster.has(code)) {
-      roster.get(code).고용형태 = newEmp;
-    }
-    // 변경본부(폴백)도 함께 들어오면 갱신 (부서마스터 미사용 환경)
-    if (o["변경본부"] && type !== "입사" && roster.has(code)) {
-      roster.get(code)._fbBonbu = o["변경본부"];
+    // 입사·퇴사가 아니면, 한 행에 들어있는 모든 변경* 값을 함께 반영한다.
+    // (예: "복직"하면서 부서/근무지/직급도 같이 바뀌는 복합 발령을 정확히 처리)
+    if (type !== "입사" && type !== "퇴사" && roster.has(code)) {
+      const pr = roster.get(code);
+      if (o["변경부서코드"]) pr.부서코드 = String(o["변경부서코드"]).trim();
+      if (o["변경부서"]) { const pd = parseDept(o["변경부서"]); pr._fbDept = pd.name; if (pd.order != null) pr._fbOrder = pd.order; }
+      if (o["변경본부"]) pr._fbBonbu = o["변경본부"];          // 폴백(부서마스터 미사용 환경)
+      if (o["변경직급"]) pr.직급 = o["변경직급"];
+      if (o["변경근무지"]) pr.근무지 = o["변경근무지"];
+      if (newEmp) pr.고용형태 = newEmp;
     }
   }
 
@@ -1458,6 +1451,21 @@ function runSelfTests() {
   // (3) 기준일 경계: 2024-01-14 에는 E007 입사 미반영
   const rMid = rosterAsOf("2024-01-14");
   assert("boundary: 2024-01-14 E007 미반영", !rMid.find(p => p.사원코드 === "E007"), "E007 present");
+
+  // (4) 복합 발령: 한 행에 복직 + 부서이동 + 근무지이동이 같이 들어와도 모두 반영
+  state.deptMaster = buildDeptMaster([
+    { 부서코드:"X1", 부서명:"가팀", 본부:"기획경영본부", 표시순서:1, 적용일:"2023-12-30" },
+    { 부서코드:"X2", 부서명:"나팀", 본부:"관광산업본부", 표시순서:1, 적용일:"2023-12-30" }
+  ]);
+  state.base = [{ 사원코드:"T1", 사원명:"테스트", 부서코드:"X1", 직급:"5급", 고용형태:"일반직", 성별:"남", 근무지:"본사", 입사일:"2020-01-01", 상태:"휴직" }];
+  state.orders = [{ 발령일:"2024-03-01", 사원코드:"T1", 변동구분:"복직", 변경부서코드:"X2", 변경근무지:"센터C", 변경직급:"4급", __idx:0 }];
+  const t1 = rosterAsOf("2024-03-02").find(p => p.사원코드 === "T1");
+  assert("combo: 복직→상태=재직", t1.상태 === "재직", t1.상태);
+  assert("combo: 복직+부서이동→부서코드=X2", t1.부서코드 === "X2", t1.부서코드);
+  assert("combo: 복직+부서이동→부서=나팀", t1.부서 === "나팀", t1.부서);
+  assert("combo: 복직+부서이동→본부=관광산업본부", t1.본부 === "관광산업본부", t1.본부);
+  assert("combo: 복직+근무지이동→센터C", t1.근무지 === "센터C", t1.근무지);
+  assert("combo: 복직+승급→직급=4급", t1.직급 === "4급", t1.직급);
 
   // 복원
   state.base = savedBase; state.orders = savedOrders; state.deptMaster = savedMaster;
