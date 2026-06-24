@@ -379,6 +379,43 @@
   .reg-result .ok { color: var(--valid); }
   .reg-result .err { color: var(--warn); }
   @media (max-width: 720px) { .reg-grid { grid-template-columns: 1fr 1fr; } }
+
+  /* ---------- KPI 카드 (탭 위 고정) ---------- */
+  .kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
+  .kpi { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 14px 18px; box-shadow: var(--shadow); }
+  .kpi .kl { font-size: 12.5px; color: var(--muted); font-weight: 500; }
+  .kpi .km { display: flex; align-items: baseline; gap: 8px; margin-top: 4px; }
+  .kpi .kn { font-size: 28px; font-weight: 700; color: var(--main); font-variant-numeric: tabular-nums; line-height: 1.1; }
+  .kpi .ks { font-size: 11px; color: var(--muted); }
+  @media (max-width: 680px){ .kpi-row { grid-template-columns: 1fr 1fr; } }
+
+  /* ---------- 센터별 근무자 ---------- */
+  .center-card { padding: 16px 18px; margin-top: 16px; }
+  .center-card h3 { margin: 0 0 12px; font-size: 14px; }
+  .center-grid { display: flex; flex-wrap: wrap; gap: 10px; }
+  .center-box { border: 1px solid var(--border); border-radius: 12px; min-width: 158px; flex: 1 1 158px; overflow: hidden; align-self: flex-start; }
+  .center-box .ch { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 12px; cursor: pointer; background: #fafbfd; }
+  .center-box .ch:hover { background: var(--main-soft); }
+  .center-box .ch .cn { font-weight: 700; font-size: 13px; }
+  .center-box .ch .cc { font-size: 14px; color: var(--main); font-weight: 700; }
+  .center-box .ch .cc small { color: var(--muted); font-weight: 400; font-size: 11px; }
+  .center-box .ch .arr { color: var(--muted); transition: transform .15s; font-size: 11px; }
+  .center-box.open .ch .arr { transform: rotate(90deg); }
+  .center-members { display: none; border-top: 1px solid var(--border); padding: 5px 0; max-height: 320px; overflow: auto; }
+  .center-box.open .center-members { display: block; }
+  .center-members .m { display: flex; justify-content: space-between; gap: 10px; padding: 4px 12px; font-size: 12px; }
+  .center-members .m.gigan { background: #fff7d6; }   /* 기간제 옅은 노랑 */
+  .center-members .m .md { color: var(--muted); font-variant-numeric: tabular-nums; }
+  .center-members .m .mg { color: #9a6a00; font-size: 10px; }
+
+  /* ---------- 정현원 비교표 ---------- */
+  table.jh2 { border-collapse: collapse; width: 100%; min-width: 1040px; font-size: 12.5px; background: var(--card); }
+  table.jh2 th, table.jh2 td { border: 1px solid var(--border); padding: 7px 6px; text-align: center; white-space: nowrap; }
+  table.jh2 thead th { background: #f0f1f6; font-weight: 700; color: #41434f; }
+  table.jh2 td.rl { background: #f6f7fa; font-weight: 700; }
+  table.jh2 td.sub, table.jh2 th.sub { background: #f6f7fa; font-weight: 700; }
+  table.jh2 .sep { border-left: 2px solid #b9bdca; }
+  table.jh2 td.neg { color: var(--warn); font-weight: 600; }
 </style>
 </head>
 <body>
@@ -418,12 +455,16 @@
     </div>
   </div>
 
+  <!-- ============ KPI 카드 (어느 탭이든 상단 고정) ============ -->
+  <div class="kpi-row" id="kpiRow"></div>
+
   <!-- ============ Tabs ============ -->
   <nav class="tabs">
     <button class="tab-btn active" data-tab="daily">① 일일</button>
     <button class="tab-btn" data-tab="grade">② 직급별</button>
     <button class="tab-btn" data-tab="roster">③ 전체 재직자</button>
-    <button class="tab-btn" data-tab="register">④ 인사발령 등록</button>
+    <button class="tab-btn" data-tab="jeong">④ 정현원</button>
+    <button class="tab-btn" data-tab="register">⑤ 인사발령 등록</button>
   </nav>
 
   <!-- ① 일일 -->
@@ -432,6 +473,11 @@
       <table class="grid" id="dailyTable"></table>
     </div>
     <p class="hint" style="margin-top:8px;">· 현재인원 = 합계 소계 − 사고내역 계 &nbsp;|&nbsp; 사고내역(휴직·휴가·파견·기타) 인원은 정원외 버킷 <b>인재경영팀(임)</b>으로 집계(모드 A). 부서명을 클릭하면 해당 기준일 구성원 명단을 볼 수 있습니다.</p>
+
+    <div class="card center-card">
+      <h3>센터별 근무자 현황 <span class="hint">(센터 클릭 → 근무자 명단 펼침 · 입사일 순 · <span style="background:#fff7d6;padding:0 4px;border-radius:3px;">기간제</span>)</span></h3>
+      <div class="center-grid" id="centerGrid"></div>
+    </div>
   </section>
 
   <!-- ② 직급별 -->
@@ -457,7 +503,15 @@
     </div>
   </section>
 
-  <!-- ④ 인사발령 등록 -->
+  <!-- ④ 정현원 비교표 -->
+  <section class="panel" id="panel-jeong">
+    <div class="card table-scroll">
+      <table class="jh2" id="jeongTable"></table>
+    </div>
+    <p class="hint" style="margin-top:8px;">· 정원 = <b>정원</b> 시트 수기값(직급별 <b>변경일</b> 기준 최신 적용) · 현원 = 기준일 재직 인원(휴직·파견 포함) · 결원 = 현원 − 정원(음수=정원 미달, 빨강) · 정원현황 = 일반직+전문직+별도직군 · 합계 = 정원현황+기간제. 전문직 정원/결원은 ‘가+나급’·‘다+라급’ 묶음.</p>
+  </section>
+
+  <!-- ⑤ 인사발령 등록 -->
   <section class="panel" id="panel-register">
     <div class="card reg-card">
       <h3 class="reg-h">공통 항목 <span class="reg-sub">(아래 대상자 전원에게 동일하게 적용)</span></h3>
@@ -1221,6 +1275,138 @@ function fillSelect(id, allLabel, values) {
 }
 
 /* ============================================================
+ * 10-1. 상단 KPI 카드 (총원 / 현원 / 휴직 / 파견)
+ * ============================================================ */
+function renderKPI(roster){
+  let total = roster.length, jaejik = 0, hyu = 0, pa = 0;
+  for(const p of roster){
+    if(p.상태 === "재직") jaejik++;
+    else if(p.상태 === "휴직") hyu++;
+    else if(p.상태 === "파견") pa++;
+  }
+  const card = (label, num, sub) =>
+    `<div class="kpi"><div class="kl">${label}</div><div class="km"><span class="kn">${num}</span><span class="ks">${sub||""}</span></div></div>`;
+  document.getElementById("kpiRow").innerHTML =
+    card("총원", total, escapeHtml(state.asOf) + " 기준") +
+    card("현원", jaejik, "사고 인원 제외") +
+    card("휴직", hyu, "") +
+    card("파견", pa, "");
+}
+
+/* ============================================================
+ * 10-2. 센터별 근무자 현황 (일일 탭) — 근무지별 인원 + 명단(입사일순), 기간제 노랑
+ * ============================================================ */
+function renderCenters(roster){
+  const groups = new Map();
+  for(const p of roster){
+    const c = p.근무지 || "(미지정)";
+    if(!groups.has(c)) groups.set(c, []);
+    groups.get(c).push(p);
+  }
+  const grid = document.getElementById("centerGrid");
+  let html = "", idx = 0;
+  for(const [center, members] of groups){
+    members.sort((a,b) => String(a.입사일).localeCompare(String(b.입사일)));  // 입사일 오름차순
+    const gigan = members.filter(m => m.고용형태 === "기간제").length;
+    let m = "";
+    for(const p of members){
+      const g = p.고용형태 === "기간제";
+      m += `<div class="m${g?" gigan":""}"><span>${escapeHtml(p.사원명)}${g?' <span class="mg">기간제</span>':""}</span><span class="md">${escapeHtml(p.입사일)}</span></div>`;
+    }
+    html += `<div class="center-box">
+      <div class="ch"><span class="cn">${escapeHtml(center)}</span><span class="cc">${members.length}<small>명${gigan?" · 기간제 "+gigan:""}</small> <span class="arr">▸</span></span></div>
+      <div class="center-members">${m}</div></div>`;
+    idx++;
+  }
+  grid.innerHTML = html || `<div class="empty">근무자가 없습니다.</div>`;
+  grid.querySelectorAll(".center-box .ch").forEach(ch => {
+    ch.onclick = () => ch.parentElement.classList.toggle("open");
+  });
+}
+
+/* ============================================================
+ * 10-3. 정현원 비교표 — 정원(변경일 기준 최신) vs 현원 vs 결원
+ * ============================================================ */
+const JH_GEN = ["임원","1급","2급","3급","4급","5급","6급"];
+const JH_PRO = ["가급","나급","다급","라급"];
+const JH_PRO_GROUPS = [["가급","나급"],["다급","라급"]];   // 전문직 정원/결원은 묶음 표시
+function jhGenGrade(j){ const k=String(j||"").trim(); if(k==="임원"||/대표|본부장/.test(k))return"임원"; const m=k.match(/^([1-6])급/); return m?m[1]+"급":null; }
+function jhProfGrade(j){ const k=String(j||"").replace(/\s/g,""); const m=k.match(/(가|나|다|라)급?$/); return m?m[1]+"급":null; }
+function jhNum(v){ const n=parseFloat(String(v??"").replace(/[^0-9.\-]/g,"")); return isFinite(n)?Math.round(n):0; }
+
+// 정원 시트 → 직급별 정원: 같은 직급에 변경일이 여러 개면 '변경일 ≤ 기준일' 중 최신값
+function quotaAsOf(rows, asOf){
+  const by = new Map();
+  for(const r of rows||[]){
+    const label = String(r["직급"] ?? r["구분"] ?? "").trim();
+    if(!label || label.startsWith("※") || label.length > 20) continue;
+    let eff = toISODate(r["변경일"]);
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(eff)) eff = BASE_DATE;   // 빈칸·비정상 → 시작일(항상 적용)
+    if(eff > asOf) continue;                                // 아직 적용 전
+    const val = jhNum(r["정원(명)"] ?? r["정원"] ?? r["정원수"]);
+    const cur = by.get(label);
+    if(!cur || eff >= cur.eff) by.set(label, {eff, val});
+  }
+  const q = {}; for(const [k,o] of by) q[k] = o.val; return q;
+}
+function jhQuotaRec(q){
+  const R = {}; [...JH_GEN, ...JH_PRO].forEach(k => R[k]=0);
+  for(const k in q){
+    if(JH_GEN.includes(k)) R[k] = q[k];
+    else if(JH_PRO.includes(k)) R[k] = q[k];
+    else if(/^(가|나|다|라)급?$/.test(k)) R[k.replace(/급?$/,"급")] = q[k];
+  }
+  R.sep = q["별도직군"]||0; R.gigan = q["기간제"]||0; R.proAgg = q["전문직"]||0;
+  R.genSub = JH_GEN.reduce((s,k)=>s+R[k],0);
+  R.proSub = JH_PRO.reduce((s,k)=>s+R[k],0) + R.proAgg;
+  R.total = R.genSub + R.proSub + R.sep; R.grand = R.total + R.gigan;
+  return R;
+}
+function jhCountHead(roster){
+  const H = {}; [...JH_GEN, ...JH_PRO].forEach(k => H[k]=0); H.sep=0; H.gigan=0; H.genEtc=0; H.proEtc=0;
+  for(const p of roster){
+    const e = p.고용형태;
+    if(e === "기간제"){ H.gigan++; continue; }
+    if(e === "개방형" || /별도직군/.test(String(p.비고||""))){ H.sep++; continue; }
+    if(e === "전문직"){ const s=jhProfGrade(p.직급); if(s) H[s]++; else H.proEtc++; continue; }
+    const g = jhGenGrade(p.직급); if(g) H[g]++; else H.genEtc++;   // 일반직 + 임원
+  }
+  H.genSub = JH_GEN.reduce((s,k)=>s+H[k],0) + H.genEtc;
+  H.proSub = JH_PRO.reduce((s,k)=>s+H[k],0) + H.proEtc;
+  H.total = H.genSub + H.proSub + H.sep; H.grand = H.total + H.gigan;
+  return H;
+}
+function renderJeonghyeon(roster, asOf){
+  const q = jhQuotaRec(quotaAsOf(state.quota, asOf));
+  const c = jhCountHead(roster);
+  const gsum = (rec,g) => g.reduce((s,k)=>s+(rec[k]||0),0);
+  const head = `<thead>
+    <tr><th rowspan="2" class="rl">구분</th>
+      <th colspan="${JH_GEN.length+1}">일반직</th>
+      <th colspan="${JH_PRO.length+1}" class="sep">전문직</th>
+      <th rowspan="2" class="sep">별도직군</th><th rowspan="2" class="sub sep">정원현황</th><th rowspan="2" class="sep">기간제</th><th rowspan="2" class="sub sep">합계</th>
+    </tr>
+    <tr>${JH_GEN.map(r=>`<th>${r}</th>`).join("")}<th class="sub">소계</th>${JH_PRO.map((r,i)=>`<th${i===0?' class="sep"':''}>${r}</th>`).join("")}<th class="sub">소계</th></tr>
+  </thead>`;
+  const row = (name, rec, proMode, cls="") => {
+    const isDiff = name === "결원";
+    const cell = (v, sub, sep) => `<td class="${sub?'sub':''}${sep?' sep':''}${(isDiff&&v<0)?' neg':''}">${v}</td>`;
+    let s = `<tr class="${cls}"><td class="rl">${name}</td>`;
+    JH_GEN.forEach(r => s += cell(rec[r]||0, false, false)); s += cell(rec.genSub||0, true, false);
+    if(proMode === "group"){
+      JH_PRO_GROUPS.forEach((g,i) => { const v = isDiff ? (gsum(c,g)-gsum(q,g)) : gsum(rec,g);
+        s += `<td colspan="${g.length}" class="${i===0?'sep':''}${(isDiff&&v<0)?' neg':''}">${v}</td>`; });
+    } else { JH_PRO.forEach((r,i) => s += cell(rec[r]||0, false, i===0)); }
+    s += cell(rec.proSub||0, true, false);
+    s += cell(rec.sep||0, false, true) + cell(rec.total||0, true, true) + cell(rec.gigan||0, false, true) + cell(rec.grand||0, true, true);
+    return s + "</tr>";
+  };
+  const d = {}; [...JH_GEN, ...JH_PRO, "genSub","proSub","sep","total","gigan","grand"].forEach(k => d[k] = (c[k]||0)-(q[k]||0));
+  const body = row("정원", q, "group") + row("현원", c, "each") + row("결원", d, "group", "");
+  document.getElementById("jeongTable").innerHTML = head + `<tbody>${body}</tbody>`;
+}
+
+/* ============================================================
  * 11. 부서 명단 모달
  * ============================================================ */
 function bindDeptClicks(table) {
@@ -1412,8 +1598,11 @@ function setAsOf(iso, syncSlider) {
 }
 function recompute() {
   state.rosterCache = rosterAsOf(state.asOf);
+  renderKPI(state.rosterCache);
   renderDaily();
+  renderCenters(state.rosterCache);
   renderGrade();
+  renderJeonghyeon(state.rosterCache, state.asOf);
   refreshRosterFilters();
   renderRoster();
 }
