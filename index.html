@@ -247,6 +247,9 @@
   table.grid td.num { font-variant-numeric: tabular-nums; }
   table.grid td.cur { font-weight: 700; color: var(--main); }
   table.grid td.warn-num { color: var(--warn); font-weight: 600; }
+  /* 강조 컬럼 밴드 (합계 소계 · 사고내역 계 · 현재인원) — 호버는 이 위에 적용 */
+  table.grid td.colband, table.grid th.colband { background: #edeff3; }
+  table.grid tr.total td.colband { background: var(--main-soft); }
   /* 십자(crosshair) 음영 — 커서가 있는 행 + 열 동시 강조 (일일/직급별 표, 부서명 포함) */
   table.grid tbody tr:hover td { background: #fafbfd; }
   table.grid td.col-hl { background: #fafbfd !important; }
@@ -1110,11 +1113,11 @@ function renderDaily() {
   for (const e of EMP_ORDER) head += `<th colspan="3" class="sep-left">${e}</th>`;
   head += `<th colspan="3" class="sep-left">합계</th>`;
   head += `<th colspan="5" class="sep-left">사고내역</th>`;
-  head += `<th rowspan="2" class="sep-left">현재인원</th></tr><tr>`;
+  head += `<th rowspan="2" class="sep-left colband">현재인원</th></tr><tr>`;
   for (let i = 0; i < EMP_ORDER.length; i++) head += `<th class="sep-left">남</th><th>여</th><th>소계</th>`;
-  head += `<th class="sep-left">남</th><th>여</th><th>소계</th>`;
+  head += `<th class="sep-left">남</th><th>여</th><th class="colband">소계</th>`;
   for (const h of HOLD_ORDER) head += `<th class="sep-left">${h}</th>`;
-  head += `<th class="sep-left">계</th></tr></thead>`;
+  head += `<th class="sep-left colband">계</th></tr></thead>`;
 
   const renderRow = (r, isTotal) => {
     let html = `<tr class="${isTotal ? "total" : ""}">`;
@@ -1123,14 +1126,14 @@ function renderDaily() {
       const c = r.row.emp[e];
       html += numCell(c.남, "sep-left") + numCell(c.여) + numCell(c.남 + c.여);
     }
-    html += numCell(r.subM, "sep-left") + numCell(r.subF) + numCell(r.subtotal);
+    html += numCell(r.subM, "sep-left") + numCell(r.subF) + numCell(r.subtotal, "colband");
     for (let i = 0; i < HOLD_ORDER.length; i++) {
       const h = HOLD_ORDER[i];
       const v = r.row.hold[h];
       html += `<td class="num${v === 0 ? " zero" : " warn-num"}${i === 0 ? " sep-left" : ""}">${v}</td>`;
     }
-    html += `<td class="num sep-left${r.row.holdTotal === 0 ? " zero" : " warn-num"}">${r.row.holdTotal}</td>`;
-    html += `<td class="num cur sep-left">${r.current}</td>`;
+    html += `<td class="num sep-left colband${r.row.holdTotal === 0 ? " zero" : " warn-num"}">${r.row.holdTotal}</td>`;
+    html += `<td class="num cur sep-left colband">${r.current}</td>`;
     html += `</tr>`;
     return html;
   };
