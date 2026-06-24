@@ -929,14 +929,22 @@ function deptOrder(roster) {
   const deptBonbu = new Map();
   const deptNum = new Map();   // 부서 → 표시순서(작은 값 우선)
   const deptSeen = new Map();
+  // 정원외 버킷도 부서마스터에 (이름으로) 등록돼 있으면 본부·표시순서를 그대로 따른다.
+  const bm = resolveDeptCodeByName(HOLD_BUCKET_DEPT, state.asOf);
+  const bucketMaster = bm ? resolveDept(bm, state.asOf) : null;
   let idx = 0;
   for (const p of roster) {
     const d = effectiveDept(p);
     if (!deptSeen.has(d)) deptSeen.set(d, idx++);
-    if (!deptBonbu.has(d)) deptBonbu.set(d, d === HOLD_BUCKET_DEPT ? null : (p.본부 || ""));
-    if (p.부서순서 != null && d !== HOLD_BUCKET_DEPT) {
-      const cur = deptNum.get(d);
-      if (cur == null || p.부서순서 < cur) deptNum.set(d, p.부서순서);
+    if (d === HOLD_BUCKET_DEPT) {
+      if (!deptBonbu.has(d)) deptBonbu.set(d, bucketMaster ? (bucketMaster.본부 || "") : null);
+      if (bucketMaster && bucketMaster.표시순서 != null && !deptNum.has(d)) deptNum.set(d, bucketMaster.표시순서);
+    } else {
+      if (!deptBonbu.has(d)) deptBonbu.set(d, p.본부 || "");
+      if (p.부서순서 != null) {
+        const cur = deptNum.get(d);
+        if (cur == null || p.부서순서 < cur) deptNum.set(d, p.부서순서);
+      }
     }
   }
 
@@ -955,9 +963,9 @@ function deptOrder(roster) {
     bonbuRank = (b) => { const i = order.indexOf(b); return i === -1 ? order.length : i; };
   }
 
-  // 정렬 우선순위: ① 일반 본부 → ② 본부 미상 → ③ 정원외 버킷(맨 끝)
+  // 정렬 우선순위: ① 일반 본부 → ② 본부 미상 → ③ 정원외 버킷(부서마스터에 없을 때만 맨 끝)
   const level = (d) => {
-    if (d === HOLD_BUCKET_DEPT) return 2;
+    if (d === HOLD_BUCKET_DEPT) return bucketMaster ? 0 : 2;  // 마스터에 있으면 일반 부서처럼 정렬
     const b = deptBonbu.get(d);
     return (b === "" || b == null) ? 1 : 0;
   };
