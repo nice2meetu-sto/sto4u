@@ -567,9 +567,11 @@ const ORDER_TYPE_SYNONYMS = {
   "복직": "복직", "복귀": "복직", "파견복귀": "복직", "복귀(복직)": "복직", "휴직복귀": "복직"
 };
 
-// 상태 표준화
+// 상태 표준화. '퇴사/입사예정'은 상태가 아니라 입사일·퇴사일(날짜)로 판정하므로,
+// 기초명부 상태 칸에 그런 라벨이 있어도 '재직'으로 취급한다(사고내역으로 세지 않음).
 const STATUS_SYNONYMS = {
   "재직": "재직", "정상": "재직", "근무": "재직",
+  "퇴사": "재직", "퇴직": "재직", "입사예정": "재직", "입사 예정": "재직", "예정": "재직",
   "휴직": "휴직",
   "휴가": "휴가",
   "파견": "파견",
@@ -1521,12 +1523,16 @@ function validateDeptCodes() {
     const c = String(p["부서코드"] ?? "").trim();
     if (c && !state.deptMaster.has(c)) bad.add(c);
   }
-  if (bad.size) {
-    showBanner("warn", `⚠ 부서마스터에서 찾을 수 없는 부서값 ${bad.size}건: <b>${[...bad].map(escapeHtml).join(", ")}</b>` +
-      `<br>· 인사발령 <b>변경부서</b>(부서코드 또는 부서명)·발령일, 또는 <b>부서마스터</b>를 확인하세요.`);
-  } else {
-    hideBanner();
-  }
+  // 기초명부 상태/날짜 정합성: 퇴사인데 퇴사일 없음 / 입사예정인데 입사일 없음
+  const retNoDate = state.base.filter(p => /^(퇴사|퇴직)$/.test(String(p["상태"] ?? "").trim()) && !toISODate(p["퇴사일"]));
+  const hireNoDate = state.base.filter(p => /^(입사예정|입사 예정|예정)$/.test(String(p["상태"] ?? "").trim()) && !toISODate(p["입사일"]));
+
+  const msgs = [];
+  if (bad.size) msgs.push(`⚠ 부서마스터에서 찾을 수 없는 부서값 ${bad.size}건: <b>${[...bad].map(escapeHtml).join(", ")}</b> (인사발령 변경부서/발령일·부서마스터 확인)`);
+  if (retNoDate.length) msgs.push(`⚠ 상태='퇴사'인데 <b>퇴사일이 비어</b> 계속 재직으로 잡히는 인원 ${retNoDate.length}명: ${retNoDate.slice(0,8).map(p=>escapeHtml(p["사원명"]||p["사원코드"])).join(", ")}${retNoDate.length>8?" 외":""} → 퇴사일을 채우세요.`);
+  if (hireNoDate.length) msgs.push(`⚠ 상태='입사예정'인데 입사일이 비어 있는 인원 ${hireNoDate.length}명 → 입사일을 채우세요.`);
+  if (msgs.length) showBanner("warn", msgs.join("<br>"));
+  else hideBanner();
 }
 function afterLoad() {
   buildTimeline();
