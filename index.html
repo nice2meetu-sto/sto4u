@@ -232,12 +232,12 @@
     z-index: 1;
   }
   table.grid td.dept.clickable {
-    color: var(--main);
+    color: var(--text);
     cursor: pointer;
     text-decoration: underline;
-    text-decoration-color: rgba(83,74,183,.35);
+    text-decoration-color: rgba(0,0,0,.25);
   }
-  table.grid td.dept.clickable:hover { color: #463ea0; }
+  table.grid td.dept.clickable:hover { color: #000; text-decoration-color: var(--main); }
   table.grid tr.total td { font-weight: 700; border-top: 2px solid #9aa1b2; }  /* 합계 행: 윗줄 진하게, 색은 각 열 이어짐 */
   table.grid tr.bb-top td { border-top: 2px solid #b3b8c5; }       /* ~~~본부 행: 윗줄 진하게 */
   table.grid tr.bb-bot td { border-bottom: 2px solid #b3b8c5; }    /* 대표이사 행: 아랫줄 진하게 */
