@@ -247,10 +247,10 @@
   table.grid td.num { font-variant-numeric: tabular-nums; }
   table.grid td.cur { font-weight: 700; color: var(--main); }
   table.grid td.warn-num { color: var(--warn); font-weight: 600; }
-  /* 십자(crosshair) 음영 — 커서가 있는 행 + 열 동시 강조 (일일/직급별 표) */
-  table.grid tbody tr:hover td:not(.dept) { background: #f1eefb; }
-  table.grid td.col-hl { background: #f1eefb !important; }
-  table.grid tbody tr:hover td.col-hl { background: #e6e1f7 !important; }   /* 교차점 약간 진하게 */
+  /* 십자(crosshair) 음영 — 커서가 있는 행 + 열 동시 강조 (일일/직급별 표, 부서명 포함) */
+  table.grid tbody tr:hover td { background: #fafbfd; }
+  table.grid td.col-hl { background: #fafbfd !important; }
+  table.grid tbody tr:hover td.col-hl { background: #eef0f3 !important; }   /* 교차점만 살짝 진한 회색 */
   table.grid .sep-left { border-left: 2px solid #cdd0db; }
 
   /* ---------- Roster tab ---------- */
