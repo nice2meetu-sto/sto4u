@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>직급별 인원 현황 (독립형)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet" />
+<style>
+/* ============================================================
+ * 직급별 인원 현황표 — 독립 실행형 (디자인 + 호버효과)
+ *   다른 페이지에 심을 때: 이 style 의 :root + table.grid·.gg-* 규칙과
+ *   script 의 함수들, 본문 마크업(.gg-wrap)만 가져가면 됩니다.
+ * ============================================================ */
+:root{
+  --main:#534AB7; --valid:#3B6D11; --warn:#A32D2D; --border:#e2e4ea;
+  --bg:#f5f6f9; --card:#fff; --text:#2b2d36; --muted:#7b7f8e; --main-soft:#ece9f8;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:"Noto Sans KR",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:14px}
+.gg-wrap{max-width:1320px;margin:0 auto;padding:22px 18px 56px}
+.gg-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+.gg-title{font-size:18px;font-weight:700;margin:0}
+.gg-title small{display:block;font-size:12px;color:var(--muted);font-weight:400;margin-top:2px}
+.gg-ctrl{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted)}
+.gg-ctrl input,.gg-ctrl button{font-family:inherit;font-size:13px;border:1px solid var(--border);border-radius:8px;padding:8px 12px;background:var(--card);color:var(--text);cursor:pointer}
+.gg-ctrl button.primary{background:var(--main);border-color:var(--main);color:#fff}
+.gg-banner{display:none;margin-bottom:12px;border-radius:10px;padding:10px 14px;font-size:12.5px}
+.gg-banner.show{display:block}
+.gg-banner.info{background:#eef3ff;color:#2c4a8c;border:1px solid #d3deff}
+.gg-banner.warn{background:#fdeaea;color:var(--warn);border:1px solid #f3cccc}
+
+.table-scroll{overflow-x:auto;border-radius:14px}
+table.grid{border-collapse:collapse;width:100%;background:var(--card);font-size:12.5px;min-width:1100px;border:1px solid var(--border);border-radius:14px}
+table.grid th,table.grid td{border:1px solid var(--border);padding:7px 9px;text-align:center;white-space:nowrap}
+table.grid thead th{background:#f0f1f6;color:#41434f;font-weight:700;position:sticky;top:0}
+table.grid thead tr.group th{background:#e9eaf2}
+table.grid td.dept,table.grid th.dept{text-align:left;font-weight:500;position:sticky;left:0;background:var(--card);z-index:1}
+table.grid td.dept.clickable{color:var(--text);cursor:pointer;text-decoration:underline;text-decoration-color:rgba(0,0,0,.25)}
+table.grid td.dept.clickable:hover{color:#000;text-decoration-color:var(--main)}
+table.grid tr.total td{font-weight:700;border-top:2px solid #9aa1b2}            /* 합계 행 윗줄 진하게 */
+table.grid tr.bb-top td{border-top:2px solid #b3b8c5}                            /* ~~~본부 행 윗줄 */
+table.grid tr.bb-bot td{border-bottom:2px solid #b3b8c5}                         /* 대표이사 행 아랫줄 */
+table.grid td.zero{color:#c2c5d0}
+table.grid td.num{font-variant-numeric:tabular-nums}
+table.grid td.cur{font-weight:700;color:var(--main)}
+/* 컬럼 색 (연한 파스텔). .esub = 계 약간 진하게 */
+table.grid .e-gen{background:#eef4fc} table.grid .e-gen.esub{background:#e0ebf9}    /* 임원~6급=파랑 */
+table.grid .e-lav{background:#f1eff9} table.grid .e-lav.esub{background:#e9e5f6}    /* 전문직=연보라 */
+table.grid .e-gig{background:#f1f3f6} table.grid .e-gig.esub{background:#e8ebef}    /* 소계=회색 */
+table.grid .e-pink{background:#fcebeb} table.grid .e-pink.esub{background:#f8dede}  /* 기간제=분홍 */
+table.grid .e-gry2{background:#e4e7ec} table.grid .e-gry2.esub{background:#d7dbe2}  /* 총계=진한회색 */
+/* 십자(crosshair) 호버 — 색 위에 적용 */
+table.grid tbody tr:hover td{background:#fafbfd !important}
+table.grid td.col-hl{background:#fafbfd !important}                              /* 흰색 셀: 회색 */
+table.grid tbody tr:hover td.col-hl{background:#eef0f3 !important}
+/* 세로 호버: 바탕색 있는 셀(계)은 그 색의 더 진한 톤 */
+table.grid td.e-gen.esub.col-hl{background:#cadcf4 !important}
+table.grid td.e-lav.esub.col-hl{background:#ddd6f0 !important}
+table.grid td.e-gig.esub.col-hl{background:#dadee4 !important}
+table.grid td.e-pink.esub.col-hl{background:#f3cccc !important}
+table.grid td.e-gry2.esub.col-hl{background:#c8cdd7 !important}
+table.grid .sep-left{border-left:2px solid #cdd0db}
+.gg-foot{margin-top:9px;font-size:11px;color:var(--muted)}
+
+/* 부서 명단 모달 */
+.gg-modal-bg{display:none;position:fixed;inset:0;background:rgba(30,31,45,.42);z-index:50;align-items:center;justify-content:center;padding:20px}
+.gg-modal-bg.open{display:flex}
+.gg-modal{background:var(--card);border-radius:16px;width:100%;max-width:760px;max-height:84vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(20,22,40,.3);overflow:hidden}
+.gg-modal header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--border)}
+.gg-modal header h3{margin:0;font-size:16px}
+.gg-modal header .meta{font-size:12px;color:var(--muted);margin-top:2px}
+.gg-modal header button{border:none;background:none;font-size:22px;color:var(--muted);cursor:pointer}
+.gg-modal .body{overflow:auto;padding:4px 0}
+table.gg-list{border-collapse:collapse;width:100%;font-size:13px}
+table.gg-list th,table.gg-list td{border-bottom:1px solid var(--border);padding:9px 12px;text-align:left;white-space:nowrap}
+table.gg-list thead th{background:#f0f1f6;font-weight:700;position:sticky;top:0}
+</style>
+</head>
+<body>
+<div class="gg-wrap">
+  <div class="gg-head">
+    <h1 class="gg-title">직급별 인원 현황 <small>부서 × 직급 · 소계 · 기간제 · 총계</small></h1>
+    <div class="gg-ctrl">
+      <label for="ggDate">기준일</label>
+      <input type="date" id="ggDate" />
+      <button id="ggRefresh" class="primary">↻ 새로고침</button>
+    </div>
+  </div>
+  <div id="ggBanner" class="gg-banner"></div>
+  <div class="table-scroll"><table class="grid" id="gradeTable"></table></div>
+  <p class="gg-foot">· 소계 = 임원 + 1급~6급 + 전문직(정원 내) · 총계 = 소계 + 기간제(정원 외) · 부서명 클릭 시 구성원 명단.</p>
+</div>
+
+<div class="gg-modal-bg" id="ggModalBg">
+  <div class="gg-modal">
+    <header><div><h3 id="ggModalTitle"></h3><div class="meta" id="ggModalMeta"></div></div><button id="ggModalClose">×</button></header>
+    <div class="body"><table class="gg-list" id="ggModalTable"></table></div>
+  </div>
+</div>
+
+<script>
+"use strict";
+/* ============================================================
+ * 0. 설정
+ * ============================================================ */
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycby9YvceUjbNbgoGmxPlwQ3wU7hFxbFZ4DQjhQMVqOXIUGjeDdTV-0oZx1T30MlHxN2P/exec";
+const BASE_DATE = "2023-12-30";
+const DEFAULT_DATE = "2023-12-30";
+const HOLD_BUCKET_MODE = "A";
+const HOLD_BUCKET_DEPT = "인재경영팀(임)";
+const BONBU_ORDER = ["대표이사실","직속부서","기획경영본부","국제관광MICE본부","관광산업본부"];
+const DEPT_ORDER = [];
+const GRADE_ORDER = ["임원","1급","2급","3급","4급","5급","6급","전문직"];
+
+const ORDER_TYPE_SYNONYMS = {"입사":"입사","신규":"입사","신규입사":"입사","채용":"입사","퇴사":"퇴사","퇴직":"퇴사","면직":"퇴사","부서이동":"부서이동","전보":"부서이동","부서변경":"부서이동","조직개편":"부서이동","팀변경":"부서이동","근무지이동":"근무지이동","근무지변경":"근무지이동","승급":"승급","승격":"승급","직급변경":"승급","휴직":"휴직","파견":"파견","복직":"복직","복귀":"복직","파견복귀":"복직","휴직복귀":"복직"};
+const STATUS_SYNONYMS = {"재직":"재직","정상":"재직","근무":"재직","퇴사":"재직","퇴직":"재직","입사예정":"재직","입사 예정":"재직","예정":"재직","휴직":"휴직","휴가":"휴가","파견":"파견","기타":"기타"};
+const EMP_SYNONYMS = {"일반직":"일반직","정규직":"일반직","전문직":"전문직","기간제":"기간제","계약직":"기간제","파견":"파견","파견직":"파견","파견근로자":"파견","개방형":"개방형","임원":"임원"};
+
+const state = { base:[], orders:[], dept:[], deptMaster:new Map(), asOf:BASE_DATE, rosterCache:[] };
+
+/* ============================================================
+ * 1. 유틸 / 정규화
+ * ============================================================ */
+function toISODate(v){
+  if(v==null||v==="")return"";
+  if(v instanceof Date){const k=new Date(v.getTime()+9*3600*1000);return k.toISOString().slice(0,10);}
+  const s=String(v).trim();
+  const m=s.match(/^(\d{4})[-./](\d{1,2})[-./](\d{1,2})/);
+  if(m)return`${m[1]}-${m[2].padStart(2,"0")}-${m[3].padStart(2,"0")}`;
+  if(/^\d{4}-\d{2}-\d{2}T/.test(s))return s.slice(0,10);
+  return s;
+}
+const normOrderType=v=>ORDER_TYPE_SYNONYMS[String(v||"").trim()]||String(v||"").trim();
+const normStatus=v=>{const k=String(v||"").trim();return k?(STATUS_SYNONYMS[k]||k):"재직";};
+const normEmp=v=>EMP_SYNONYMS[String(v||"").trim()]||String(v||"").trim();
+const idOf=p=>String(p["사원코드"]??p["사번"]??"").trim();
+function parseDept(raw){const s=String(raw||"").trim();const m=s.match(/^(.*\S)\s*[#.\-_]?\s*(\d+)\s*$/);if(m&&m[1])return{name:m[1].trim(),order:parseInt(m[2],10)};return{name:s,order:null};}
+function gradeBucketOf(j){const k=String(j||"").trim();if(k==="임원"||/대표|본부장/.test(k))return"임원";const m=k.match(/^([1-6])급/);if(m)return m[1]+"급";if(k.startsWith("전문직")||/^[가나다라]\s*급?$/.test(k))return"전문직";return k;}
+
+function buildDeptMaster(rows){
+  const map=new Map();
+  for(const r of rows||[]){
+    const code=String(r["부서코드"]??"").trim(); if(!code)continue;
+    const ord=r["표시순서"];
+    map.has(code)||map.set(code,[]);
+    map.get(code).push({적용일:toISODate(r["적용일"])||BASE_DATE,부서명:String(r["부서명"]??"").trim(),본부:String(r["본부"]??"").trim(),표시순서:(ord===""||ord==null)?null:Number(ord)});
+  }
+  for(const arr of map.values()) arr.sort((a,b)=>a.적용일<b.적용일?-1:a.적용일>b.적용일?1:0);
+  return map;
+}
+function resolveDept(code,asOf){
+  const arr=state.deptMaster.get(String(code??"").trim()); if(!arr||!arr.length)return null;
+  let chosen=null; for(const e of arr){if(e.적용일<=asOf)chosen=e;else break;}
+  return chosen||arr[0];
+}
+function resolveDeptCodeByName(name,asOf){
+  const target=String(name||"").replace(/\s+/g,""); if(!target)return null;
+  let best=null;
+  for(const [code,arr] of state.deptMaster){ for(const e of arr){ if(String(e.부서명).replace(/\s+/g,"")===target&&e.적용일<=asOf){ if(!best||e.적용일>best.적용일)best={적용일:e.적용일,부서코드:code}; } } }
+  return best?best.부서코드:null;
+}
+function resolveOrderDept(o,asOf){
+  const cand=[o["변경부서코드"],o["부서코드"],o["변경부서"],o["부서"]].map(v=>String(v??"").trim()).find(v=>v);
+  if(!cand)return null;
+  if(state.deptMaster.has(cand))return{code:cand};
+  const byName=resolveDeptCodeByName(cand,asOf); if(byName)return{code:byName};
+  const pd=parseDept(cand); return{name:pd.name,order:pd.order};
+}
+
+/* ============================================================
+ * 2. 명부 재구성 (입/퇴사=날짜, 부서/직급/상태=발령)
+ * ============================================================ */
+function rosterAsOf(baseDate){
+  const baseIso=toISODate(baseDate);
+  const locOf=p=>p["근무지"]??p["사업장"]??"";
+  const roster=new Map();
+  for(const p of state.base){
+    const code=idOf(p); if(!code)continue;
+    const hire=toISODate(p["입사일"]),leave=toISODate(p["퇴사일"]);
+    if(hire&&hire>baseIso)continue;
+    if(leave&&leave<=baseIso)continue;
+    const fb=parseDept(p["부서"]);
+    roster.set(code,{사원코드:code,사원명:p["사원명"]||"",부서코드:String(p["부서코드"]??"").trim(),_fbDept:fb.name,_fbBonbu:p["본부"]||"",_fbOrder:fb.order,직급:p["직급"]||"",고용형태:normEmp(p["고용형태"]),성별:p["성별"]||"",근무지:locOf(p),입사일:hire,상태:normStatus(p["상태"])});
+  }
+  const orders=state.orders.filter(o=>toISODate(o["발령일"])&&toISODate(o["발령일"])<=baseIso).slice()
+    .sort((a,b)=>{const da=toISODate(a["발령일"]),db=toISODate(b["발령일"]);if(da<db)return -1;if(da>db)return 1;return(a.__idx||0)-(b.__idx||0);});
+  for(const o of orders){
+    const code=idOf(o); if(!code)continue;
+    const type=normOrderType(o["변동구분"]); const oDate=toISODate(o["발령일"]);
+    const newEmp=o["변경고용형태"]?normEmp(o["변경고용형태"]):null;
+    if(type==="퇴사"){roster.delete(code);continue;}
+    if(type==="입사"&&!roster.has(code)){
+      const dch=resolveOrderDept(o,oDate);
+      roster.set(code,{사원코드:code,사원명:o["사원명"]||"",부서코드:(dch&&dch.code)?dch.code:"",_fbDept:(dch&&dch.name)?dch.name:"",_fbBonbu:o["변경본부"]||"",_fbOrder:(dch&&dch.order!=null)?dch.order:null,직급:o["변경직급"]||"",고용형태:newEmp||"일반직",성별:o["성별"]||"",근무지:o["변경근무지"]||"",입사일:oDate,상태:"재직"});
+    }
+    if(!roster.has(code))continue;
+    const pr=roster.get(code);
+    if(type==="휴직")pr.상태="휴직"; else if(type==="파견")pr.상태="파견"; else if(type==="복직")pr.상태="재직";
+    const dch=resolveOrderDept(o,oDate);
+    if(dch){ if(dch.code)pr.부서코드=dch.code; else{pr.부서코드="";pr._fbDept=dch.name;if(dch.order!=null)pr._fbOrder=dch.order;} }
+    if(o["변경본부"])pr._fbBonbu=o["변경본부"];
+    if(o["변경직급"])pr.직급=o["변경직급"];
+    if(o["변경근무지"])pr.근무지=o["변경근무지"];
+    if(newEmp)pr.고용형태=newEmp;
+  }
+  const result=Array.from(roster.values());
+  for(const p of result){
+    const m=p.부서코드?resolveDept(p.부서코드,baseIso):null;
+    if(m){p.부서=m.부서명||p._fbDept;p.본부=m.본부||p._fbBonbu;p.부서순서=(m.표시순서!=null)?m.표시순서:p._fbOrder;}
+    else{p.부서=p._fbDept;p.본부=p._fbBonbu;p.부서순서=p._fbOrder;}
+    delete p._fbDept;delete p._fbBonbu;delete p._fbOrder;
+  }
+  return result;
+}
+function effectiveDept(p){ if(HOLD_BUCKET_MODE==="A"&&p.상태!=="재직")return HOLD_BUCKET_DEPT; return p.부서||"(미지정)"; }
+
+/* ============================================================
+ * 3. 부서 표시 순서 (본부순 → 표시순서)
+ * ============================================================ */
+function deptOrder(roster){
+  if(DEPT_ORDER.length){
+    const set=new Set(DEPT_ORDER),extra=[];
+    for(const p of roster){const d=effectiveDept(p);if(!set.has(d)&&!extra.includes(d))extra.push(d);}
+    return[...DEPT_ORDER,...extra];
+  }
+  const deptBonbu=new Map(),deptNum=new Map(),deptSeen=new Map();
+  const bm=resolveDeptCodeByName(HOLD_BUCKET_DEPT,state.asOf);
+  const bucketMaster=bm?resolveDept(bm,state.asOf):null;
+  let idx=0;
+  for(const p of roster){
+    const d=effectiveDept(p);
+    if(!deptSeen.has(d))deptSeen.set(d,idx++);
+    if(d===HOLD_BUCKET_DEPT){
+      if(!deptBonbu.has(d))deptBonbu.set(d,bucketMaster?(bucketMaster.본부||""):null);
+      if(bucketMaster&&bucketMaster.표시순서!=null&&!deptNum.has(d))deptNum.set(d,bucketMaster.표시순서);
+    }else{
+      if(!deptBonbu.has(d))deptBonbu.set(d,p.본부||"");
+      if(p.부서순서!=null){const cur=deptNum.get(d);if(cur==null||p.부서순서<cur)deptNum.set(d,p.부서순서);}
+    }
+  }
+  const normBonbu=b=>String(b||"").replace(/\s+/g,"").toLowerCase();
+  let bonbuRank;
+  if(BONBU_ORDER.length){const rm=new Map(BONBU_ORDER.map((b,i)=>[normBonbu(b),i]));bonbuRank=b=>rm.has(normBonbu(b))?rm.get(normBonbu(b)):BONBU_ORDER.length;}
+  else{const order=[],seen=new Set();const add=b=>{if(b&&!seen.has(b)){seen.add(b);order.push(b);}};for(const p of state.base)add(p["본부"]);for(const p of roster)add(p.본부);bonbuRank=b=>{const i=order.indexOf(b);return i===-1?order.length:i;};}
+  const level=d=>{ if(d===HOLD_BUCKET_DEPT)return bucketMaster?0:2; const b=deptBonbu.get(d); return(b===""||b==null)?1:0; };
+  const depts=[...new Set(roster.map(effectiveDept))];
+  return depts.sort((a,b)=>{
+    const la=level(a),lb=level(b);if(la!==lb)return la-lb;
+    const ra=bonbuRank(deptBonbu.get(a)||""),rb=bonbuRank(deptBonbu.get(b)||"");if(ra!==rb)return ra-rb;
+    const na=deptNum.has(a)?deptNum.get(a):Infinity,nb=deptNum.has(b)?deptNum.get(b):Infinity;if(na!==nb)return na-nb;
+    return(deptSeen.get(a)??1e9)-(deptSeen.get(b)??1e9);
+  });
+}
+
+/* ============================================================
+ * 4. 직급별 피벗 + 렌더
+ * ============================================================ */
+function buildGradePivot(roster){
+  const depts=deptOrder(roster);
+  const blank=()=>{const row={grade:{},gigan:{남:0,여:0}};for(const g of GRADE_ORDER)row.grade[g]={남:0,여:0};return row;};
+  const rows=new Map(); for(const d of depts)rows.set(d,blank());
+  for(const p of roster){
+    const d=effectiveDept(p); if(!rows.has(d))rows.set(d,blank());
+    const row=rows.get(d); const g=p.성별==="여"?"여":"남";
+    if(p.고용형태==="기간제"){ row.gigan[g]++; }
+    else{ const gb=(p.고용형태==="전문직")?"전문직":gradeBucketOf(p.직급); if(!row.grade[gb])row.grade[gb]={남:0,여:0}; row.grade[gb][g]++; }
+  }
+  const calc=(row)=>{
+    let sM=0,sF=0; for(const g of GRADE_ORDER){sM+=row.grade[g].남;sF+=row.grade[g].여;}
+    const subtotal={남:sM,여:sF,계:sM+sF};
+    const gigan={남:row.gigan.남,여:row.gigan.여,계:row.gigan.남+row.gigan.여};
+    const total={남:sM+gigan.남,여:sF+gigan.여,계:subtotal.계+gigan.계};
+    return{subtotal,gigan,total};
+  };
+  const out=[]; const totalRow=blank();
+  for(const d of depts){
+    const row=rows.get(d); out.push({dept:d,row,...calc(row)});
+    for(const g of GRADE_ORDER){totalRow.grade[g].남+=row.grade[g].남;totalRow.grade[g].여+=row.grade[g].여;}
+    totalRow.gigan.남+=row.gigan.남; totalRow.gigan.여+=row.gigan.여;
+  }
+  const total={dept:"합계",row:totalRow,...calc(totalRow)};
+  return{rows:out,total};
+}
+function escapeHtml(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));}
+function numCell(v,cls){const z=(v===0)?" zero":"";return`<td class="num${z}${cls?" "+cls:""}">${v}</td>`;}
+function deptCell(name,clickable){const cls="dept"+(clickable?" clickable":"");const attr=clickable?` data-dept="${escapeHtml(name)}"`:"";return`<td class="${cls}"${attr}>${escapeHtml(name)}</td>`;}
+
+function renderGrade(){
+  const roster=state.rosterCache;
+  const pivot=buildGradePivot(roster);
+  const t=document.getElementById("gradeTable");
+  const gcls=g=>(g==="전문직"?"e-lav":"e-gen");   // 임원~6급=파랑, 전문직=연보라
+  let head=`<thead><tr class="group"><th class="dept" rowspan="2">부서</th>`;
+  for(const g of GRADE_ORDER) head+=`<th colspan="3" class="sep-left ${gcls(g)} esub">${g}</th>`;
+  head+=`<th colspan="3" class="sep-left e-gig esub">소계</th>`;
+  head+=`<th colspan="3" class="sep-left e-pink esub">기간제</th>`;
+  head+=`<th colspan="3" class="sep-left e-gry2 esub">총계</th></tr><tr>`;
+  for(const g of GRADE_ORDER) head+=`<th class="sep-left">남</th><th>여</th><th class="${gcls(g)} esub">계</th>`;
+  head+=`<th class="sep-left">남</th><th>여</th><th class="e-gig esub">계</th>`;
+  head+=`<th class="sep-left">남</th><th>여</th><th class="e-pink esub">계</th>`;
+  head+=`<th class="sep-left">남</th><th>여</th><th class="e-gry2 esub">계</th></tr></thead>`;
+  // 남/여 흰색, '계' 칸에만 색
+  const trio=(o,cls)=>numCell(o.남,"sep-left")+numCell(o.여)+numCell(o.계,"cur "+cls+" esub");
+  const trioG=(cell,cls)=>numCell(cell.남,"sep-left")+numCell(cell.여)+numCell(cell.남+cell.여,cls+" esub");
+  const renderRow=(r,isTotal)=>{
+    const bcls=isTotal?"":(r.dept==="대표이사"?" bb-bot":(/본부$/.test(r.dept)?" bb-top":""));
+    let html=`<tr class="${isTotal?"total":""}${bcls}">`;
+    html+=deptCell(r.dept,!isTotal);
+    for(const g of GRADE_ORDER) html+=trioG(r.row.grade[g],gcls(g));
+    html+=trio(r.subtotal,"e-gig");
+    html+=trio(r.gigan,"e-pink");
+    html+=trio(r.total,"e-gry2");
+    html+="</tr>"; return html;
+  };
+  let body="<tbody>";
+  for(const r of pivot.rows)body+=renderRow(r,false);
+  body+=renderRow(pivot.total,true);
+  t.innerHTML=head+body+"</tbody>";
+  bindDeptClicks(t);
+}
+
+/* ============================================================
+ * 5. 호버(십자) + 명단 모달
+ * ============================================================ */
+function enableCrosshair(table){
+  if(!table)return; let curIdx=-1;
+  const clear=()=>{if(curIdx<0)return;const tb=table.tBodies[0];if(tb)for(const tr of tb.rows){const c=tr.cells[curIdx];if(c)c.classList.remove("col-hl");}curIdx=-1;};
+  table.addEventListener("mouseover",e=>{
+    const td=e.target.closest("td"); const tb=table.tBodies[0];
+    if(!td||!tb||!tb.contains(td)){clear();return;}
+    const idx=td.cellIndex; if(idx===curIdx)return; clear(); curIdx=idx;
+    for(const tr of tb.rows){const c=tr.cells[idx];if(c)c.classList.add("col-hl");}
+  });
+  table.addEventListener("mouseleave",clear);
+}
+function bindDeptClicks(table){ table.querySelectorAll("td.dept.clickable").forEach(td=>{ td.onclick=()=>openDeptModal(td.getAttribute("data-dept")); }); }
+function openDeptModal(dept){
+  const members=state.rosterCache.filter(p=>effectiveDept(p)===dept).sort((a,b)=>String(a.입사일).localeCompare(String(b.입사일)));
+  document.getElementById("ggModalTitle").textContent=dept;
+  document.getElementById("ggModalMeta").textContent=`기준일 ${state.asOf} · ${members.length}명`;
+  let head="<thead><tr><th>사원명</th><th>직급</th><th>고용형태</th><th>성별</th><th>근무지</th><th>입사일</th><th>상태</th></tr></thead>";
+  let body="<tbody>";
+  if(!members.length)body+=`<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:30px">구성원이 없습니다.</td></tr>`;
+  else for(const p of members)body+=`<tr><td>${escapeHtml(p.사원명)}</td><td>${escapeHtml(p.직급)}</td><td>${escapeHtml(p.고용형태)}</td><td>${escapeHtml(p.성별)}</td><td>${escapeHtml(p.근무지)}</td><td>${escapeHtml(p.입사일)}</td><td>${escapeHtml(p.상태)}</td></tr>`;
+  document.getElementById("ggModalTable").innerHTML=head+body+"</tbody>";
+  document.getElementById("ggModalBg").classList.add("open");
+}
+
+/* ============================================================
+ * 6. 데이터 로딩 / 부팅
+ * ============================================================ */
+function banner(kind,html){const b=document.getElementById("ggBanner");if(!html){b.className="gg-banner";return;}b.className="gg-banner show "+kind;b.innerHTML=html;}
+function recompute(){ state.rosterCache=rosterAsOf(state.asOf); renderGrade(); }
+function setAsOf(iso){ state.asOf=iso; document.getElementById("ggDate").value=iso; recompute(); }
+async function load(){
+  if(!SCRIPT_URL){ state.base=DEMO.base;state.orders=DEMO.orders.map((o,i)=>({...o,__idx:i}));state.deptMaster=buildDeptMaster(DEMO.dept); banner("info","⚠ SCRIPT_URL 비어 있음 — 데모 데이터"); setAsOf(DEFAULT_DATE); return; }
+  try{
+    const res=await fetch(SCRIPT_URL+(SCRIPT_URL.includes("?")?"&":"?")+"action=data",{method:"GET",redirect:"follow"});
+    const j=await res.json(); if(j.error)throw new Error(j.error);
+    state.base=j.base||[]; state.orders=(j.orders||[]).map((o,i)=>({...o,__idx:i})); state.deptMaster=buildDeptMaster(j.dept||[]);
+    banner(); setAsOf(DEFAULT_DATE);
+  }catch(e){ banner("warn","❌ 데이터 로드 실패: "+escapeHtml(e.message)+" — 데모로 표시"); state.base=DEMO.base;state.orders=DEMO.orders.map((o,i)=>({...o,__idx:i}));state.deptMaster=buildDeptMaster(DEMO.dept); setAsOf(DEFAULT_DATE); }
+}
+
+const DEMO={
+  dept:[
+    {부서코드:"D000",부서명:"대표이사",본부:"대표이사실",표시순서:1,적용일:"2023-12-30"},
+    {부서코드:"D101",부서명:"기획경영본부",본부:"기획경영본부",표시순서:2,적용일:"2023-12-30"},
+    {부서코드:"D102",부서명:"기획예산팀",본부:"기획경영본부",표시순서:3,적용일:"2023-12-30"},
+    {부서코드:"D201",부서명:"관광산업본부",본부:"관광산업본부",표시순서:4,적용일:"2023-12-30"},
+    {부서코드:"D202",부서명:"관광사업팀",본부:"관광산업본부",표시순서:5,적용일:"2023-12-30"},
+    {부서코드:"D900",부서명:"인재경영팀(임)",본부:"기획경영본부",표시순서:9,적용일:"2023-12-30"}
+  ],
+  base:[
+    {사원코드:"E1",사원명:"김대표",부서코드:"D000",직급:"임원",고용형태:"일반직",성별:"남",근무지:"본사",입사일:"2010-01-01",퇴사일:""},
+    {사원코드:"E2",사원명:"이기획",부서코드:"D101",직급:"1급",고용형태:"일반직",성별:"여",근무지:"본사",입사일:"2012-03-01",퇴사일:""},
+    {사원코드:"E3",사원명:"박예산",부서코드:"D102",직급:"4급",고용형태:"일반직",성별:"남",근무지:"본사",입사일:"2018-05-01",퇴사일:""},
+    {사원코드:"E4",사원명:"최휴직",부서코드:"D102",직급:"5급",고용형태:"일반직",성별:"여",근무지:"본사",입사일:"2019-01-01",퇴사일:"",상태:"휴직"},
+    {사원코드:"E5",사원명:"정관광",부서코드:"D202",직급:"5급",고용형태:"일반직",성별:"남",근무지:"센터A",입사일:"2020-02-01",퇴사일:""},
+    {사원코드:"E6",사원명:"강계약",부서코드:"D202",직급:"6급",고용형태:"기간제",성별:"여",근무지:"센터A",입사일:"2022-09-01",퇴사일:""},
+    {사원코드:"E7",사원명:"한전문",부서코드:"D201",직급:"전문직 나",고용형태:"전문직",성별:"여",근무지:"본사",입사일:"2017-07-01",퇴사일:""}
+  ],
+  orders:[]
+};
+window.addEventListener("DOMContentLoaded",()=>{
+  const dp=document.getElementById("ggDate"); dp.value=DEFAULT_DATE; dp.min=BASE_DATE; dp.onchange=()=>{if(dp.value)setAsOf(dp.value);};
+  document.getElementById("ggRefresh").onclick=load;
+  document.getElementById("ggModalClose").onclick=()=>document.getElementById("ggModalBg").classList.remove("open");
+  document.getElementById("ggModalBg").onclick=e=>{if(e.target.id==="ggModalBg")document.getElementById("ggModalBg").classList.remove("open");};
+  enableCrosshair(document.getElementById("gradeTable"));
+  load();
+});
+</script>
+</body>
+</html>
