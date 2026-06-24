@@ -748,11 +748,22 @@ function resolveOrderDept(o, asOf) {
  * ============================================================ */
 function rosterAsOf(baseDate) {
   const baseIso = toISODate(baseDate);
-  // 4-1. 기초명부 deepcopy → 사원코드 맵
+
+  // 컬럼 별칭: 기초명부는 사번/사업장, 인사발령은 사원코드/근무지 를 쓸 수 있어 모두 허용
+  const idOf  = p => String(p["사원코드"] ?? p["사번"] ?? "").trim();
+  const locOf = p => p["근무지"] ?? p["사업장"] ?? "";
+
+  // 4-1. 기초명부에서 '조회일 현재 재직'인 사람만 적재
+  //   재직 = 입사일 ≤ 조회일  AND  (퇴사일 없음 OR 조회일 < 퇴사일)   ※ 퇴사일 당일 제외
   const roster = new Map();
   for (const p of state.base) {
-    const code = String(p["사원코드"]).trim();
-    const fb = parseDept(p["부서"]);  // 부서마스터 미사용 환경의 폴백(부서명#숫자 지원)
+    const code = idOf(p);
+    if (!code) continue;
+    const hire = toISODate(p["입사일"]);
+    const leave = toISODate(p["퇴사일"]);
+    if (hire && hire > baseIso) continue;     // 아직 입사 전
+    if (leave && leave <= baseIso) continue;  // 이미 퇴사 (퇴사일 당일부터 제외)
+    const fb = parseDept(p["부서"]);          // (선택) 기초명부에 부서 열이 있으면 초기값
     roster.set(code, {
       사원코드: code,
       사원명: p["사원명"] || "",
@@ -763,9 +774,9 @@ function rosterAsOf(baseDate) {
       직급: p["직급"] || "",
       고용형태: normEmp(p["고용형태"]),
       성별: p["성별"] || "",
-      근무지: p["근무지"] || "",
-      입사일: toISODate(p["입사일"]),
-      상태: normStatus(p["상태"])
+      근무지: locOf(p),
+      입사일: hire,
+      상태: normStatus(p["상태"])             // (선택) 초기 상태. 없으면 재직
     });
   }
 
@@ -780,68 +791,48 @@ function rosterAsOf(baseDate) {
       return (a.__idx || 0) - (b.__idx || 0);
     });
 
-  // 4-3. 순차 적용
+  // 4-3. 발령 순차 적용
+  //   입/퇴사는 기초명부 날짜가 1차. 단, 인사발령의 입사/퇴사 행도 함께 인정(호환):
+  //   - 입사: 기초명부에 아직 없는 신규자면 발령정보로 추가
+  //   - 퇴사: 해당 발령일부터 집계 제외
   for (const o of orders) {
-    const code = String(o["사원코드"]).trim();
+    const code = idOf(o);
+    if (!code) continue;
     const type = normOrderType(o["변동구분"]);
+    const oDate = toISODate(o["발령일"]);
     const newEmp = o["변경고용형태"] ? normEmp(o["변경고용형태"]) : null;
 
-    switch (type) {
-      case "입사": {
-        const oDate = toISODate(o["발령일"]);
-        const dch = resolveOrderDept(o, oDate);
-        roster.set(code, {
-          사원코드: code,
-          사원명: o["사원명"] || "",
-          부서코드: (dch && dch.code) ? dch.code : "",
-          _fbDept: (dch && dch.name) ? dch.name : "",
-          _fbBonbu: o["변경본부"] || o["본부"] || "",
-          _fbOrder: (dch && dch.order != null) ? dch.order : null,
-          직급: o["변경직급"] || o["직급"] || "",
-          고용형태: newEmp || normEmp(o["고용형태"]) || "일반직",
-          성별: o["성별"] || o["변경성별"] || "",
-          근무지: o["변경근무지"] || o["근무지"] || "",
-          입사일: oDate,
-          상태: "재직"
-        });
-        break;
-      }
-      case "퇴사":
-        roster.delete(code);
-        break;
-      case "휴직":
-        if (roster.has(code)) roster.get(code).상태 = "휴직";
-        break;
-      case "파견":
-        if (roster.has(code)) roster.get(code).상태 = "파견";
-        break;
-      case "복직":
-        if (roster.has(code)) roster.get(code).상태 = "재직";
-        break;
-      case "부서이동":
-      case "근무지이동":
-      case "승급":
-      default:
-        // 필드 갱신은 아래 공통 블록에서 처리 (변동구분과 무관)
-        break;
+    if (type === "퇴사") { roster.delete(code); continue; }
+
+    if (type === "입사" && !roster.has(code)) {
+      roster.set(code, {
+        사원코드: code, 사원명: o["사원명"] || "",
+        부서코드: "", _fbDept: "", _fbBonbu: "", _fbOrder: null,
+        직급: o["변경직급"] || "", 고용형태: newEmp || "일반직",
+        성별: o["성별"] || o["변경성별"] || "", 근무지: o["변경근무지"] || "",
+        입사일: oDate, 상태: "재직"
+      });
     }
-    // 입사·퇴사가 아니면, 한 행에 들어있는 모든 변경* 값을 함께 반영한다.
-    // (예: "복직"하면서 부서/근무지/직급도 같이 바뀌는 복합 발령을 정확히 처리)
-    if (type !== "입사" && type !== "퇴사" && roster.has(code)) {
-      const pr = roster.get(code);
-      const dch = resolveOrderDept(o, toISODate(o["발령일"]));  // 코드든 이름이든 부서 변경 해석
-      if (dch) {
-        if (dch.code) { pr.부서코드 = dch.code; }
-        else { pr.부서코드 = ""; pr._fbDept = dch.name; if (dch.order != null) pr._fbOrder = dch.order; }
-      }
-      if (o["변경본부"]) pr._fbBonbu = o["변경본부"];          // 폴백(부서마스터 미사용 환경)
-      if (o["변경직급"]) pr.직급 = o["변경직급"];
-      if (o["변경근무지"]) pr.근무지 = o["변경근무지"];
-      if (newEmp) pr.고용형태 = newEmp;
+    if (!roster.has(code)) continue;  // 재직 중 아닌(미입사/타사) 대상 발령은 무시
+    const pr = roster.get(code);
+
+    if (type === "휴직") pr.상태 = "휴직";
+    else if (type === "파견") pr.상태 = "파견";
+    else if (type === "복직") pr.상태 = "재직";
+
+    // 모든 변동구분에서 행에 들어있는 변경* 값을 반영 (복합 발령 지원)
+    const dch = resolveOrderDept(o, oDate);   // 변경부서: 코드든 이름이든 코드로 해석
+    if (dch) {
+      if (dch.code) pr.부서코드 = dch.code;
+      else { pr.부서코드 = ""; pr._fbDept = dch.name; if (dch.order != null) pr._fbOrder = dch.order; }
     }
+    if (o["변경본부"]) pr._fbBonbu = o["변경본부"];
+    if (o["변경직급"]) pr.직급 = o["변경직급"];
+    if (o["변경근무지"]) pr.근무지 = o["변경근무지"];
+    if (newEmp) pr.고용형태 = newEmp;
   }
 
-  // 4-4. 부서 속성 확정: 부서코드가 있으면 부서마스터(조회일 기준) 우선, 없으면 폴백값
+  // 4-4. 부서 속성 확정: 부서코드 → 부서마스터(조회일 기준) → 부서명/본부/표시순서
   const result = Array.from(roster.values());
   for (const p of result) {
     const m = p.부서코드 ? resolveDept(p.부서코드, baseIso) : null;
@@ -1298,7 +1289,7 @@ function regRecalc() {
     // 사원코드
     const codeCell = tr.querySelector(".reg-code");
     if (!name) { codeCell.textContent = "—"; codeCell.classList.remove("bad"); }
-    else if (state.emapByName.size === 0) { codeCell.textContent = "기타_사원코드 미로드"; codeCell.classList.add("bad"); }
+    else if (state.emapByName.size === 0) { codeCell.textContent = "명부 미로드"; codeCell.classList.add("bad"); }
     else {
       const code = state.emapByName.get(name);
       codeCell.textContent = code || "코드없음";
@@ -1309,7 +1300,7 @@ function regRecalc() {
     if (!dept) { dcCell.textContent = "—"; dcCell.classList.remove("bad"); }
     else if (!asOf) { dcCell.textContent = "발령일?"; dcCell.classList.add("bad"); }
     else {
-      const dc = resolveDeptCodeByName(dept, asOf);
+      const dc = state.deptMaster.has(dept) ? dept : resolveDeptCodeByName(dept, asOf);
       dcCell.textContent = dc || "부서없음";
       dcCell.classList.toggle("bad", !dc);
     }
@@ -1342,7 +1333,7 @@ async function regSubmit() {
     if (!name && !dept) continue;            // 빈 행 건너뜀
     if (!name) { status.textContent = "사원명이 빈 행이 있습니다."; return; }
     const 사원코드 = state.emapByName.get(name) || "";
-    const 변경부서코드 = dept ? (resolveDeptCodeByName(dept, 발령일) || "") : "";
+    const 변경부서코드 = dept ? (state.deptMaster.has(dept) ? dept : (resolveDeptCodeByName(dept, 발령일) || "")) : "";
     if (dept && !변경부서코드) { status.textContent = `'${name}'의 부서 '${dept}'를 발령일 기준 부서코드로 변환할 수 없습니다.`; return; }
     // 변경부서 컬럼에 '코드'를 저장 (변경부서코드 컬럼이 따로 있으면 거기에도 동일 코드 기록)
     payloads.push({ ...common, 사원코드, 사원명: name, 변경부서: 변경부서코드, 변경부서코드 });
@@ -1447,7 +1438,9 @@ function applyData(src, source) {
   state.dept = src.dept || [];
   state.deptMaster = buildDeptMaster(state.dept);
   state.emap = src.emap || [];
-  state.emapByName = buildEmapByName(state.emap);
+  // 등록 탭 사원코드 자동변환: 기초명부(사원명→사번) 우선, 기타_사원코드는 보조
+  state.emapByName = buildEmapByName(state.base);
+  for (const [k, v] of buildEmapByName(state.emap)) if (!state.emapByName.has(k)) state.emapByName.set(k, v);
   state.source = source;
 }
 // 기타_사원코드 → 사원명→사원코드 맵.
@@ -1512,22 +1505,24 @@ async function loadData() {
 }
 // 부서코드 참조 무결성 검사: 명부/발령에서 쓰인 부서코드가 부서마스터에 있는지 확인
 function validateDeptCodes() {
-  if (!usingMaster()) {
-    hideBanner();
-    return;
-  }
-  const used = new Set();
-  for (const p of state.base) { const c = String(p["부서코드"] ?? "").trim(); if (c) used.add(c); }
+  if (!usingMaster()) { hideBanner(); return; }
+  // 인사발령 변경부서: 코드도 이름도 아니면(부서마스터에 코드 없고 이름 변환도 실패) 오류로 본다
+  const bad = new Set();
   for (const o of state.orders) {
-    const c = String(o["변경부서코드"] ?? "").trim(); if (c) used.add(c);
+    const v = String(o["변경부서"] ?? o["변경부서코드"] ?? "").trim();
+    if (!v) continue;
+    if (state.deptMaster.has(v)) continue;
+    if (resolveDeptCodeByName(v, toISODate(o["발령일"]))) continue;
+    bad.add(v);
   }
-  const missing = [...used].filter(c => !state.deptMaster.has(c));
-  const noCode = state.base.filter(p => !String(p["부서코드"] ?? "").trim()).length;
-  if (missing.length) {
-    showBanner("warn", `⚠ 부서마스터에 없는 부서코드 ${missing.length}건: <b>${missing.map(escapeHtml).join(", ")}</b>` +
-      `<br>· 해당 코드를 <b>부서마스터</b> 탭에 추가하거나 기초명부/인사발령의 코드를 수정하세요.`);
-  } else if (noCode) {
-    showBanner("info", `ℹ 기초명부 ${noCode}명에 부서코드가 비어 있어 해당 인원은 '부서명' 컬럼값으로 폴백 표시됩니다.`);
+  // 기초명부 부서코드(선택)도 검증
+  for (const p of state.base) {
+    const c = String(p["부서코드"] ?? "").trim();
+    if (c && !state.deptMaster.has(c)) bad.add(c);
+  }
+  if (bad.size) {
+    showBanner("warn", `⚠ 부서마스터에서 찾을 수 없는 부서값 ${bad.size}건: <b>${[...bad].map(escapeHtml).join(", ")}</b>` +
+      `<br>· 인사발령 <b>변경부서</b>(부서코드 또는 부서명)·발령일, 또는 <b>부서마스터</b>를 확인하세요.`);
   } else {
     hideBanner();
   }
@@ -1597,7 +1592,9 @@ function bindEvents() {
   document.getElementById("regType").onchange = () => {
     const t = document.getElementById("regType").value;
     document.getElementById("regStatus").textContent =
-      t === "입사" ? "※ 입사는 기타_사원코드에 신규 사번이 등록돼 있어야 사원코드가 채워집니다." : "";
+      (t === "입사" || t === "퇴사")
+        ? "※ 입/퇴사는 기초명부의 입사일·퇴사일로 자동 계산됩니다(여기 발령은 보조). 신규자는 기초명부에도 추가하세요."
+        : "";
   };
   document.getElementById("modalClose").onclick = closeModal;
   document.getElementById("modalBackdrop").onclick = (e) => {
@@ -1633,30 +1630,29 @@ const DEMO = {
     { 부서코드:"D301", 부서명:"관광사업팀", 본부:"관광산업본부",      표시순서:1, 적용일:"2023-12-30" },
     { 부서코드:"D302", 부서명:"관광인재팀", 본부:"관광산업본부",      표시순서:2, 적용일:"2024-08-01", 비고:"신설" }
   ],
+  // 기초명부: 역대 전원(입사일/퇴사일 보유). 입/퇴사는 날짜로 자동 계산.
+  // 부서코드/상태 열은 '초기값'으로 선택 입력 가능(없으면 발령으로만 결정·기본 재직).
   base: [
-    { 사원코드:"E001", 사원명:"김대표", 부서코드:"D000", 직급:"임원",      고용형태:"일반직", 성별:"남", 근무지:"본사",  입사일:"2010-01-01", 상태:"재직" },
-    { 사원코드:"E002", 사원명:"이기획", 부서코드:"D101", 직급:"1급",       고용형태:"일반직", 성별:"여", 근무지:"본사",  입사일:"2012-03-01", 상태:"재직" },
-    { 사원코드:"E003", 사원명:"박직원", 부서코드:"D102", 직급:"5급",       고용형태:"일반직", 성별:"여", 근무지:"본사",  입사일:"2018-05-01", 상태:"휴직" },
-    { 사원코드:"E004", 사원명:"최계약", 부서코드:"D301", 직급:"5급",       고용형태:"기간제", 성별:"남", 근무지:"센터A", 입사일:"2021-02-01", 상태:"재직" },
-    { 사원코드:"E005", 사원명:"정전문", 부서코드:"D201", 직급:"전문직 나", 고용형태:"전문직", 성별:"여", 근무지:"본사",  입사일:"2019-07-01", 상태:"재직" },
-    { 사원코드:"E006", 사원명:"강사원", 부서코드:"D301", 직급:"6급",       고용형태:"일반직", 성별:"남", 근무지:"센터A", 입사일:"2022-09-01", 상태:"재직" }
+    { 사원코드:"E001", 사원명:"김대표", 부서코드:"D000", 직급:"임원",      고용형태:"일반직", 성별:"남", 근무지:"본사",  입사일:"2010-01-01", 퇴사일:"" },
+    { 사원코드:"E002", 사원명:"이기획", 부서코드:"D101", 직급:"1급",       고용형태:"일반직", 성별:"여", 근무지:"본사",  입사일:"2012-03-01", 퇴사일:"" },
+    { 사원코드:"E003", 사원명:"박직원", 부서코드:"D102", 직급:"5급",       고용형태:"일반직", 성별:"여", 근무지:"본사",  입사일:"2018-05-01", 퇴사일:"", 상태:"휴직" },
+    { 사원코드:"E004", 사원명:"최계약", 부서코드:"D301", 직급:"5급",       고용형태:"기간제", 성별:"남", 근무지:"센터A", 입사일:"2021-02-01", 퇴사일:"2024-04-01" },
+    { 사원코드:"E005", 사원명:"정전문", 부서코드:"D201", 직급:"전문직 나", 고용형태:"전문직", 성별:"여", 근무지:"본사",  입사일:"2019-07-01", 퇴사일:"" },
+    { 사원코드:"E006", 사원명:"강사원", 부서코드:"D301", 직급:"6급",       고용형태:"일반직", 성별:"남", 근무지:"센터A", 입사일:"2022-09-01", 퇴사일:"" },
+    { 사원코드:"E007", 사원명:"신입사", 부서코드:"D301", 직급:"6급",       고용형태:"일반직", 성별:"남", 근무지:"센터A", 입사일:"2024-01-15", 퇴사일:"" }
   ],
+  // 인사발령: 부서/직급/근무지/상태 변경만 (입/퇴사는 기초명부 날짜로). 변경부서엔 '부서코드'.
   orders: [
-    { 발령일:"2024-01-15", 사원코드:"E007", 사원명:"신입사", 변동구분:"입사",       변경부서코드:"D301", 변경직급:"6급", 변경고용형태:"일반직", 성별:"남", 변경근무지:"센터A", 비고:"신규채용" },
-    { 발령일:"2024-02-01", 사원코드:"E006", 사원명:"강사원", 변동구분:"전보",       변경부서코드:"D201", 비고:"개인 부서이동(본부도 마스터에서 자동: 관광산업→국제관광MICE)" },
+    { 발령일:"2024-02-01", 사원코드:"E006", 사원명:"강사원", 변동구분:"전보",       변경부서:"D201", 비고:"부서이동(본부도 마스터에서 자동)" },
     { 발령일:"2024-03-01", 사원코드:"E002", 사원명:"이기획", 변동구분:"승격",       변경직급:"임원", 비고:"승급 동의어" },
-    { 발령일:"2024-04-01", 사원코드:"E004", 사원명:"최계약", 변동구분:"퇴직",       비고:"계약만료(퇴사 동의어)" },
     { 발령일:"2024-05-01", 사원코드:"E003", 사원명:"박직원", 변동구분:"복귀",       비고:"휴직 복귀(복직 동의어)" },
     { 발령일:"2024-06-01", 사원코드:"E005", 사원명:"정전문", 변동구분:"휴직",       비고:"육아휴직" },
     { 발령일:"2024-07-01", 사원코드:"E001", 사원명:"김대표", 변동구분:"근무지이동", 변경근무지:"센터B", 비고:"근무지 변경" },
-    { 발령일:"2024-08-01", 사원코드:"E003", 사원명:"박직원", 변동구분:"조직개편",   변경부서코드:"D302", 비고:"신설팀으로 개인 이동(부서코드 변경)" }
+    { 발령일:"2024-08-01", 사원코드:"E003", 사원명:"박직원", 변동구분:"조직개편",   변경부서:"D302", 비고:"개인 부서이동(부서코드 변경)" }
   ],
-  // 기타_사원코드: 사원명 → 사원코드 (등록 탭 미리보기용 데모)
+  // 기타_사원코드: 사원명 → 사번 (보조). 기본은 기초명부에서 변환.
   emap: [
-    { 사원명:"김대표", 사원코드:"E001" }, { 사원명:"이기획", 사원코드:"E002" },
-    { 사원명:"박직원", 사원코드:"E003" }, { 사원명:"정전문", 사원코드:"E005" },
-    { 사원명:"강사원", 사원코드:"E006" }, { 사원명:"신입사", 사원코드:"E007" },
-    { 사원명:"홍길동", 사원코드:"E010" }
+    { 사원명:"홍길동", 사번:"E010" }
   ],
   quota: []
 };
@@ -1726,9 +1722,13 @@ function runSelfTests() {
     d1.total.subtotal === 6 && d1.total.row.hold["휴직"] === 1 && d1.total.current === 5,
     `${d1.total.subtotal}/${d1.total.row.hold["휴직"]}/${d1.total.current}`);
 
-  // (3) 기준일 경계: 2024-01-14 에는 E007 입사 미반영
+  // (3) 입사일 경계: 입사일(2024-01-15) 전날엔 E007 미반영
   const rMid = rosterAsOf("2024-01-14");
-  assert("boundary: 2024-01-14 E007 미반영", !rMid.find(p => p.사원코드 === "E007"), "E007 present");
+  assert("boundary: 입사일 전(2024-01-14) E007 미반영", !rMid.find(p => p.사원코드 === "E007"), "E007 present");
+  assert("boundary: 입사일 당일(2024-01-15) E007 반영", !!rosterAsOf("2024-01-15").find(p => p.사원코드 === "E007"), "E007 absent");
+  // 퇴사일 경계: 퇴사일(2024-04-01) 전날 재직, 당일부터 제외
+  assert("boundary: 퇴사일 전(2024-03-31) E004 재직", !!rosterAsOf("2024-03-31").find(p => p.사원코드 === "E004"), "E004 absent");
+  assert("boundary: 퇴사일 당일(2024-04-01) E004 제외", !rosterAsOf("2024-04-01").find(p => p.사원코드 === "E004"), "E004 present");
 
   // (4) 복합 발령: 한 행에 복직 + 부서이동 + 근무지이동이 같이 들어와도 모두 반영
   state.deptMaster = buildDeptMaster([
