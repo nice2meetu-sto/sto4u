@@ -258,8 +258,18 @@
   table.grid .e-gry2{ background:#e4e7ec; }  table.grid .e-gry2.esub{ background:#d7dbe2; }   /* 진한 회색(직급별 총계) */
   /* 십자(crosshair) 음영 — 색 위에 적용 */
   table.grid tbody tr:hover td { background: #fafbfd !important; }
-  table.grid td.col-hl { background: #fafbfd !important; }
+  table.grid td.col-hl { background: #fafbfd !important; }                 /* 흰색 셀: 회색 */
   table.grid tbody tr:hover td.col-hl { background: #eef0f3 !important; }
+  /* 세로선 호버: 바탕색 있는 셀(소계·계)은 그 색의 더 진한 톤 */
+  table.grid td.e-gen.esub.col-hl  { background:#cadcf4 !important; }
+  table.grid td.e-pro.esub.col-hl  { background:#f6d9bb !important; }
+  table.grid td.e-gig.esub.col-hl  { background:#dadee4 !important; }
+  table.grid td.e-grn.esub.col-hl  { background:#d2e6c0 !important; }
+  table.grid td.e-yel.esub.col-hl  { background:#f7ea93 !important; }
+  table.grid td.e-lav.esub.col-hl  { background:#ddd6f0 !important; }
+  table.grid td.e-tan.esub.col-hl  { background:#f4dcba !important; }
+  table.grid td.e-pink.esub.col-hl { background:#f3cccc !important; }
+  table.grid td.e-gry2.esub.col-hl { background:#c8cdd7 !important; }
   table.grid .sep-left { border-left: 2px solid #cdd0db; }
 
   /* ---------- Roster tab ---------- */
