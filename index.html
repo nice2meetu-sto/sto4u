@@ -238,31 +238,24 @@
     text-decoration-color: rgba(83,74,183,.35);
   }
   table.grid td.dept.clickable:hover { color: #463ea0; }
-  table.grid tr.total td {
-    background: var(--main-soft);
-    font-weight: 700;
-  }
-  table.grid tr.total td.dept { background: var(--main-soft); }
+  table.grid tr.total td { font-weight: 700; border-top: 2px solid #cdd0db; }  /* 합계 행: 각 열 색이 그대로 이어짐 */
   table.grid td.zero { color: #c2c5d0; }
   table.grid td.num { font-variant-numeric: tabular-nums; }
   table.grid td.cur { font-weight: 700; color: var(--main); }
   table.grid td.warn-num { color: var(--warn); font-weight: 600; }
-  /* 강조 컬럼 밴드 (합계 소계 · 사고내역 계 · 현재인원) — 호버는 이 위에 적용 */
-  table.grid td.colband, table.grid th.colband { background: #edeff3; }
-  table.grid tr.total td.colband { background: var(--main-soft); }
-  /* 고용형태 그룹 색 (일일표): 일반직=파랑 / 전문직=주황 / 기간제·파견=회색. 소계(esub) 약간 진하게 */
-  table.grid .e-gen { background: #e6effb; }
-  table.grid .e-gen.esub { background: #d2e2f6; }
-  table.grid .e-pro { background: #fdead9; }
-  table.grid .e-pro.esub { background: #fbd8ba; }
-  table.grid .e-gig { background: #edeff2; }
-  table.grid .e-gig.esub { background: #e0e3e7; }
-  table.grid .e-pa  { background: #eef0f4; }
-  table.grid .e-pa.esub { background: #e2e5ea; }
-  /* 십자(crosshair) 음영 — 커서가 있는 행 + 열 동시 강조 (일일/직급별 표, 부서명 포함) */
+  /* 컬럼 그룹 색 (연한 파스텔) — 일일/직급별 공통. .esub = 소계/계 약간 진하게 */
+  table.grid .e-gen { background:#eef4fc; }  table.grid .e-gen.esub { background:#e0ebf9; }   /* 파랑(일반직/정원내) */
+  table.grid .e-pro { background:#fdf2e8; }  table.grid .e-pro.esub { background:#fbe7d4; }   /* 주황(전문직) */
+  table.grid .e-gig { background:#f1f3f6; }  table.grid .e-gig.esub { background:#e8ebef; }   /* 회색(기간제) */
+  table.grid .e-pa  { background:#f1f3f6; }  table.grid .e-pa.esub  { background:#e8ebef; }   /* 회색(파견) */
+  table.grid .e-yel { background:#fdf8d6; }  table.grid .e-yel.esub { background:#fbf2b0; }   /* 노랑(합계/총계) */
+  table.grid .e-lav { background:#f1eff9; }  table.grid .e-lav.esub { background:#e9e5f6; }   /* 연보라(사고내역) */
+  table.grid .e-tan { background:#fcf1e2; }  table.grid .e-tan.esub { background:#f9e8d2; }   /* 연주황(현재인원) */
+  table.grid .e-pink{ background:#fcebeb; }  table.grid .e-pink.esub{ background:#f8dede; }   /* 분홍(직급별 기간제) */
+  /* 십자(crosshair) 음영 — 색 위에 적용 */
   table.grid tbody tr:hover td { background: #fafbfd !important; }
   table.grid td.col-hl { background: #fafbfd !important; }
-  table.grid tbody tr:hover td.col-hl { background: #eef0f3 !important; }   /* 교차점만 살짝 진한 회색 */
+  table.grid tbody tr:hover td.col-hl { background: #eef0f3 !important; }
   table.grid .sep-left { border-left: 2px solid #cdd0db; }
 
   /* ---------- Roster tab ---------- */
@@ -1121,13 +1114,13 @@ function renderDaily() {
     <tr class="group">
       <th class="dept" rowspan="2">부서</th>`;
   for (const e of EMP_ORDER) head += `<th colspan="3" class="sep-left ${EMP_CLS[e]} esub">${e}</th>`;
-  head += `<th colspan="3" class="sep-left">합계</th>`;
-  head += `<th colspan="5" class="sep-left">사고내역</th>`;
-  head += `<th rowspan="2" class="sep-left colband">현재인원</th></tr><tr>`;
+  head += `<th colspan="3" class="sep-left e-yel esub">합계</th>`;
+  head += `<th colspan="5" class="sep-left e-lav esub">사고내역</th>`;
+  head += `<th rowspan="2" class="sep-left e-tan esub">현재인원</th></tr><tr>`;
   for (const e of EMP_ORDER) head += `<th class="sep-left ${EMP_CLS[e]}">남</th><th class="${EMP_CLS[e]}">여</th><th class="${EMP_CLS[e]} esub">소계</th>`;
-  head += `<th class="sep-left">남</th><th>여</th><th class="colband">소계</th>`;
-  for (const h of HOLD_ORDER) head += `<th class="sep-left">${h}</th>`;
-  head += `<th class="sep-left colband">계</th></tr></thead>`;
+  head += `<th class="sep-left">남</th><th>여</th><th class="e-yel esub">소계</th>`;
+  HOLD_ORDER.forEach((h, i) => head += `<th class="${i === 0 ? "sep-left " : ""}e-lav">${h}</th>`);
+  head += `<th class="sep-left e-lav esub">계</th></tr></thead>`;
 
   const renderRow = (r, isTotal) => {
     let html = `<tr class="${isTotal ? "total" : ""}">`;
@@ -1137,14 +1130,14 @@ function renderDaily() {
       const cl = EMP_CLS[e];
       html += numCell(c.남, "sep-left " + cl) + numCell(c.여, cl) + numCell(c.남 + c.여, cl + " esub");
     }
-    html += numCell(r.subM, "sep-left") + numCell(r.subF) + numCell(r.subtotal, "colband");
+    html += numCell(r.subM, "sep-left") + numCell(r.subF) + numCell(r.subtotal, "e-yel esub");
     for (let i = 0; i < HOLD_ORDER.length; i++) {
       const h = HOLD_ORDER[i];
       const v = r.row.hold[h];
-      html += `<td class="num${v === 0 ? " zero" : " warn-num"}${i === 0 ? " sep-left" : ""}">${v}</td>`;
+      html += `<td class="num e-lav${v === 0 ? " zero" : " warn-num"}${i === 0 ? " sep-left" : ""}">${v}</td>`;
     }
-    html += `<td class="num sep-left colband${r.row.holdTotal === 0 ? " zero" : " warn-num"}">${r.row.holdTotal}</td>`;
-    html += `<td class="num cur sep-left colband">${r.current}</td>`;
+    html += `<td class="num sep-left e-lav esub${r.row.holdTotal === 0 ? " zero" : " warn-num"}">${r.row.holdTotal}</td>`;
+    html += `<td class="num cur sep-left e-tan esub">${r.current}</td>`;
     html += `</tr>`;
     return html;
   };
@@ -1167,25 +1160,26 @@ function renderGrade() {
   const t = document.getElementById("gradeTable");
 
   let head = `<thead><tr class="group"><th class="dept" rowspan="2">부서</th>`;
-  for (const g of GRADE_ORDER) head += `<th colspan="3" class="sep-left">${g}</th>`;
-  head += `<th colspan="3" class="sep-left">소계</th>`;
-  head += `<th colspan="3" class="sep-left">기간제</th>`;
-  head += `<th colspan="3" class="sep-left">총계</th></tr><tr>`;
-  for (let i = 0; i < GRADE_ORDER.length; i++) head += `<th class="sep-left">남</th><th>여</th><th>계</th>`;
-  head += `<th class="sep-left">남</th><th>여</th><th>계</th>`;
-  head += `<th class="sep-left">남</th><th>여</th><th>계</th>`;
-  head += `<th class="sep-left">남</th><th>여</th><th>계</th></tr></thead>`;
+  for (const g of GRADE_ORDER) head += `<th colspan="3" class="sep-left e-gen esub">${g}</th>`;
+  head += `<th colspan="3" class="sep-left e-gen esub">소계</th>`;
+  head += `<th colspan="3" class="sep-left e-pink esub">기간제</th>`;
+  head += `<th colspan="3" class="sep-left e-yel esub">총계</th></tr><tr>`;
+  for (let i = 0; i < GRADE_ORDER.length; i++) head += `<th class="sep-left e-gen">남</th><th class="e-gen">여</th><th class="e-gen esub">계</th>`;
+  head += `<th class="sep-left e-gen">남</th><th class="e-gen">여</th><th class="e-gen esub">계</th>`;
+  head += `<th class="sep-left e-pink">남</th><th class="e-pink">여</th><th class="e-pink esub">계</th>`;
+  head += `<th class="sep-left e-yel">남</th><th class="e-yel">여</th><th class="e-yel esub">계</th></tr></thead>`;
 
-  const trio = (o, sep) => numCell(o.남, sep ? "sep-left" : "") + numCell(o.여) + numCell(o.계, "cur");
-  const trioG = (cell, sep) => numCell(cell.남, sep ? "sep-left" : "") + numCell(cell.여) + numCell(cell.남 + cell.여);
+  // cls = 컬럼 색 클래스 (e-gen/e-pink/e-yel). 계 칸은 esub(약간 진하게)
+  const trio = (o, cls) => numCell(o.남, "sep-left " + cls) + numCell(o.여, cls) + numCell(o.계, "cur " + cls + " esub");
+  const trioG = (cell, cls) => numCell(cell.남, "sep-left " + cls) + numCell(cell.여, cls) + numCell(cell.남 + cell.여, cls + " esub");
 
   const renderRow = (r, isTotal) => {
     let html = `<tr class="${isTotal ? "total" : ""}">`;
     html += deptCell(r.dept, !isTotal);
-    for (const g of GRADE_ORDER) html += trioG(r.row.grade[g], true);
-    html += trio(r.subtotal, true);
-    html += trio(r.gigan, true);
-    html += trio(r.total, true);
+    for (const g of GRADE_ORDER) html += trioG(r.row.grade[g], "e-gen");
+    html += trio(r.subtotal, "e-gen");
+    html += trio(r.gigan, "e-pink");
+    html += trio(r.total, "e-yel");
     html += `</tr>`;
     return html;
   };
