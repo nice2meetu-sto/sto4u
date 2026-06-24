@@ -1529,13 +1529,11 @@ function validateDeptCodes() {
 }
 function afterLoad() {
   buildTimeline();
-  // 기본 조회일: 오늘(KST)과 데이터 범위 중 적절히
-  const today = toISODate(new Date());
-  const initial = today < BASE_DATE ? BASE_DATE : today;
-  setAsOf(initial, true);
-  // 등록 탭 기본값
+  // 조회 기본 기준일: 시작일(2023-12-30)로 고정
+  setAsOf(BASE_DATE, true);
+  // 등록 탭 기본값 — 발령일은 오늘
   const regDate = document.getElementById("regDate");
-  if (regDate && !regDate.value) regDate.value = today;
+  if (regDate && !regDate.value) regDate.value = toISODate(new Date());
   if (!document.querySelectorAll("#regRows tr").length) regAddPersonRow();
 }
 
