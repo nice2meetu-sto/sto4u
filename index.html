@@ -239,7 +239,8 @@
   }
   table.grid td.dept.clickable:hover { color: #463ea0; }
   table.grid tr.total td { font-weight: 700; border-top: 2px solid #9aa1b2; }  /* 합계 행: 윗줄 진하게, 색은 각 열 이어짐 */
-  table.grid tr.bhead td { border-top: 2px solid #b3b8c5; border-bottom: 2px solid #b3b8c5; }  /* 본부(대표이사/~~~본부) 행 위·아래 진한 줄 */
+  table.grid tr.bb-top td { border-top: 2px solid #b3b8c5; }       /* ~~~본부 행: 윗줄 진하게 */
+  table.grid tr.bb-bot td { border-bottom: 2px solid #b3b8c5; }    /* 대표이사 행: 아랫줄 진하게 */
   table.grid td.zero { color: #c2c5d0; }
   table.grid td.num { font-variant-numeric: tabular-nums; }
   table.grid td.cur { font-weight: 700; color: var(--main); }
@@ -1126,8 +1127,8 @@ function renderDaily() {
   head += `<th class="sep-left e-lav esub">계</th></tr></thead>`;
 
   const renderRow = (r, isTotal) => {
-    const isBonbu = !isTotal && (/본부$/.test(r.dept) || r.dept === "대표이사");
-    let html = `<tr class="${isTotal ? "total" : ""}${isBonbu ? " bhead" : ""}">`;
+    const bcls = isTotal ? "" : (r.dept === "대표이사" ? " bb-bot" : (/본부$/.test(r.dept) ? " bb-top" : ""));
+    let html = `<tr class="${isTotal ? "total" : ""}${bcls}">`;
     html += deptCell(r.dept, !isTotal);
     for (const e of EMP_ORDER) {
       const c = r.row.emp[e];
@@ -1178,8 +1179,8 @@ function renderGrade() {
   const trioG = (cell, cls) => numCell(cell.남, "sep-left") + numCell(cell.여) + numCell(cell.남 + cell.여, cls + " esub");
 
   const renderRow = (r, isTotal) => {
-    const isBonbu = !isTotal && (/본부$/.test(r.dept) || r.dept === "대표이사");
-    let html = `<tr class="${isTotal ? "total" : ""}${isBonbu ? " bhead" : ""}">`;
+    const bcls = isTotal ? "" : (r.dept === "대표이사" ? " bb-bot" : (/본부$/.test(r.dept) ? " bb-top" : ""));
+    let html = `<tr class="${isTotal ? "total" : ""}${bcls}">`;
     html += deptCell(r.dept, !isTotal);
     for (const g of GRADE_ORDER) html += trioG(r.row.grade[g], gcls(g));
     html += trio(r.subtotal, "e-gig");
