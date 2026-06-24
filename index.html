@@ -247,7 +247,10 @@
   table.grid td.num { font-variant-numeric: tabular-nums; }
   table.grid td.cur { font-weight: 700; color: var(--main); }
   table.grid td.warn-num { color: var(--warn); font-weight: 600; }
-  table.grid tbody tr:hover td:not(.dept) { background: #fafbfd; }
+  /* 십자(crosshair) 음영 — 커서가 있는 행 + 열 동시 강조 (일일/직급별 표) */
+  table.grid tbody tr:hover td:not(.dept) { background: #f1eefb; }
+  table.grid td.col-hl { background: #f1eefb !important; }
+  table.grid tbody tr:hover td.col-hl { background: #e6e1f7 !important; }   /* 교차점 약간 진하게 */
   table.grid .sep-left { border-left: 2px solid #cdd0db; }
 
   /* ---------- Roster tab ---------- */
@@ -1761,7 +1764,32 @@ function escapeAttr(s) { return escapeHtml(s); }
 /* ============================================================
  * 16. 이벤트 바인딩
  * ============================================================ */
+// 십자 음영: 셀에 마우스 올리면 같은 '열'의 본문 셀에 col-hl 부여 (행은 CSS tr:hover)
+function enableCrosshair(table) {
+  if (!table) return;
+  let curIdx = -1;
+  const clear = () => {
+    if (curIdx < 0) return;
+    const tb = table.tBodies[0];
+    if (tb) for (const tr of tb.rows) { const c = tr.cells[curIdx]; if (c) c.classList.remove("col-hl"); }
+    curIdx = -1;
+  };
+  table.addEventListener("mouseover", (e) => {
+    const td = e.target.closest("td");
+    const tb = table.tBodies[0];
+    if (!td || !tb || !tb.contains(td)) { clear(); return; }
+    const idx = td.cellIndex;
+    if (idx === curIdx) return;
+    clear();
+    curIdx = idx;
+    for (const tr of tb.rows) { const c = tr.cells[idx]; if (c) c.classList.add("col-hl"); }
+  });
+  table.addEventListener("mouseleave", clear);
+}
+
 function bindEvents() {
+  enableCrosshair(document.getElementById("dailyTable"));
+  enableCrosshair(document.getElementById("gradeTable"));
   document.querySelectorAll(".tab-btn").forEach(btn => {
     btn.onclick = () => {
       document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
