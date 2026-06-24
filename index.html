@@ -475,7 +475,7 @@
     <p class="hint" style="margin-top:8px;">· 현재인원 = 합계 소계 − 사고내역 계 &nbsp;|&nbsp; 사고내역(휴직·휴가·파견·기타) 인원은 정원외 버킷 <b>인재경영팀(임)</b>으로 집계(모드 A). 부서명을 클릭하면 해당 기준일 구성원 명단을 볼 수 있습니다.</p>
 
     <div class="card center-card">
-      <h3>센터별 근무자 현황 <span class="hint">(센터 클릭 → 근무자 명단 펼침 · 입사일 순 · <span style="background:#fff7d6;padding:0 4px;border-radius:3px;">기간제</span>)</span></h3>
+      <h3>센터별 근무자 현황 <span class="hint">(본사 제외 · 입사일 순 · <span style="background:#fff7d6;padding:0 4px;border-radius:3px;">기간제</span> · 센터 헤더 클릭 시 접기/펴기)</span></h3>
       <div class="center-grid" id="centerGrid"></div>
     </div>
   </section>
@@ -1304,8 +1304,9 @@ function renderCenters(roster){
     groups.get(c).push(p);
   }
   const grid = document.getElementById("centerGrid");
-  let html = "", idx = 0;
+  let html = "";
   for(const [center, members] of groups){
+    if(center === "본사") continue;                  // 본사 제외
     members.sort((a,b) => String(a.입사일).localeCompare(String(b.입사일)));  // 입사일 오름차순
     const gigan = members.filter(m => m.고용형태 === "기간제").length;
     let m = "";
@@ -1313,12 +1314,11 @@ function renderCenters(roster){
       const g = p.고용형태 === "기간제";
       m += `<div class="m${g?" gigan":""}"><span>${escapeHtml(p.사원명)}${g?' <span class="mg">기간제</span>':""}</span><span class="md">${escapeHtml(p.입사일)}</span></div>`;
     }
-    html += `<div class="center-box">
+    html += `<div class="center-box open">
       <div class="ch"><span class="cn">${escapeHtml(center)}</span><span class="cc">${members.length}<small>명${gigan?" · 기간제 "+gigan:""}</small> <span class="arr">▸</span></span></div>
       <div class="center-members">${m}</div></div>`;
-    idx++;
   }
-  grid.innerHTML = html || `<div class="empty">근무자가 없습니다.</div>`;
+  grid.innerHTML = html || `<div class="empty">표시할 센터가 없습니다.</div>`;
   grid.querySelectorAll(".center-box .ch").forEach(ch => {
     ch.onclick = () => ch.parentElement.classList.toggle("open");
   });
