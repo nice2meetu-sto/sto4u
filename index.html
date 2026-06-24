@@ -994,7 +994,8 @@ function buildGradePivot(roster) {
     if (p.고용형태 === "기간제") {
       row.gigan[g]++;                       // 정원 외
     } else {
-      const gb = gradeBucketOf(p.직급);
+      // 전문직 고용형태는 직급 라벨(가~라급/매니저 등)과 무관하게 '전문직' 칸으로 집계
+      const gb = (p.고용형태 === "전문직") ? "전문직" : gradeBucketOf(p.직급);
       if (!row.grade[gb]) row.grade[gb] = { 남: 0, 여: 0 };
       row.grade[gb][g]++;                   // 정원 내
     }
