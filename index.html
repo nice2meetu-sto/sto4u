@@ -464,7 +464,7 @@
   <div class="card controls">
     <div class="group">
       <label for="datePicker">조회 기준일</label>
-      <input type="date" id="datePicker" />
+      <input type="date" id="datePicker" max="2100-12-31" />
     </div>
     <div class="group">
       <button id="prevOrderBtn" title="이전 발령일로">◀ 발령</button>
@@ -537,7 +537,7 @@
       <div class="reg-grid">
         <div class="reg-field">
           <label for="regDate">발령일 *</label>
-          <input type="date" id="regDate" />
+          <input type="date" id="regDate" min="2000-01-01" max="2100-12-31" />
         </div>
         <div class="reg-field">
           <label for="regType">변동구분 *</label>
