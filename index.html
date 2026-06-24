@@ -726,6 +726,23 @@ function resolveDept(code, asOf) {
 }
 const usingMaster = () => state.deptMaster.size > 0;
 
+// 발령 행의 부서 변경 해석.
+//   변경부서코드/변경부서/부서코드/부서 중 첫 값(코드든 이름이든)을 골라
+//   - 부서마스터의 코드면 그대로 코드로
+//   - 아니면 이름으로 보고 발령일 기준으로 코드 변환 시도
+//   - 그래도 안 되면 폴백 이름으로
+// 반환: {code} | {name, order} | null(부서 변경 없음)
+function resolveOrderDept(o, asOf) {
+  const cand = [o["변경부서코드"], o["부서코드"], o["변경부서"], o["부서"]]
+    .map(v => String(v ?? "").trim()).find(v => v);
+  if (!cand) return null;
+  if (state.deptMaster.has(cand)) return { code: cand };
+  const byName = resolveDeptCodeByName(cand, asOf);
+  if (byName) return { code: byName };
+  const pd = parseDept(cand);
+  return { name: pd.name, order: pd.order };
+}
+
 /* ============================================================
  * 4. 핵심 알고리즘 — 기준일 명부 재구성 (발령 리플레이)
  * ============================================================ */
@@ -771,19 +788,20 @@ function rosterAsOf(baseDate) {
 
     switch (type) {
       case "입사": {
-        const fb = parseDept(o["변경부서"] || o["부서"]);
+        const oDate = toISODate(o["발령일"]);
+        const dch = resolveOrderDept(o, oDate);
         roster.set(code, {
           사원코드: code,
           사원명: o["사원명"] || "",
-          부서코드: String(o["변경부서코드"] ?? o["부서코드"] ?? "").trim(),
-          _fbDept: fb.name,
+          부서코드: (dch && dch.code) ? dch.code : "",
+          _fbDept: (dch && dch.name) ? dch.name : "",
           _fbBonbu: o["변경본부"] || o["본부"] || "",
-          _fbOrder: fb.order,
+          _fbOrder: (dch && dch.order != null) ? dch.order : null,
           직급: o["변경직급"] || o["직급"] || "",
           고용형태: newEmp || normEmp(o["고용형태"]) || "일반직",
           성별: o["성별"] || o["변경성별"] || "",
           근무지: o["변경근무지"] || o["근무지"] || "",
-          입사일: toISODate(o["발령일"]),
+          입사일: oDate,
           상태: "재직"
         });
         break;
@@ -811,8 +829,11 @@ function rosterAsOf(baseDate) {
     // (예: "복직"하면서 부서/근무지/직급도 같이 바뀌는 복합 발령을 정확히 처리)
     if (type !== "입사" && type !== "퇴사" && roster.has(code)) {
       const pr = roster.get(code);
-      if (o["변경부서코드"]) pr.부서코드 = String(o["변경부서코드"]).trim();
-      if (o["변경부서"]) { const pd = parseDept(o["변경부서"]); pr._fbDept = pd.name; if (pd.order != null) pr._fbOrder = pd.order; }
+      const dch = resolveOrderDept(o, toISODate(o["발령일"]));  // 코드든 이름이든 부서 변경 해석
+      if (dch) {
+        if (dch.code) { pr.부서코드 = dch.code; }
+        else { pr.부서코드 = ""; pr._fbDept = dch.name; if (dch.order != null) pr._fbOrder = dch.order; }
+      }
       if (o["변경본부"]) pr._fbBonbu = o["변경본부"];          // 폴백(부서마스터 미사용 환경)
       if (o["변경직급"]) pr.직급 = o["변경직급"];
       if (o["변경근무지"]) pr.근무지 = o["변경근무지"];
@@ -1277,6 +1298,7 @@ function regRecalc() {
     // 사원코드
     const codeCell = tr.querySelector(".reg-code");
     if (!name) { codeCell.textContent = "—"; codeCell.classList.remove("bad"); }
+    else if (state.emapByName.size === 0) { codeCell.textContent = "기타_사원코드 미로드"; codeCell.classList.add("bad"); }
     else {
       const code = state.emapByName.get(name);
       codeCell.textContent = code || "코드없음";
@@ -1322,7 +1344,8 @@ async function regSubmit() {
     const 사원코드 = state.emapByName.get(name) || "";
     const 변경부서코드 = dept ? (resolveDeptCodeByName(dept, 발령일) || "") : "";
     if (dept && !변경부서코드) { status.textContent = `'${name}'의 부서 '${dept}'를 발령일 기준 부서코드로 변환할 수 없습니다.`; return; }
-    payloads.push({ ...common, 사원코드, 사원명: name, 변경부서: dept, 변경부서코드 });
+    // 변경부서 컬럼에 '코드'를 저장 (변경부서코드 컬럼이 따로 있으면 거기에도 동일 코드 기록)
+    payloads.push({ ...common, 사원코드, 사원명: name, 변경부서: 변경부서코드, 변경부서코드 });
   }
   if (!payloads.length) { status.textContent = "대상자를 1명 이상 입력하세요."; return; }
 
@@ -1427,14 +1450,19 @@ function applyData(src, source) {
   state.emapByName = buildEmapByName(state.emap);
   state.source = source;
 }
-// 기타_사원코드 → 사원명→사원코드 맵 (헤더 사원명/사원코드, 없으면 1·2번째 열)
+// 기타_사원코드 → 사원명→사원코드 맵.
+// 헤더 이름(사원명/성명/이름 · 사원코드/사번/코드)을 우선 인식하고, 없으면 1·2번째 열.
 function buildEmapByName(rows) {
   const map = new Map();
-  for (const r of rows || []) {
-    const keys = Object.keys(r);
-    const name = String(r["사원명"] ?? r[keys[0]] ?? "").trim();
-    const code = String(r["사원코드"] ?? r[keys[1]] ?? "").trim();
-    if (name && !map.has(name)) map.set(name, code);
+  if (!rows || !rows.length) return map;
+  const keys = Object.keys(rows[0]);
+  const nameKey = keys.find(k => /사원\s*명|성\s*명|이름/.test(k)) || keys[0];
+  const codeKey = keys.find(k => /사원\s*코드|사\s*번|사원\s*번호|코드/.test(k))
+    || keys.find(k => k !== nameKey) || keys[1];
+  for (const r of rows) {
+    const name = String(r[nameKey] ?? "").trim();
+    const codeVal = String(r[codeKey] ?? "").trim();
+    if (name && !map.has(name)) map.set(name, codeVal);
   }
   return map;
 }
