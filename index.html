@@ -353,6 +353,32 @@
   .banner.ok { background: #e7f1df; color: var(--valid); border: 1px solid #cfe4be; }
   .hint { font-size: 11px; color: var(--muted); }
   .footer-note { margin-top: 24px; font-size: 11px; color: var(--muted); text-align: center; }
+
+  /* ---------- Register tab ---------- */
+  .reg-card { padding: 18px 20px; }
+  .reg-h { margin: 0 0 10px; font-size: 14px; }
+  .reg-sub { font-size: 12px; color: var(--muted); font-weight: 400; }
+  .reg-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px 16px;
+  }
+  .reg-field { display: flex; flex-direction: column; gap: 4px; }
+  .reg-field.reg-wide { grid-column: 1 / -1; }
+  .reg-field label { font-size: 12px; color: var(--muted); font-weight: 500; }
+  .reg-table th { font-size: 11.5px; }
+  .reg-table td { padding: 5px 8px; }
+  .reg-table input { width: 100%; box-sizing: border-box; }
+  .reg-table td.auto { color: var(--main); font-weight: 600; font-variant-numeric: tabular-nums; }
+  .reg-table td.auto.bad { color: var(--warn); font-weight: 500; }
+  .reg-auto { font-size: 10px; color: var(--muted); font-weight: 400; }
+  .reg-del { border: none; background: none; color: var(--warn); font-size: 16px; padding: 0 4px; }
+  .reg-actions { display: flex; align-items: center; gap: 12px; margin-top: 14px; }
+  .reg-status { font-size: 12px; color: var(--muted); }
+  .reg-result { margin-top: 12px; font-size: 12.5px; }
+  .reg-result .ok { color: var(--valid); }
+  .reg-result .err { color: var(--warn); }
+  @media (max-width: 720px) { .reg-grid { grid-template-columns: 1fr 1fr; } }
 </style>
 </head>
 <body>
@@ -397,6 +423,7 @@
     <button class="tab-btn active" data-tab="daily">① 일일</button>
     <button class="tab-btn" data-tab="grade">② 직급별</button>
     <button class="tab-btn" data-tab="roster">③ 전체 재직자</button>
+    <button class="tab-btn" data-tab="register">④ 인사발령 등록</button>
   </nav>
 
   <!-- ① 일일 -->
@@ -428,6 +455,66 @@
     <div class="card table-scroll">
       <table class="list" id="rosterTable"></table>
     </div>
+  </section>
+
+  <!-- ④ 인사발령 등록 -->
+  <section class="panel" id="panel-register">
+    <div class="card reg-card">
+      <h3 class="reg-h">공통 항목 <span class="reg-sub">(아래 대상자 전원에게 동일하게 적용)</span></h3>
+      <div class="reg-grid">
+        <div class="reg-field">
+          <label for="regDate">발령일 *</label>
+          <input type="date" id="regDate" />
+        </div>
+        <div class="reg-field">
+          <label for="regType">변동구분 *</label>
+          <select id="regType">
+            <option value="">선택</option>
+            <option>입사</option><option>퇴사</option><option>부서이동</option>
+            <option>근무지이동</option><option>승급</option><option>휴직</option>
+            <option>파견</option><option>복직</option>
+          </select>
+        </div>
+        <div class="reg-field">
+          <label for="regGrade">변경직급</label>
+          <input type="text" id="regGrade" placeholder="승급 시 (예: 4급)" />
+        </div>
+        <div class="reg-field">
+          <label for="regLoc">변경근무지</label>
+          <input type="text" id="regLoc" placeholder="근무지이동 시" />
+        </div>
+        <div class="reg-field">
+          <label for="regEmp">변경고용형태</label>
+          <input type="text" id="regEmp" placeholder="변경 시 (예: 파견)" />
+        </div>
+        <div class="reg-field reg-wide">
+          <label for="regNote">비고</label>
+          <input type="text" id="regNote" placeholder="자유 기재" />
+        </div>
+      </div>
+
+      <h3 class="reg-h" style="margin-top:18px;">대상자 <span class="reg-sub">(사원명·변경부서만 개별 입력 · 코드는 자동 변환)</span></h3>
+      <div class="table-scroll">
+        <table class="list reg-table" id="regTable">
+          <thead><tr>
+            <th style="width:34px;">#</th>
+            <th>사원명 *</th>
+            <th>사원코드 <span class="reg-auto">자동</span></th>
+            <th>변경부서(부서명)</th>
+            <th>변경부서코드 <span class="reg-auto">자동(발령일 기준)</span></th>
+            <th style="width:44px;"></th>
+          </tr></thead>
+          <tbody id="regRows"></tbody>
+        </table>
+      </div>
+      <div class="reg-actions">
+        <button id="regAddRow">＋ 인원 추가</button>
+        <button id="regSubmit" class="primary">시트에 저장</button>
+        <span id="regStatus" class="reg-status"></span>
+      </div>
+      <div id="regResult" class="reg-result"></div>
+    </div>
+    <p class="hint" style="margin-top:8px;">· 사원코드는 <b>기타_사원코드</b> 탭(사원명→코드)에서 자동 변환됩니다. 변경부서는 입력한 부서명을 <b>발령일 기준</b>으로 부서마스터에서 부서코드로 변환해 <b>변경부서코드</b> 열에 저장합니다. 저장은 한 명당 1행씩 인사발령 시트에 추가됩니다.</p>
   </section>
 
   <p class="footer-note">단일 HTML + 순수 JS · GitHub Pages 호스팅 · Google Apps Script GET JSON API 연동 · 모든 날짜 KST 기준</p>
@@ -525,6 +612,8 @@ const state = {
   quota: [],        // 정원 (선택)
   dept: [],         // 부서마스터 (원본 행)
   deptMaster: new Map(), // 부서코드 → [{적용일, 부서명, 본부, 표시순서, 비고}] (적용일 asc)
+  emap: [],         // 기타_사원코드 (원본 행)
+  emapByName: new Map(), // 사원명 → 사원코드
   lastSync: null,   // 마지막 동기화 시각
   source: "none",   // "remote" | "demo"
   asOf: BASE_DATE,  // 현재 조회 기준일
@@ -1153,6 +1242,120 @@ function openDeptModal(dept) {
 function closeModal() { document.getElementById("modalBackdrop").classList.remove("open"); }
 
 /* ============================================================
+ * 11-1. 인사발령 등록 탭
+ * ============================================================ */
+function regPersonRow() {
+  const tr = document.createElement("tr");
+  tr.innerHTML =
+    `<td class="reg-idx"></td>` +
+    `<td><input type="text" class="reg-name" placeholder="홍길동" /></td>` +
+    `<td class="auto reg-code">—</td>` +
+    `<td><input type="text" class="reg-dept" placeholder="경영지원팀" /></td>` +
+    `<td class="auto reg-deptcode">—</td>` +
+    `<td><button class="reg-del" title="삭제">×</button></td>`;
+  tr.querySelector(".reg-name").addEventListener("input", () => regRecalc());
+  tr.querySelector(".reg-dept").addEventListener("input", () => regRecalc());
+  tr.querySelector(".reg-del").addEventListener("click", () => {
+    tr.remove();
+    if (!document.querySelectorAll("#regRows tr").length) regAddPersonRow();
+    regRecalc();
+  });
+  return tr;
+}
+function regAddPersonRow() {
+  document.getElementById("regRows").appendChild(regPersonRow());
+  regRecalc();
+}
+// 사원명→사원코드, 부서명+발령일→부서코드 를 각 행에 미리보기로 채움
+function regRecalc() {
+  const asOf = document.getElementById("regDate").value;
+  const rows = [...document.querySelectorAll("#regRows tr")];
+  rows.forEach((tr, i) => {
+    tr.querySelector(".reg-idx").textContent = i + 1;
+    const name = tr.querySelector(".reg-name").value.trim();
+    const dept = tr.querySelector(".reg-dept").value.trim();
+    // 사원코드
+    const codeCell = tr.querySelector(".reg-code");
+    if (!name) { codeCell.textContent = "—"; codeCell.classList.remove("bad"); }
+    else {
+      const code = state.emapByName.get(name);
+      codeCell.textContent = code || "코드없음";
+      codeCell.classList.toggle("bad", !code);
+    }
+    // 변경부서코드
+    const dcCell = tr.querySelector(".reg-deptcode");
+    if (!dept) { dcCell.textContent = "—"; dcCell.classList.remove("bad"); }
+    else if (!asOf) { dcCell.textContent = "발령일?"; dcCell.classList.add("bad"); }
+    else {
+      const dc = resolveDeptCodeByName(dept, asOf);
+      dcCell.textContent = dc || "부서없음";
+      dcCell.classList.toggle("bad", !dc);
+    }
+  });
+}
+// 저장: 행마다 addOrder GET 호출
+async function regSubmit() {
+  const status = document.getElementById("regStatus");
+  const result = document.getElementById("regResult");
+  result.innerHTML = "";
+  const 발령일 = document.getElementById("regDate").value;
+  const 변동구분 = document.getElementById("regType").value;
+  if (!발령일) { status.textContent = "발령일을 입력하세요."; return; }
+  if (!변동구분) { status.textContent = "변동구분을 선택하세요."; return; }
+  if (!SCRIPT_URL) { status.textContent = "데모 모드에서는 저장할 수 없습니다 (SCRIPT_URL 필요)."; return; }
+
+  const common = {
+    발령일, 변동구분,
+    변경직급: document.getElementById("regGrade").value.trim(),
+    변경근무지: document.getElementById("regLoc").value.trim(),
+    변경고용형태: document.getElementById("regEmp").value.trim(),
+    비고: document.getElementById("regNote").value.trim()
+  };
+
+  const rows = [...document.querySelectorAll("#regRows tr")];
+  const payloads = [];
+  for (const tr of rows) {
+    const name = tr.querySelector(".reg-name").value.trim();
+    const dept = tr.querySelector(".reg-dept").value.trim();
+    if (!name && !dept) continue;            // 빈 행 건너뜀
+    if (!name) { status.textContent = "사원명이 빈 행이 있습니다."; return; }
+    const 사원코드 = state.emapByName.get(name) || "";
+    const 변경부서코드 = dept ? (resolveDeptCodeByName(dept, 발령일) || "") : "";
+    if (dept && !변경부서코드) { status.textContent = `'${name}'의 부서 '${dept}'를 발령일 기준 부서코드로 변환할 수 없습니다.`; return; }
+    payloads.push({ ...common, 사원코드, 사원명: name, 변경부서: dept, 변경부서코드 });
+  }
+  if (!payloads.length) { status.textContent = "대상자를 1명 이상 입력하세요."; return; }
+
+  const btn = document.getElementById("regSubmit");
+  btn.disabled = true;
+  let ok = 0, fail = 0;
+  const lines = [];
+  for (let i = 0; i < payloads.length; i++) {
+    const p = payloads[i];
+    status.textContent = `저장 중… (${i + 1}/${payloads.length})`;
+    const qs = Object.entries({ action: "addOrder", ...p })
+      .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`).join("&");
+    try {
+      const res = await fetch(SCRIPT_URL + (SCRIPT_URL.includes("?") ? "&" : "?") + qs, { method: "GET", redirect: "follow" });
+      const j = await res.json();
+      if (j && j.ok) { ok++; lines.push(`<div class="ok">✔ ${escapeHtml(p.사원명)} (${escapeHtml(p.변동구분)}) 저장됨</div>`); }
+      else { fail++; lines.push(`<div class="err">✗ ${escapeHtml(p.사원명)} 실패: ${escapeHtml((j && j.error) || "알 수 없음")}</div>`); }
+    } catch (e) {
+      fail++; lines.push(`<div class="err">✗ ${escapeHtml(p.사원명)} 실패: ${escapeHtml(e.message)}</div>`);
+    }
+  }
+  btn.disabled = false;
+  status.textContent = `완료 — 성공 ${ok}, 실패 ${fail}`;
+  result.innerHTML = lines.join("");
+  if (ok) {
+    // 저장 성공분 반영: 시트 재동기화 후 대상자 표 초기화
+    await loadData();
+    document.getElementById("regRows").innerHTML = "";
+    regAddPersonRow();
+  }
+}
+
+/* ============================================================
  * 12. CSV 다운로드 (UTF-8 BOM → 엑셀 한글 호환)
  * ============================================================ */
 function downloadRosterCSV() {
@@ -1220,7 +1423,34 @@ function applyData(src, source) {
   state.quota = src.quota || [];
   state.dept = src.dept || [];
   state.deptMaster = buildDeptMaster(state.dept);
+  state.emap = src.emap || [];
+  state.emapByName = buildEmapByName(state.emap);
   state.source = source;
+}
+// 기타_사원코드 → 사원명→사원코드 맵 (헤더 사원명/사원코드, 없으면 1·2번째 열)
+function buildEmapByName(rows) {
+  const map = new Map();
+  for (const r of rows || []) {
+    const keys = Object.keys(r);
+    const name = String(r["사원명"] ?? r[keys[0]] ?? "").trim();
+    const code = String(r["사원코드"] ?? r[keys[1]] ?? "").trim();
+    if (name && !map.has(name)) map.set(name, code);
+  }
+  return map;
+}
+// 부서명 + 발령일 → 부서코드 (적용일 ≤ 발령일 중 이름이 일치하는 최신 줄의 코드)
+function resolveDeptCodeByName(name, asOf) {
+  const target = String(name || "").replace(/\s+/g, "");
+  if (!target) return null;
+  let best = null;
+  for (const [code, arr] of state.deptMaster) {
+    for (const e of arr) {
+      if (String(e.부서명).replace(/\s+/g, "") === target && e.적용일 <= asOf) {
+        if (!best || e.적용일 > best.적용일) best = { 적용일: e.적용일, 부서코드: code };
+      }
+    }
+  }
+  return best ? best.부서코드 : null;
 }
 async function loadData() {
   setSync("loading", "동기화 중…");
@@ -1280,6 +1510,10 @@ function afterLoad() {
   const today = toISODate(new Date());
   const initial = today < BASE_DATE ? BASE_DATE : today;
   setAsOf(initial, true);
+  // 등록 탭 기본값
+  const regDate = document.getElementById("regDate");
+  if (regDate && !regDate.value) regDate.value = today;
+  if (!document.querySelectorAll("#regRows tr").length) regAddPersonRow();
 }
 
 /* ============================================================
@@ -1329,6 +1563,14 @@ function bindEvents() {
   document.getElementById("filterStatus").onchange = () => renderRoster();
   document.getElementById("filterDept").onchange = () => renderRoster();
   document.getElementById("downloadBtn").onclick = () => downloadRosterCSV();
+  document.getElementById("regAddRow").onclick = () => regAddPersonRow();
+  document.getElementById("regSubmit").onclick = () => regSubmit();
+  document.getElementById("regDate").onchange = () => regRecalc();
+  document.getElementById("regType").onchange = () => {
+    const t = document.getElementById("regType").value;
+    document.getElementById("regStatus").textContent =
+      t === "입사" ? "※ 입사는 기타_사원코드에 신규 사번이 등록돼 있어야 사원코드가 채워집니다." : "";
+  };
   document.getElementById("modalClose").onclick = closeModal;
   document.getElementById("modalBackdrop").onclick = (e) => {
     if (e.target.id === "modalBackdrop") closeModal();
@@ -1380,6 +1622,13 @@ const DEMO = {
     { 발령일:"2024-06-01", 사원코드:"E005", 사원명:"정전문", 변동구분:"휴직",       비고:"육아휴직" },
     { 발령일:"2024-07-01", 사원코드:"E001", 사원명:"김대표", 변동구분:"근무지이동", 변경근무지:"센터B", 비고:"근무지 변경" },
     { 발령일:"2024-08-01", 사원코드:"E003", 사원명:"박직원", 변동구분:"조직개편",   변경부서코드:"D302", 비고:"신설팀으로 개인 이동(부서코드 변경)" }
+  ],
+  // 기타_사원코드: 사원명 → 사원코드 (등록 탭 미리보기용 데모)
+  emap: [
+    { 사원명:"김대표", 사원코드:"E001" }, { 사원명:"이기획", 사원코드:"E002" },
+    { 사원명:"박직원", 사원코드:"E003" }, { 사원명:"정전문", 사원코드:"E005" },
+    { 사원명:"강사원", 사원코드:"E006" }, { 사원명:"신입사", 사원코드:"E007" },
+    { 사원명:"홍길동", 사원코드:"E010" }
   ],
   quota: []
 };
