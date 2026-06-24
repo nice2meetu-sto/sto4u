@@ -3,340 +3,257 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>정현원 비교표</title>
+<title>정현원 현황</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet" />
 <style>
 /* ============================================================
- * 정현원 비교표 — 디자인 토큰 (다른 시스템에 심을 때 이 :root 와
- * .jh-* 클래스만 그대로 가져가면 됩니다)
+ * 정현원 현황표 — 다른 시스템에 심을 때 .jh-* 와 :root 만 가져가면 됩니다.
  * ============================================================ */
-:root {
-  --main: #534AB7;     /* 포인트(파랑/보라) */
-  --valid: #3B6D11;    /* 충족/초과(녹색) */
-  --warn: #A32D2D;     /* 결원/부족(빨강) */
-  --border: #e2e4ea;
-  --bg: #f5f6f9;
-  --card: #ffffff;
-  --text: #2b2d36;
-  --muted: #7b7f8e;
-  --main-soft: #ece9f8;
-  --warn-soft: #fdeaea;
-  --valid-soft: #e7f1df;
-  --shadow: 0 1px 3px rgba(40,42,60,.06), 0 4px 16px rgba(40,42,60,.05);
+:root{
+  --main:#534AB7; --warn:#A32D2D; --border:#d4d7e0; --bg:#f5f6f9;
+  --card:#fff; --text:#2b2d36; --muted:#7b7f8e; --head:#eef0f5; --sub:#f6f7fa;
 }
-* { box-sizing: border-box; }
-body {
-  margin: 0; background: var(--bg); color: var(--text);
-  font-family: "Noto Sans KR", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  font-size: 14px; line-height: 1.5; -webkit-font-smoothing: antialiased;
-}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:"Noto Sans KR",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:13px}
+.jh-wrap{max-width:1180px;margin:0 auto;padding:22px 18px 48px}
+.jh-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.jh-title{font-size:16px;font-weight:700;margin:0;display:flex;align-items:center;gap:7px}
+.jh-title .dot{width:9px;height:9px;border:2px solid var(--main);border-radius:50%;display:inline-block}
+.jh-ctrl{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--muted)}
+.jh-ctrl input,.jh-ctrl button{font-family:inherit;font-size:12px;border:1px solid var(--border);border-radius:7px;padding:6px 10px;background:var(--card);color:var(--text);cursor:pointer}
+.jh-ctrl button.primary{background:var(--main);border-color:var(--main);color:#fff}
 
-/* 컨테이너 */
-.jh-wrap { max-width: 880px; margin: 0 auto; padding: 24px 20px 56px; }
-.jh-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 16px; }
-.jh-title { font-size: 18px; font-weight: 700; margin: 0; }
-.jh-title small { display: block; font-size: 12px; color: var(--muted); font-weight: 400; margin-top: 2px; }
-.jh-controls { display: flex; align-items: center; gap: 8px; }
-.jh-controls label { font-size: 12px; color: var(--muted); font-weight: 500; }
-.jh-controls input[type="date"], .jh-controls button {
-  font-family: inherit; font-size: 13px; border: 1px solid var(--border);
-  border-radius: 8px; padding: 8px 12px; background: var(--card); color: var(--text); cursor: pointer;
-}
-.jh-controls button.primary { background: var(--main); border-color: var(--main); color: #fff; }
-
-/* 요약 카드 */
-.jh-summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
-.jh-kpi { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 14px 16px; box-shadow: var(--shadow); }
-.jh-kpi .k { font-size: 12px; color: var(--muted); font-weight: 500; }
-.jh-kpi .v { font-size: 24px; font-weight: 700; margin-top: 2px; font-variant-numeric: tabular-nums; }
-.jh-kpi.shortage .v { color: var(--warn); }
-.jh-kpi.rate .v { color: var(--main); }
-
-/* 표 */
-.jh-card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; box-shadow: var(--shadow); overflow: hidden; }
-table.jh-table { border-collapse: collapse; width: 100%; font-size: 13.5px; }
-.jh-table th, .jh-table td { padding: 11px 14px; text-align: center; border-bottom: 1px solid var(--border); white-space: nowrap; }
-.jh-table thead th { background: #f0f1f6; color: #41434f; font-weight: 700; }
-.jh-table td.label, .jh-table th.label { text-align: left; font-weight: 500; }
-.jh-table td.num { font-variant-numeric: tabular-nums; }
-.jh-table tbody tr:hover td { background: #fafbfd; }
-.jh-table tr.total td { background: var(--main-soft); font-weight: 700; border-top: 2px solid #cdd0db; }
-.jh-table tr.total td:hover { background: var(--main-soft); }
-
-/* 과부족 배지 */
-.jh-badge { display: inline-block; min-width: 46px; padding: 2px 10px; border-radius: 20px; font-size: 12px; font-weight: 700; }
-.jh-badge.short { background: var(--warn-soft); color: var(--warn); }   /* 결원(정원>현원) */
-.jh-badge.over  { background: var(--main-soft); color: var(--main); }   /* 초과(현원>정원) */
-.jh-badge.even  { background: #eef0f4; color: var(--muted); }           /* 동일 */
-
-/* 충원율 바 */
-.jh-rate { display: flex; align-items: center; gap: 8px; justify-content: center; }
-.jh-bar { width: 84px; height: 8px; border-radius: 5px; background: #eceef3; overflow: hidden; position: relative; }
-.jh-bar > i { display: block; height: 100%; border-radius: 5px; background: var(--main); }
-.jh-bar > i.full { background: var(--valid); }      /* 100% 이상 */
-.jh-bar > i.low  { background: var(--warn); }       /* 70% 미만 */
-.jh-rate .pct { font-size: 12.5px; font-variant-numeric: tabular-nums; min-width: 44px; text-align: right; }
-
-.jh-foot { margin-top: 10px; font-size: 11px; color: var(--muted); }
-.jh-banner { display: none; margin-bottom: 14px; border-radius: 10px; padding: 10px 14px; font-size: 12.5px; }
-.jh-banner.show { display: block; }
-.jh-banner.warn { background: var(--warn-soft); color: var(--warn); border: 1px solid #f3cccc; }
-.jh-banner.info { background: #eef3ff; color: #2c4a8c; border: 1px solid #d3deff; }
-@media (max-width: 640px){ .jh-summary { grid-template-columns: 1fr 1fr; } }
+.jh-scroll{overflow-x:auto;background:var(--card);border:1px solid var(--border);border-radius:10px}
+table.jh{border-collapse:collapse;width:100%;min-width:1100px;font-size:12.5px}
+table.jh th,table.jh td{border:1px solid var(--border);padding:7px 6px;text-align:center;white-space:nowrap}
+table.jh thead th{background:var(--head);font-weight:700;color:#41434f}
+table.jh td.rowlab{background:var(--sub);font-weight:700}
+table.jh td.num{font-variant-numeric:tabular-nums}
+table.jh col.sep,table.jh .sep{border-left:2px solid #b9bdca}
+table.jh th.sub,table.jh td.sub{background:var(--sub);font-weight:700}     /* 소계/정원현황/합계 강조 */
+table.jh tbody tr:hover td:not(.rowlab):not(.sub){background:#fafbfd}
+table.jh td.neg{color:var(--warn);font-weight:600}                          /* 결원(음수) */
+.jh-foot{margin-top:9px;font-size:11px;color:var(--muted)}
+.jh-banner{display:none;margin-bottom:12px;border-radius:9px;padding:9px 13px;font-size:12px}
+.jh-banner.show{display:block}
+.jh-banner.warn{background:#fdeaea;color:var(--warn);border:1px solid #f3cccc}
+.jh-banner.info{background:#eef3ff;color:#2c4a8c;border:1px solid #d3deff}
 </style>
 </head>
 <body>
 <div class="jh-wrap">
   <div class="jh-head">
-    <h1 class="jh-title">정현원 비교표 <small>직급별 정원 · 현원 · 과부족 · 충원율</small></h1>
-    <div class="jh-controls">
+    <h1 class="jh-title"><span class="dot"></span>정현원 현황</h1>
+    <div class="jh-ctrl">
       <label for="jhDate">기준일</label>
       <input type="date" id="jhDate" />
       <button id="jhRefresh" class="primary">↻ 새로고침</button>
     </div>
   </div>
-
   <div id="jhBanner" class="jh-banner"></div>
-
-  <div class="jh-summary" id="jhSummary"></div>
-
-  <div class="jh-card">
-    <table class="jh-table" id="jhTable"></table>
+  <div class="jh-scroll">
+    <table class="jh" id="jhTable"></table>
   </div>
-  <p class="jh-foot">· 현원 = 기준일 재직 인원(휴직 포함). 과부족 = 정원 − 현원(<b>＋초과</b>/<b>－결원</b>). 충원율 = 현원 ÷ 정원 × 100.</p>
+  <p class="jh-foot">· 정원=수기(정원 탭) · 현원=기준일 재직 인원(휴직 포함) · 결원=현원−정원(음수=부족, 빨강) · 정원현황=일반직+전문직+별도직군 · 합계=정원현황+기간제</p>
 </div>
 
 <script>
 "use strict";
-
 /* ============================================================
- * 0. 설정 — 다른 시트/시스템에 맞게 여기만 바꾸면 됩니다
+ * 0. 설정
  * ============================================================ */
 const CONFIG = {
-  // Apps Script GET JSON API ( { base:[...], orders:[...], quota:[...] } 반환 ). 비우면 데모.
-  SCRIPT_URL: "",
-  BASE_DATE: "2023-12-30",     // 스냅샷 시작일(이 전 발령은 없음)
-  DEFAULT_DATE: "2023-12-30",  // 처음 보여줄 기준일
-  // 정원 탭 컬럼명 (시트에 맞게)
+  SCRIPT_URL: "https://script.google.com/macros/s/AKfycbwzxRrw2VLhudcgtQs1yUbjJxQ_D_9nqA4F_Hl-1qgWflacl5WBAWEiT6NR2ErkSdbO/exec",  // 비우면 데모. 다른 시스템에 심을 땐 그 시스템 API로 교체.
+  BASE_DATE: "2023-12-30",
+  DEFAULT_DATE: "2023-12-30",
   QUOTA_LABEL_COL: "직급",
   QUOTA_VALUE_COL: "정원(명)",
-  // 표에 보일 직급 순서(정원 탭에 없으면 자동 뒤에 붙음)
-  GRADE_ORDER: ["임원","1급","2급","3급","4급","5급","6급","전문직","별도직군","기간제"],
-  // 현원 집계 시 휴직 등 사고내역도 포함할지 (정원 대비 '채워진 자리' 기준이면 true 권장)
-  INCLUDE_HOLD: true
+  INCLUDE_HOLD: true              // 현원에 휴직 등 사고내역 포함
 };
+// 표 열 정의
+const GEN_GRADES  = ["임원","1급","2급","3급","4급","5급","6급"];   // 일반직 하위
+const PROF_GRADES = ["가급","나급","다급","라급"];                   // 전문직 하위
 
 /* ============================================================
- * 1. 명부 재구성 (직급/고용형태만 — 부서 로직 없음, 가볍게)
- *    입/퇴사 = 입사일·퇴사일(날짜) / 승급·고용형태변경 = 인사발령
+ * 1. 경량 명부 재구성 (입/퇴사=날짜, 승급/고용형태=발령)
  * ============================================================ */
-const EMP_SYN = { "일반직":"일반직","정규직":"일반직","전문직":"전문직","기간제":"기간제","계약직":"기간제","파견":"파견","파견직":"파견","파견근로자":"파견" };
-const STATUS_SYN = { "재직":"재직","정상":"재직","근무":"재직","퇴사":"재직","퇴직":"재직","입사예정":"재직","입사 예정":"재직","예정":"재직","휴직":"휴직","휴가":"휴가","파견":"파견","기타":"기타" };
-const ORDER_SYN = { "입사":"입사","채용":"입사","퇴사":"퇴사","퇴직":"퇴사","승급":"승급","승격":"승급","직급변경":"승급","휴직":"휴직","파견":"파견","복직":"복직","복귀":"복직","파견복귀":"복직" };
+const EMP_SYN={"일반직":"일반직","정규직":"일반직","전문직":"전문직","기간제":"기간제","계약직":"기간제","파견":"파견","파견직":"파견","개방형":"개방형","임원":"임원"};
+const STATUS_SYN={"재직":"재직","정상":"재직","근무":"재직","퇴사":"재직","퇴직":"재직","입사예정":"재직","입사 예정":"재직","예정":"재직","휴직":"휴직","휴가":"휴가","파견":"파견","기타":"기타"};
+const ORDER_SYN={"입사":"입사","채용":"입사","퇴사":"퇴사","퇴직":"퇴사","승급":"승급","승격":"승급","직급변경":"승급","휴직":"휴직","파견":"파견","복직":"복직","복귀":"복직","파견복귀":"복직"};
+function iso(v){if(v==null||v==="")return"";const s=String(v).trim();const m=s.match(/^(\d{4})[-./](\d{1,2})[-./](\d{1,2})/);if(m)return`${m[1]}-${m[2].padStart(2,"0")}-${m[3].padStart(2,"0")}`;if(/^\d{4}-\d{2}-\d{2}T/.test(s))return s.slice(0,10);return s;}
+const normEmp=v=>EMP_SYN[String(v||"").trim()]||String(v||"").trim();
+const normStatus=v=>{const k=String(v||"").trim();return k?(STATUS_SYN[k]||k):"재직";};
+const normType=v=>ORDER_SYN[String(v||"").trim()]||String(v||"").trim();
+const idOf=p=>String(p["사원코드"]??p["사번"]??"").trim();
 
-function iso(v){
-  if(v===null||v===undefined||v==="") return "";
-  const s=String(v).trim();
-  const m=s.match(/^(\d{4})[-./](\d{1,2})[-./](\d{1,2})/);
-  if(m) return `${m[1]}-${m[2].padStart(2,"0")}-${m[3].padStart(2,"0")}`;
-  if(/^\d{4}-\d{2}-\d{2}T/.test(s)) return s.slice(0,10);
-  return s;
-}
-const normEmp = v => EMP_SYN[String(v||"").trim()] || String(v||"").trim();
-const normStatus = v => { const k=String(v||"").trim(); return k ? (STATUS_SYN[k]||k) : "재직"; };
-const normType = v => ORDER_SYN[String(v||"").trim()] || String(v||"").trim();
-const idOf = p => String(p["사원코드"] ?? p["사번"] ?? "").trim();
-
-// 직급 → 직급버킷 (임원 / 1급~6급 / 전문직). 고용형태 전문직·기간제는 호출부에서 우선 처리.
-function gradeBucketOf(jikgup){
-  const k=String(jikgup||"").trim();
-  if(k==="임원"||/대표|본부장/.test(k)) return "임원";
-  const m=k.match(/^([1-6])급/); if(m) return m[1]+"급";
-  if(k.startsWith("전문직")||/^[가나다라]\s*급?$/.test(k)) return "전문직";
-  return k;
-}
-
-function rosterAsOf(base, orders, baseDate){
-  const baseIso = iso(baseDate);
-  const roster = new Map();
+function rosterAsOf(base,orders,baseDate){
+  const b=iso(baseDate),roster=new Map();
   for(const p of base){
-    const code = idOf(p); if(!code) continue;
-    const hire = iso(p["입사일"]), leave = iso(p["퇴사일"]);
-    if(hire && hire > baseIso) continue;       // 아직 입사 전
-    if(leave && leave <= baseIso) continue;     // 이미 퇴사(당일부터 제외)
-    roster.set(code, { 직급:p["직급"]||"", 고용형태:normEmp(p["고용형태"]), 상태:normStatus(p["상태"]) });
+    const code=idOf(p);if(!code)continue;
+    const hire=iso(p["입사일"]),leave=iso(p["퇴사일"]);
+    if(hire&&hire>b)continue;
+    if(leave&&leave<=b)continue;
+    roster.set(code,{직급:p["직급"]||"",고용형태:normEmp(p["고용형태"]),상태:normStatus(p["상태"])});
   }
-  const ords = orders
-    .map((o,i)=>({o,i}))
-    .filter(x=>iso(x.o["발령일"]) && iso(x.o["발령일"]) <= baseIso)
-    .sort((a,b)=>{ const x=iso(a.o["발령일"]),y=iso(b.o["발령일"]); return x<y?-1:x>y?1:a.i-b.i; })
-    .map(x=>x.o);
+  const ords=orders.map((o,i)=>({o,i})).filter(x=>iso(x.o["발령일"])&&iso(x.o["발령일"])<=b)
+    .sort((a,c)=>{const x=iso(a.o["발령일"]),y=iso(c.o["발령일"]);return x<y?-1:x>y?1:a.i-c.i;}).map(x=>x.o);
   for(const o of ords){
-    const code=idOf(o), type=normType(o["변동구분"]);
-    if(type==="퇴사"){ roster.delete(code); continue; }
-    if(type==="입사" && !roster.has(code))
-      roster.set(code, { 직급:o["변경직급"]||"", 고용형태:normEmp(o["변경고용형태"])||"일반직", 상태:"재직" });
-    if(!roster.has(code)) continue;
+    const code=idOf(o),type=normType(o["변동구분"]);
+    if(type==="퇴사"){roster.delete(code);continue;}
+    if(type==="입사"&&!roster.has(code))roster.set(code,{직급:o["변경직급"]||"",고용형태:normEmp(o["변경고용형태"])||"일반직",상태:"재직"});
+    if(!roster.has(code))continue;
     const pr=roster.get(code);
-    if(type==="휴직") pr.상태="휴직"; else if(type==="파견") pr.상태="파견"; else if(type==="복직") pr.상태="재직";
-    if(o["변경직급"]) pr.직급=o["변경직급"];
-    if(o["변경고용형태"]) pr.고용형태=normEmp(o["변경고용형태"]);
+    if(type==="휴직")pr.상태="휴직";else if(type==="파견")pr.상태="파견";else if(type==="복직")pr.상태="재직";
+    if(o["변경직급"])pr.직급=o["변경직급"];
+    if(o["변경고용형태"])pr.고용형태=normEmp(o["변경고용형태"]);
   }
   return [...roster.values()];
 }
 
-// 현원 by 직급버킷 (직급별표와 동일 규칙: 기간제·전문직은 고용형태 우선)
-function headcountByGrade(roster, includeHold){
-  const c={};
+/* ============================================================
+ * 2. 직급 분류
+ * ============================================================ */
+function genGrade(j){const k=String(j||"").trim();if(k==="임원"||/대표|본부장/.test(k))return"임원";const m=k.match(/^([1-6])급/);return m?m[1]+"급":null;}
+function profGrade(j){const k=String(j||"").replace(/\s/g,"");const m=k.match(/(가|나|다|라)급?$/);return m?m[1]+"급":null;}
+
+/* ============================================================
+ * 3. 현원 집계 — 고용형태 그룹 → 직급
+ *    반환: {gen:{임원..6급}, genEtc, prof:{가급..라급}, profEtc, byeoldo, gigan}
+ * ============================================================ */
+function countHead(roster,includeHold){
+  const H={gen:{},prof:{},genEtc:0,profEtc:0,byeoldo:0,gigan:0};
+  GEN_GRADES.forEach(g=>H.gen[g]=0); PROF_GRADES.forEach(g=>H.prof[g]=0);
   for(const p of roster){
-    if(!includeHold && p.상태!=="재직") continue;
-    let k;
-    if(p.고용형태==="기간제") k="기간제";
-    else if(p.고용형태==="전문직") k="전문직";
-    else k=gradeBucketOf(p.직급);
-    c[k]=(c[k]||0)+1;
+    if(!includeHold&&p.상태!=="재직")continue;
+    const e=p.고용형태;
+    if(e==="기간제"){H.gigan++;continue;}
+    if(e==="개방형"||e==="별도직군"){H.byeoldo++;continue;}
+    if(e==="전문직"){const s=profGrade(p.직급);if(s)H.prof[s]++;else H.profEtc++;continue;}
+    const g=genGrade(p.직급);if(g)H.gen[g]++;else H.genEtc++;   // 일반직+임원
   }
-  return c;
+  return H;
 }
 
 /* ============================================================
- * 2. 정현원 수식 — 순수 함수 (다른 시스템에서 현원만 넘겨도 재사용 가능)
- *    buildJeongHyeon( [{직급,정원}], {직급버킷:현원} ) → { rows, total }
+ * 4. 정원 파싱 (정원 탭 → 직급별)
  * ============================================================ */
-function parseQuota(v){
-  const n = parseFloat(String(v ?? "").replace(/[^0-9.\-]/g,""));
-  return isFinite(n) ? Math.round(n) : 0;
-}
-function isNoteRow(label){ return !label || label.startsWith("※") || label.length > 20; }
-
-function makeRow(label, quota, hyeon){
-  const diff = quota - hyeon;                       // ＋: 결원(정원 남음) / －: 초과
-  const rate = quota > 0 ? (hyeon / quota * 100) : null;
-  return { label, quota, hyeon, diff, rate };
-}
-function buildJeongHyeon(quotaRows, headcount){
-  const order = CONFIG.GRADE_ORDER;
-  const rows = [];
-  const seen = new Set();
-  // 1) 정원 탭에 있는 직급
-  const qmap = new Map();
-  for(const q of (quotaRows||[])){
-    const label = String(q[CONFIG.QUOTA_LABEL_COL] ?? "").trim();
-    if(isNoteRow(label)) continue;
-    qmap.set(label, parseQuota(q[CONFIG.QUOTA_VALUE_COL]));
+function parseNum(v){const n=parseFloat(String(v??"").replace(/[^0-9.\-]/g,""));return isFinite(n)?Math.round(n):0;}
+function parseQuota(rows){
+  const Q={gen:{},prof:{},profAgg:0,byeoldo:0,gigan:0};
+  GEN_GRADES.forEach(g=>Q.gen[g]=0); PROF_GRADES.forEach(g=>Q.prof[g]=0);
+  for(const r of rows||[]){
+    const label=String(r[CONFIG.QUOTA_LABEL_COL]??"").trim();
+    if(!label||label.startsWith("※")||label.length>20)continue;
+    const val=parseNum(r[CONFIG.QUOTA_VALUE_COL]);
+    if(GEN_GRADES.includes(label)){Q.gen[label]+=val;}
+    else if(PROF_GRADES.includes(label)){Q.prof[label]+=val;}
+    else if(/^(가|나|다|라)급?$/.test(label)){Q.prof[label.replace(/급?$/,"급")]+=val;}
+    else if(label==="전문직"){Q.profAgg+=val;}
+    else if(label==="별도직군"){Q.byeoldo+=val;}
+    else if(label==="기간제"){Q.gigan+=val;}
   }
-  // 2) GRADE_ORDER 순서로, 그 외는 등장순으로
-  const labels = [...order.filter(l=>qmap.has(l) || (headcount[l]!=null)),
-                  ...[...qmap.keys()].filter(l=>!order.includes(l)),
-                  ...Object.keys(headcount).filter(l=>!order.includes(l) && !qmap.has(l))];
-  for(const label of labels){
-    if(seen.has(label)) continue; seen.add(label);
-    rows.push(makeRow(label, qmap.get(label) || 0, headcount[label] || 0));
-  }
-  const totQ = rows.reduce((s,r)=>s+r.quota,0);
-  const totH = rows.reduce((s,r)=>s+r.hyeon,0);
-  return { rows, total: makeRow("합계", totQ, totH) };
+  return Q;
 }
 
 /* ============================================================
- * 3. 렌더링
+ * 5. 표 모델 만들기 — 셀 순서: [임원..6급, 일반소계, 가~라급, 전문소계, 별도직군, 정원현황, 기간제, 합계]
  * ============================================================ */
-function fmtRate(rate){
-  if(rate===null) return `<span class="pct" style="color:var(--muted)">—</span>`;
-  const w = Math.max(0, Math.min(100, rate));
-  const cls = rate >= 100 ? "full" : (rate < 70 ? "low" : "");
-  return `<span class="jh-bar"><i class="${cls}" style="width:${w}%"></i></span>` +
-         `<span class="pct">${rate.toFixed(0)}%</span>`;
-}
-function fmtDiff(diff){
-  if(diff === 0) return `<span class="jh-badge even">0</span>`;
-  if(diff > 0)  return `<span class="jh-badge short">－${diff}</span>`;   // 결원
-  return `<span class="jh-badge over">＋${Math.abs(diff)}</span>`;        // 초과
-}
-function renderTable(model){
-  const head = `<thead><tr>
-    <th class="label">직급</th><th>정원</th><th>현원</th><th>과부족</th><th>충원율</th>
-  </tr></thead>`;
-  const rowHtml = (r, isTotal) => `<tr class="${isTotal?"total":""}">
-    <td class="label">${r.label}</td>
-    <td class="num">${r.quota}</td>
-    <td class="num">${r.hyeon}</td>
-    <td>${fmtDiff(r.diff)}</td>
-    <td><div class="jh-rate">${fmtRate(r.rate)}</div></td>
-  </tr>`;
-  document.getElementById("jhTable").innerHTML =
-    head + "<tbody>" + model.rows.map(r=>rowHtml(r,false)).join("") + rowHtml(model.total,true) + "</tbody>";
-}
-function renderSummary(model){
-  const t = model.total;
-  const shortage = model.rows.reduce((s,r)=>s + Math.max(0, r.diff), 0);  // 결원 합
-  const over = model.rows.reduce((s,r)=>s + Math.max(0, -r.diff), 0);     // 초과 합
-  const rate = t.quota > 0 ? (t.hyeon/t.quota*100).toFixed(1) : "—";
-  const kpi = (k,v,cls)=>`<div class="jh-kpi ${cls||''}"><div class="k">${k}</div><div class="v">${v}</div></div>`;
-  document.getElementById("jhSummary").innerHTML =
-    kpi("정원 합계", t.quota) + kpi("현원 합계", t.hyeon) +
-    kpi("결원(부족)", shortage, "shortage") + kpi("총 충원율", rate+(rate==="—"?"":"%"), "rate");
-}
-function render(base, orders, quota, date){
-  const roster = rosterAsOf(base, orders, date);
-  const head = headcountByGrade(roster, CONFIG.INCLUDE_HOLD);
-  const model = buildJeongHyeon(quota, head);
-  renderSummary(model);
-  renderTable(model);
+function buildModel(Q,H){
+  const cell=(q,h)=>({q,h,d:h-q});                 // d=결원(현원-정원)
+  const sum=(o,keys)=>keys.reduce((s,k)=>s+(o[k]||0),0);
+  const genSumQ=sum(Q.gen,GEN_GRADES), genSumH=sum(H.gen,GEN_GRADES)+H.genEtc;
+  const profSumQ=sum(Q.prof,PROF_GRADES)+Q.profAgg, profSumH=sum(H.prof,PROF_GRADES)+H.profEtc;
+  const jeongQ=genSumQ+profSumQ+Q.byeoldo, jeongH=genSumH+profSumH+H.byeoldo;
+  const totQ=jeongQ+Q.gigan, totH=jeongH+H.gigan;
+  const cells=[];
+  GEN_GRADES.forEach(g=>cells.push({key:g,...cell(Q.gen[g],H.gen[g])}));
+  cells.push({key:"일반직 소계",sub:true,...cell(genSumQ,genSumH)});
+  PROF_GRADES.forEach(g=>cells.push({key:g,sep:g==="가급",...cell(Q.prof[g],H.prof[g]),qBlank:!Q.prof[g]&&Q.profAgg>0}));
+  cells.push({key:"전문직 소계",sub:true,...cell(profSumQ,profSumH)});
+  cells.push({key:"별도직군",sep:true,...cell(Q.byeoldo,H.byeoldo)});
+  cells.push({key:"정원현황",sub:true,sep:true,...cell(jeongQ,jeongH)});
+  cells.push({key:"기간제",sep:true,...cell(Q.gigan,H.gigan)});
+  cells.push({key:"합계",sub:true,sep:true,...cell(totQ,totH)});
+  return cells;
 }
 
 /* ============================================================
- * 4. 데이터 로딩 + 부팅
+ * 6. 렌더 (캡처와 동일한 가로 표)
  * ============================================================ */
-const store = { base:[], orders:[], quota:[] };
-function banner(kind, html){ const b=document.getElementById("jhBanner"); if(!html){b.className="jh-banner";return;} b.className="jh-banner show "+kind; b.innerHTML=html; }
+function render(base,orders,quota,date){
+  const H=countHead(rosterAsOf(base,orders,date),CONFIG.INCLUDE_HOLD);
+  const cells=buildModel(parseQuota(quota),H);
+  const th=(t,attr="")=>`<th ${attr}>${t}</th>`;
+  // 헤더 2줄
+  let head=`<thead>
+    <tr>
+      ${th("구분",'rowspan="2"')}
+      ${th("일반직",'colspan="8"')}
+      ${th("전문직",'colspan="5" class="sep"')}
+      ${th("별도직군",'rowspan="2" class="sep"')}
+      ${th("정원현황",'rowspan="2" class="sub sep"')}
+      ${th("기간제",'rowspan="2" class="sep"')}
+      ${th("합계",'rowspan="2" class="sub sep"')}
+    </tr>
+    <tr>
+      ${GEN_GRADES.map(g=>th(g)).join("")}${th("소계",'class="sub"')}
+      ${PROF_GRADES.map((g,i)=>th(g,i===0?'class="sep"':"")).join("")}${th("소계",'class="sub"')}
+    </tr></thead>`;
+  // 본문 3행 (mode: q=정원 / h=현원 / d=결원)
+  const rowCells=(mode)=>cells.map(c=>{
+    let cls="num"; if(c.sub)cls+=" sub"; if(c.sep)cls+=" sep";
+    let txt;
+    if(mode==="d"){ const v=c.d; txt=v===0?"0":(v<0?"-"+Math.abs(v):String(v)); if(v<0)cls+=" neg"; }
+    else if(mode==="q"){ txt = c.qBlank ? "" : c.q; }
+    else { txt = c.h; }
+    return `<td class="${cls}">${txt}</td>`;
+  }).join("");
+  const body=`<tbody>
+    <tr><td class="rowlab">정원</td>${rowCells("q")}</tr>
+    <tr><td class="rowlab">현원</td>${rowCells("h")}</tr>
+    <tr><td class="rowlab">결원</td>${rowCells("d")}</tr>
+  </tbody>`;
+  document.getElementById("jhTable").innerHTML=head+body;
+}
 
+/* ============================================================
+ * 7. 로딩 / 부팅
+ * ============================================================ */
+const store={base:[],orders:[],quota:[]};
+function banner(kind,html){const b=document.getElementById("jhBanner");if(!html){b.className="jh-banner";return;}b.className="jh-banner show "+kind;b.innerHTML=html;}
+function draw(){render(store.base,store.orders,store.quota,document.getElementById("jhDate").value||CONFIG.DEFAULT_DATE);}
 async function load(){
-  if(!CONFIG.SCRIPT_URL){
-    store.base = DEMO.base; store.orders = DEMO.orders; store.quota = DEMO.quota;
-    banner("info", "⚠ SCRIPT_URL 이 비어 있어 데모 데이터로 표시 중입니다. 코드 상단 CONFIG.SCRIPT_URL 에 Apps Script URL을 넣으세요.");
-    draw(); return;
-  }
+  if(!CONFIG.SCRIPT_URL){store.base=DEMO.base;store.orders=DEMO.orders;store.quota=DEMO.quota;banner("info","⚠ SCRIPT_URL 이 비어 있어 데모 데이터로 표시 중입니다. 코드 상단 CONFIG.SCRIPT_URL 에 Apps Script URL을 넣으세요.");draw();return;}
   try{
-    const res = await fetch(CONFIG.SCRIPT_URL + (CONFIG.SCRIPT_URL.includes("?")?"&":"?") + "action=data", { method:"GET", redirect:"follow" });
-    const j = await res.json();
-    store.base = j.base||[]; store.orders = j.orders||[]; store.quota = j.quota||[];
-    banner();
-    draw();
-  }catch(e){
-    banner("warn", "❌ 데이터 로드 실패: " + e.message + " — 데모로 표시합니다.");
-    store.base = DEMO.base; store.orders = DEMO.orders; store.quota = DEMO.quota; draw();
-  }
+    const res=await fetch(CONFIG.SCRIPT_URL+(CONFIG.SCRIPT_URL.includes("?")?"&":"?")+"action=data",{method:"GET",redirect:"follow"});
+    const j=await res.json();
+    store.base=j.base||[];store.orders=j.orders||[];store.quota=j.quota||[];banner();draw();
+  }catch(e){banner("warn","❌ 데이터 로드 실패: "+e.message+" — 데모로 표시합니다.");store.base=DEMO.base;store.orders=DEMO.orders;store.quota=DEMO.quota;draw();}
 }
-function draw(){ render(store.base, store.orders, store.quota, document.getElementById("jhDate").value || CONFIG.DEFAULT_DATE); }
-
-/* ---- 데모 데이터 ---- */
-const DEMO = {
-  base: [
-    {사원코드:"E1",직급:"임원",고용형태:"임원",입사일:"2010-01-01",퇴사일:"",상태:"재직"},
-    {사원코드:"E2",직급:"1급",고용형태:"일반직",입사일:"2012-03-01",퇴사일:"",상태:"재직"},
-    {사원코드:"E3",직급:"3급",고용형태:"일반직",입사일:"2015-03-01",퇴사일:"",상태:"휴직"},
-    {사원코드:"E4",직급:"5급",고용형태:"일반직",입사일:"2018-03-01",퇴사일:"",상태:"재직"},
-    {사원코드:"E5",직급:"라급",고용형태:"전문직",입사일:"2019-07-01",퇴사일:"",상태:"재직"},
-    {사원코드:"E6",직급:"6급",고용형태:"기간제",입사일:"2021-02-01",퇴사일:"",상태:"재직"},
-    {사원코드:"E7",직급:"5급",고용형태:"일반직",입사일:"2024-06-01",퇴사일:"",상태:"입사예정"}
+const DEMO={
+  base:[
+    {사원코드:"E1",직급:"임원",고용형태:"임원",입사일:"2010-01-01",상태:"재직"},
+    {사원코드:"E2",직급:"1급",고용형태:"일반직",입사일:"2012-03-01",상태:"재직"},
+    {사원코드:"E3",직급:"1급",고용형태:"개방형",입사일:"2013-03-01",상태:"재직"},
+    {사원코드:"E4",직급:"3급",고용형태:"일반직",입사일:"2015-03-01",상태:"휴직"},
+    {사원코드:"E5",직급:"5급",고용형태:"일반직",입사일:"2018-03-01",상태:"재직"},
+    {사원코드:"E6",직급:"라급",고용형태:"전문직",입사일:"2019-07-01",상태:"재직"},
+    {사원코드:"E7",직급:"다급",고용형태:"전문직",입사일:"2020-07-01",상태:"재직"},
+    {사원코드:"E8",직급:"주임",고용형태:"기간제",입사일:"2021-02-01",상태:"재직"},
+    {사원코드:"E9",직급:"6급",고용형태:"일반직",입사일:"2024-06-01",상태:"입사예정"}
   ],
-  orders: [],
-  quota: [
-    {직급:"임원","정원(명)":1},{직급:"1급","정원(명)":2},{직급:"2급","정원(명)":2},
-    {직급:"3급","정원(명)":2},{직급:"4급","정원(명)":3},{직급:"5급","정원(명)":2},
-    {직급:"6급","정원(명)":1},{직급:"전문직","정원(명)":2},{직급:"기간제","정원(명)":0}
+  orders:[],
+  quota:[
+    {직급:"임원","정원(명)":1},{직급:"1급","정원(명)":2},{직급:"2급","정원(명)":2},{직급:"3급","정원(명)":2},
+    {직급:"4급","정원(명)":3},{직급:"5급","정원(명)":2},{직급:"6급","정원(명)":1},
+    {직급:"전문직","정원(명)":3},{직급:"별도직군","정원(명)":1},{직급:"기간제","정원(명)":0}
   ]
 };
-
-window.addEventListener("DOMContentLoaded", ()=>{
-  const dp = document.getElementById("jhDate");
-  dp.value = CONFIG.DEFAULT_DATE; dp.min = CONFIG.BASE_DATE;
-  dp.onchange = draw;
-  document.getElementById("jhRefresh").onclick = load;
-  load();
+window.addEventListener("DOMContentLoaded",()=>{
+  const dp=document.getElementById("jhDate");dp.value=CONFIG.DEFAULT_DATE;dp.min=CONFIG.BASE_DATE;dp.onchange=draw;
+  document.getElementById("jhRefresh").onclick=load;load();
 });
 </script>
 </body>
