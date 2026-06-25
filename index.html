@@ -553,6 +553,10 @@
           <input type="text" id="regGrade" placeholder="승급 시 (예: 4급)" />
         </div>
         <div class="reg-field">
+          <label for="regTitle">변경직책</label>
+          <input type="text" id="regTitle" placeholder="직책 변경 시 (예: 팀장)" />
+        </div>
+        <div class="reg-field">
           <label for="regLoc">변경근무지</label>
           <input type="text" id="regLoc" placeholder="근무지이동 시" />
         </div>
@@ -848,6 +852,7 @@ function rosterAsOf(baseDate) {
       _fbBonbu: p["본부"] || "",
       _fbOrder: fb.order,
       직급: p["직급"] || "",
+      직책: p["직책"] || "",
       고용형태: normEmp(p["고용형태"]),
       성별: p["성별"] || "",
       근무지: locOf(p),
@@ -884,7 +889,7 @@ function rosterAsOf(baseDate) {
       roster.set(code, {
         사원코드: code, 사원명: o["사원명"] || "",
         부서코드: "", _fbDept: "", _fbBonbu: "", _fbOrder: null,
-        직급: o["변경직급"] || "", 고용형태: newEmp || "일반직",
+        직급: o["변경직급"] || "", 직책: o["변경직책"] || o["직책변경"] || "", 고용형태: newEmp || "일반직",
         성별: o["성별"] || o["변경성별"] || "", 근무지: o["변경근무지"] || "",
         입사일: oDate, 상태: "재직"
       });
@@ -904,6 +909,7 @@ function rosterAsOf(baseDate) {
     }
     if (o["변경본부"]) pr._fbBonbu = o["변경본부"];
     if (o["변경직급"]) pr.직급 = o["변경직급"];
+    if (o["변경직책"] || o["직책변경"]) pr.직책 = o["변경직책"] || o["직책변경"];
     if (o["변경근무지"]) pr.근무지 = o["변경근무지"];
     if (newEmp) pr.고용형태 = newEmp;
   }
@@ -1218,6 +1224,7 @@ const ROSTER_COLS = [
   { key: "사원명", label: "사원명" },
   { key: "부서", label: "부서" },
   { key: "직급", label: "직급" },
+  { key: "직책", label: "직책" },
   { key: "고용형태", label: "고용형태" },
   { key: "근무지", label: "근무지" },
   { key: "입사일", label: "입사일" },
@@ -1266,6 +1273,7 @@ function renderRoster() {
       body += `<td>${escapeHtml(p.사원명)}</td>`;
       body += `<td>${escapeHtml(p.부서)}</td>`;
       body += `<td>${escapeHtml(p.직급)}</td>`;
+      body += `<td>${escapeHtml(p.직책)}</td>`;
       body += `<td>${escapeHtml(p.고용형태)}</td>`;
       body += `<td>${escapeHtml(p.근무지)}</td>`;
       body += `<td>${escapeHtml(p.입사일)}</td>`;
@@ -1452,15 +1460,15 @@ function openDeptModal(dept) {
   document.getElementById("modalTitle").textContent = dept;
   document.getElementById("modalMeta").textContent = `기준일 ${state.asOf} · ${members.length}명`;
   const t = document.getElementById("modalTable");
-  let head = "<thead><tr><th>사원코드</th><th>사원명</th><th>실소속부서</th><th>직급</th><th>고용형태</th><th>성별</th><th>근무지</th><th>상태</th></tr></thead>";
+  let head = "<thead><tr><th>사원코드</th><th>사원명</th><th>실소속부서</th><th>직급</th><th>직책</th><th>고용형태</th><th>성별</th><th>근무지</th><th>상태</th></tr></thead>";
   let body = "<tbody>";
   if (!members.length) {
-    body += `<tr><td colspan="8"><div class="empty">구성원이 없습니다.</div></td></tr>`;
+    body += `<tr><td colspan="9"><div class="empty">구성원이 없습니다.</div></td></tr>`;
   } else {
     for (const p of members) {
       body += "<tr>";
       body += `<td>${escapeHtml(p.사원코드)}</td><td>${escapeHtml(p.사원명)}</td>`;
-      body += `<td>${escapeHtml(p.부서)}</td><td>${escapeHtml(p.직급)}</td>`;
+      body += `<td>${escapeHtml(p.부서)}</td><td>${escapeHtml(p.직급)}</td><td>${escapeHtml(p.직책)}</td>`;
       body += `<td>${escapeHtml(p.고용형태)}</td><td>${escapeHtml(p.성별)}</td>`;
       body += `<td>${escapeHtml(p.근무지)}</td>`;
       body += `<td><span class="status-pill status-${escapeAttr(p.상태)}">${escapeHtml(p.상태)}</span></td>`;
@@ -1537,9 +1545,11 @@ async function regSubmit() {
   if (!변동구분) { status.textContent = "변동구분을 선택하세요."; return; }
   if (!SCRIPT_URL) { status.textContent = "데모 모드에서는 저장할 수 없습니다 (SCRIPT_URL 필요)."; return; }
 
+  const 직책 = document.getElementById("regTitle").value.trim();
   const common = {
     발령일, 변동구분,
     변경직급: document.getElementById("regGrade").value.trim(),
+    변경직책: 직책, 직책변경: 직책,   // 시트 컬럼명이 둘 중 무엇이든 채워지도록 동일값 전송
     변경근무지: document.getElementById("regLoc").value.trim(),
     변경고용형태: document.getElementById("regEmp").value.trim(),
     비고: document.getElementById("regNote").value.trim()
