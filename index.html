@@ -245,6 +245,11 @@
   table.grid td.num { font-variant-numeric: tabular-nums; }
   table.grid td.cur { font-weight: 700; color: var(--main); }
   table.grid td.warn-num { color: var(--warn); font-weight: 600; }
+  /* 직전 발령 시점 대비 값이 바뀐 칸: 파란 네모 테두리 */
+  table.grid td.num.chg { box-shadow: inset 0 0 0 2px var(--main); border-radius: 3px; }
+  .diff-note { font-size: 11px; color: var(--main); font-weight: 600; margin: 0 0 8px; }
+  .diff-note .box { display:inline-block; width:11px; height:11px; box-shadow: inset 0 0 0 2px var(--main); border-radius:3px; vertical-align:-2px; margin:0 3px; }
+  .diff-note.empty { color: var(--muted); font-weight: 500; }
   /* 컬럼 그룹 색 (연한 파스텔) — 일일/직급별 공통. .esub = 소계/계 약간 진하게 */
   table.grid .e-gen { background:#eef4fc; }  table.grid .e-gen.esub { background:#e0ebf9; }   /* 파랑(일반직/정원내) */
   table.grid .e-pro { background:#fdf2e8; }  table.grid .e-pro.esub { background:#fbe7d4; }   /* 주황(전문직) */
@@ -490,6 +495,7 @@
 
   <!-- ① 일일 -->
   <section class="panel active" id="panel-daily">
+    <p class="diff-note" id="dailyDiffNote"></p>
     <div class="card table-scroll">
       <table class="grid" id="dailyTable"></table>
     </div>
@@ -503,6 +509,7 @@
 
   <!-- ② 직급별 -->
   <section class="panel" id="panel-grade">
+    <p class="diff-note" id="gradeDiffNote"></p>
     <div class="card table-scroll">
       <table class="grid" id="gradeTable"></table>
     </div>
@@ -945,6 +952,20 @@ function effectiveDept(person) {
 /* ============================================================
  * 5. 부서 표시 순서
  * ============================================================ */
+// 인원이 0이어도 행을 유지할 '좌석' 부서(대표이사·본부장).
+//   부서마스터(조회일 기준)에서 본부 헤더(부서명===본부) 또는 기관장(대표이사 등)을 추출.
+function seatDepts(asOf) {
+  const out = [], seen = new Set();
+  for (const [, arr] of state.deptMaster) {
+    let e = null;
+    for (const row of arr) { if (row.적용일 <= asOf) e = row; else break; }  // 조회일 ≤ 최신, 미래 부서는 제외
+    if (!e || !e.부서명 || seen.has(e.부서명)) continue;
+    const isBonbuHead = e.부서명 === e.본부;          // 본부장 좌석(본부 헤더 행)
+    const isHead = /대표이사|이사장|원장/.test(e.부서명); // 기관장 좌석
+    if (isBonbuHead || isHead) { out.push({ dept: e.부서명, 본부: e.본부, 표시순서: e.표시순서 }); seen.add(e.부서명); }
+  }
+  return out;
+}
 function deptOrder(roster) {
   // 1순위: DEPT_ORDER 로 부서 순서를 완전히 직접 지정한 경우
   if (DEPT_ORDER.length) {
@@ -981,6 +1002,17 @@ function deptOrder(roster) {
     }
   }
 
+  // 인원이 0이어도 대표이사·본부장 좌석은 행 유지(부서마스터 기준으로 강제 포함)
+  const seats = seatDepts(state.asOf);
+  for (const s of seats) {
+    if (!deptSeen.has(s.dept)) deptSeen.set(s.dept, idx++);
+    if (!deptBonbu.has(s.dept)) deptBonbu.set(s.dept, s.본부 || "");
+    if (s.표시순서 != null) {
+      const cur = deptNum.get(s.dept);
+      if (cur == null || s.표시순서 < cur) deptNum.set(s.dept, s.표시순서);
+    }
+  }
+
   // 본부 표시 순서 (BONBU_ORDER 우선, 없으면 데이터 등장순)
   // 본부명은 대소문자·공백 무시로 비교 (mice/MICE, 띄어쓰기 차이 흡수)
   const normBonbu = (b) => String(b || "").replace(/\s+/g, "").toLowerCase();
@@ -1002,7 +1034,7 @@ function deptOrder(roster) {
     const b = deptBonbu.get(d);
     return (b === "" || b == null) ? 1 : 0;
   };
-  const depts = [...new Set(roster.map(effectiveDept))];
+  const depts = [...new Set([...roster.map(effectiveDept), ...seats.map(s => s.dept)])];
   return depts.sort((a, b) => {
     const la = level(a), lb = level(b);
     if (la !== lb) return la - lb;
@@ -1119,9 +1151,21 @@ function buildGradePivot(roster) {
 /* ============================================================
  * 8. 렌더링 — 일일표
  * ============================================================ */
-function numCell(v, cls) {
+// 변동 표시 안내 캡션 갱신
+function updateDiffNote(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  if (state.diffDate) {
+    el.className = "diff-note";
+    el.innerHTML = `<span class="box"></span> 직전 발령 시점(${escapeHtml(state.diffDate)}) 대비 인원이 바뀐 칸`;
+  } else {
+    el.className = "diff-note empty";
+    el.innerHTML = "· 직전 발령 시점이 없어 변동 표시 없음(가장 이른 시점)";
+  }
+}
+function numCell(v, cls, chg) {
   const z = (v === 0) ? " zero" : "";
-  return `<td class="num${z}${cls ? " " + cls : ""}">${v}</td>`;
+  return `<td class="num${z}${cls ? " " + cls : ""}${chg ? " chg" : ""}">${v}</td>`;
 }
 function deptCell(name, clickable) {
   const cls = "dept" + (clickable ? " clickable" : "");
@@ -1133,6 +1177,14 @@ function renderDaily() {
   const roster = state.rosterCache;
   const pivot = buildDailyPivot(roster);
   const t = document.getElementById("dailyTable");
+  // 직전 발령 시점 대비 변동 비교용 기준 피벗(부서명 → 행)
+  const baseMap = new Map();
+  if (state.diffRoster) {
+    const bp = buildDailyPivot(state.diffRoster);
+    for (const br of bp.rows) baseMap.set(br.dept, br);
+    baseMap.set("합계", bp.total);
+  }
+  updateDiffNote("dailyDiffNote");
 
   let head = `<thead>
     <tr class="group">
@@ -1147,21 +1199,25 @@ function renderDaily() {
   head += `<th class="sep-left e-lav esub">계</th></tr></thead>`;
 
   const renderRow = (r, isTotal) => {
+    const b = baseMap.size ? baseMap.get(r.dept) : null;       // 기준(직전 발령) 행, 없으면 0으로 간주
+    const hasBase = baseMap.size > 0;
+    const dEmp = (e, g) => hasBase && (r.row.emp[e][g] !== (b ? b.row.emp[e][g] : 0));
+    const dHold = (h) => hasBase && (r.row.hold[h] !== (b ? b.row.hold[h] : 0));
     const bcls = isTotal ? "" : (r.dept === "대표이사" ? " bb-bot" : (/본부$/.test(r.dept) ? " bb-top" : ""));
     let html = `<tr class="${isTotal ? "total" : ""}${bcls}">`;
     html += deptCell(r.dept, !isTotal);
     for (const e of EMP_ORDER) {
       const c = r.row.emp[e];
-      html += numCell(c.남, "sep-left") + numCell(c.여) + numCell(c.남 + c.여, EMP_CLS[e] + " esub");
+      html += numCell(c.남, "sep-left", dEmp(e, "남")) + numCell(c.여, "", dEmp(e, "여")) + numCell(c.남 + c.여, EMP_CLS[e] + " esub", dEmp(e, "남") || dEmp(e, "여"));
     }
-    html += numCell(r.subM, "sep-left") + numCell(r.subF) + numCell(r.subtotal, "e-yel esub");
+    html += numCell(r.subM, "sep-left", hasBase && r.subM !== (b ? b.subM : 0)) + numCell(r.subF, "", hasBase && r.subF !== (b ? b.subF : 0)) + numCell(r.subtotal, "e-yel esub", hasBase && r.subtotal !== (b ? b.subtotal : 0));
     for (let i = 0; i < HOLD_ORDER.length; i++) {
       const h = HOLD_ORDER[i];
       const v = r.row.hold[h];
-      html += `<td class="num${v === 0 ? " zero" : " warn-num"}${i === 0 ? " sep-left" : ""}">${v}</td>`;
+      html += `<td class="num${v === 0 ? " zero" : " warn-num"}${i === 0 ? " sep-left" : ""}${dHold(h) ? " chg" : ""}">${v}</td>`;
     }
-    html += `<td class="num sep-left e-lav esub${r.row.holdTotal === 0 ? " zero" : " warn-num"}">${r.row.holdTotal}</td>`;
-    html += `<td class="num cur sep-left e-tan esub">${r.current}</td>`;
+    html += `<td class="num sep-left e-lav esub${r.row.holdTotal === 0 ? " zero" : " warn-num"}${hasBase && r.row.holdTotal !== (b ? b.row.holdTotal : 0) ? " chg" : ""}">${r.row.holdTotal}</td>`;
+    html += `<td class="num cur sep-left e-tan esub${hasBase && r.current !== (b ? b.current : 0) ? " chg" : ""}">${r.current}</td>`;
     html += `</tr>`;
     return html;
   };
@@ -1182,6 +1238,13 @@ function renderGrade() {
   const roster = state.rosterCache;
   const pivot = buildGradePivot(roster);
   const t = document.getElementById("gradeTable");
+  const baseMap = new Map();
+  if (state.diffRoster) {
+    const bp = buildGradePivot(state.diffRoster);
+    for (const br of bp.rows) baseMap.set(br.dept, br);
+    baseMap.set("합계", bp.total);
+  }
+  updateDiffNote("gradeDiffNote");
 
   let head = `<thead><tr class="group"><th class="dept" rowspan="2">부서</th>`;
   const gcls = (g) => (g === "전문직" ? "e-lav" : "e-gen");   // 임원~6급=파랑, 전문직=연보라
@@ -1194,18 +1257,23 @@ function renderGrade() {
   head += `<th class="sep-left">남</th><th>여</th><th class="e-pink esub">계</th>`;
   head += `<th class="sep-left">남</th><th>여</th><th class="e-gry2 esub">계</th></tr></thead>`;
 
-  // 남/여 칸은 흰색, '계' 칸에만 색 (cls=색 클래스)
-  const trio = (o, cls) => numCell(o.남, "sep-left") + numCell(o.여) + numCell(o.계, "cur " + cls + " esub");
-  const trioG = (cell, cls) => numCell(cell.남, "sep-left") + numCell(cell.여) + numCell(cell.남 + cell.여, cls + " esub");
+  // 남/여 칸은 흰색, '계' 칸에만 색 (cls=색 클래스). bo=기준값(없으면 null→변동표시 안 함)
+  const trio = (o, cls, bo) => numCell(o.남, "sep-left", bo && o.남 !== bo.남) + numCell(o.여, "", bo && o.여 !== bo.여) + numCell(o.계, "cur " + cls + " esub", bo && o.계 !== bo.계);
+  const trioG = (cell, cls, bc) => numCell(cell.남, "sep-left", bc && cell.남 !== bc.남) + numCell(cell.여, "", bc && cell.여 !== bc.여) + numCell(cell.남 + cell.여, cls + " esub", bc && (cell.남 + cell.여) !== (bc.남 + bc.여));
+  const Z2 = { 남: 0, 여: 0 }, Z3 = { 남: 0, 여: 0, 계: 0 };
 
   const renderRow = (r, isTotal) => {
+    const hasBase = baseMap.size > 0;
+    const b = hasBase ? baseMap.get(r.dept) : null;           // 새로 생긴 부서면 b=null → 기준 0
+    const bg = (g) => !hasBase ? null : (b ? b.row.grade[g] : Z2);
+    const bo = (k) => !hasBase ? null : (b ? b[k] : Z3);
     const bcls = isTotal ? "" : (r.dept === "대표이사" ? " bb-bot" : (/본부$/.test(r.dept) ? " bb-top" : ""));
     let html = `<tr class="${isTotal ? "total" : ""}${bcls}">`;
     html += deptCell(r.dept, !isTotal);
-    for (const g of GRADE_ORDER) html += trioG(r.row.grade[g], gcls(g));
-    html += trio(r.subtotal, "e-gig");
-    html += trio(r.gigan, "e-pink");
-    html += trio(r.total, "e-gry2");
+    for (const g of GRADE_ORDER) html += trioG(r.row.grade[g], gcls(g), bg(g));
+    html += trio(r.subtotal, "e-gig", bo("subtotal"));
+    html += trio(r.gigan, "e-pink", bo("gigan"));
+    html += trio(r.total, "e-gry2", bo("total"));
     html += `</tr>`;
     return html;
   };
@@ -1641,8 +1709,22 @@ function setAsOf(iso, syncSlider) {
   }
   recompute();
 }
+// 조회일 현재 상태를 만든 '가장 최근 발령 시점'의 바로 직전 발령 시점.
+// (없으면 null → 비교/변동표시 안 함). orderDates 는 [시작일, ...발령일] 오름차순.
+function prevBoundaryDate(asOf) {
+  const ds = state.orderDates || [];
+  let cur = null;
+  for (const d of ds) { if (d <= asOf) cur = d; else break; }
+  if (cur == null) return null;
+  let prev = null;
+  for (const d of ds) { if (d < cur) prev = d; else break; }
+  return prev;
+}
 function recompute() {
   state.rosterCache = rosterAsOf(state.asOf);
+  // 직전 발령 시점 대비 변동 표시용 기준 명부
+  state.diffDate = prevBoundaryDate(state.asOf);
+  state.diffRoster = state.diffDate ? rosterAsOf(state.diffDate) : null;
   renderKPI(state.rosterCache);
   renderDaily();
   renderCenters(state.rosterCache);
