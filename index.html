@@ -1492,7 +1492,10 @@ function jhQuotaRec(q){
   }
   R.sep = q["별도직군"]||0; R.gigan = q["기간제"]||0; R.proAgg = q["전문직"]||0;
   R.genSub = JH_GEN.reduce((s,k)=>s+R[k],0);
-  R.proSub = JH_PRO.reduce((s,k)=>s+R[k],0) + R.proAgg;
+  // 전문직 정원 소계: 개별 직급(가~라급)이 입력돼 있으면 그 합, 없으면 '전문직' 합계행 사용.
+  // (개별행과 '전문직' 합계행을 둘 다 더해 중복 합산되던 버그 수정)
+  const proIndiv = JH_PRO.reduce((s,k)=>s+R[k],0);
+  R.proSub = proIndiv > 0 ? proIndiv : R.proAgg;
   R.total = R.genSub + R.proSub + R.sep; R.grand = R.total + R.gigan;
   return R;
 }
