@@ -129,7 +129,7 @@ function countHead(roster,includeHold){
   for(const p of roster){
     if(!includeHold&&p.상태!=="재직")continue;
     const e=p.고용형태;
-    if(e==="개방형"||e==="별도직군"||/전문위원|별도직군/.test(String(p.비고||""))){H.byeoldo++;continue;}
+    if(/전문위원|별도직군/.test(String(p.비고||""))){H.byeoldo++;continue;}   // 별도직군 = 비고 표시만으로 판정(직급 통계서 제외)
     if(e==="기간제"){H.gigan++;continue;}
     if(e==="전문직"){const s=profGrade(p.직급);if(s)H.prof[s]++;else H.profEtc++;continue;}
     const g=genGrade(p.직급);if(g)H.gen[g]++;else H.genEtc++;   // 일반직+임원

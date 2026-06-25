@@ -1409,7 +1409,7 @@ function jhCountHead(roster){
   const H = {}; [...JH_GEN, ...JH_PRO].forEach(k => H[k]=0); H.sep=0; H.gigan=0; H.genEtc=0; H.proEtc=0;
   for(const p of roster){
     const e = p.고용형태;
-    if(e === "개방형" || /전문위원|별도직군/.test(String(p.비고||""))){ H.sep++; continue; }
+    if(/전문위원|별도직군/.test(String(p.비고||""))){ H.sep++; continue; }   // 별도직군 = 비고 표시만으로 판정(직급 통계서 제외)
     if(e === "기간제"){ H.gigan++; continue; }
     if(e === "전문직"){ const s=jhProfGrade(p.직급); if(s) H[s]++; else H.proEtc++; continue; }
     const g = jhGenGrade(p.직급); if(g) H[g]++; else H.genEtc++;   // 일반직 + 임원
