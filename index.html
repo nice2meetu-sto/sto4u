@@ -1770,8 +1770,9 @@ function validateDeptCodes() {
 }
 function afterLoad() {
   buildTimeline();
-  // 조회 기본 기준일: 시작일(2023-12-30)로 고정
-  setAsOf(BASE_DATE, true);
+  // 조회 기본 기준일: 오늘(KST). 단 시작일(2023-12-30) 이전이면 시작일로.
+  const today = toISODate(new Date());
+  setAsOf(today < BASE_DATE ? BASE_DATE : today, true);
   // 등록 탭 기본값 — 발령일은 오늘
   const regDate = document.getElementById("regDate");
   if (regDate && !regDate.value) regDate.value = toISODate(new Date());

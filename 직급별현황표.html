@@ -107,7 +107,7 @@ table.gg-list thead th{background:#f0f1f6;font-weight:700;position:sticky;top:0}
  * ============================================================ */
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycby9YvceUjbNbgoGmxPlwQ3wU7hFxbFZ4DQjhQMVqOXIUGjeDdTV-0oZx1T30MlHxN2P/exec";
 const BASE_DATE = "2023-12-30";
-const DEFAULT_DATE = "2023-12-30";
+const DEFAULT_DATE = (() => { const t = toISODate(new Date()); return t < BASE_DATE ? BASE_DATE : t; })();  // 기본: 오늘(KST)
 const HOLD_BUCKET_MODE = "A";
 const HOLD_BUCKET_DEPT = "인재경영팀(임)";
 const BONBU_ORDER = ["대표이사실","직속부서","기획경영본부","국제관광MICE본부","관광산업본부"];

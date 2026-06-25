@@ -67,7 +67,7 @@ table.jh td.neg{color:var(--warn);font-weight:600}                          /* �
 const CONFIG = {
   SCRIPT_URL: "https://script.google.com/macros/s/AKfycby9YvceUjbNbgoGmxPlwQ3wU7hFxbFZ4DQjhQMVqOXIUGjeDdTV-0oZx1T30MlHxN2P/exec",  // 비우면 데모. 다른 시스템에 심을 땐 그 시스템 API로 교체.
   BASE_DATE: "2023-12-30",
-  DEFAULT_DATE: "2023-12-30",
+  DEFAULT_DATE: (() => { const t = new Date(Date.now() + 9*3600*1000).toISOString().slice(0,10); return t < "2023-12-30" ? "2023-12-30" : t; })(),  // 기본: 오늘(KST)
   QUOTA_LABEL_COL: "직급",
   QUOTA_VALUE_COL: "정원(명)",
   INCLUDE_HOLD: true              // 현원에 휴직 등 사고내역 포함
