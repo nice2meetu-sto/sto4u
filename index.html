@@ -835,7 +835,7 @@ function rosterAsOf(baseDate) {
   const locOf = p => p["근무지"] ?? p["사업장"] ?? "";
 
   // 4-1. 기초명부에서 '조회일 현재 재직'인 사람만 적재
-  //   재직 = 입사일 ≤ 조회일  AND  (퇴사일 없음 OR 조회일 < 퇴사일)   ※ 퇴사일 당일 제외
+  //   재직 = 입사일 ≤ 조회일  AND  (퇴사일 없음 OR 조회일 ≤ 퇴사일)   ※ 퇴사일(마지막 근무일) 당일까지 재직
   const roster = new Map();
   for (const p of state.base) {
     const code = idOf(p);
@@ -843,7 +843,7 @@ function rosterAsOf(baseDate) {
     const hire = toISODate(p["입사일"]);
     const leave = toISODate(p["퇴사일"]);
     if (hire && hire > baseIso) continue;     // 아직 입사 전
-    if (leave && leave <= baseIso) continue;  // 이미 퇴사 (퇴사일 당일부터 제외)
+    if (leave && leave < baseIso) continue;   // 이미 퇴사 (퇴사일 다음날부터 제외, 퇴사일 당일은 재직)
     const fb = parseDept(p["부서"]);          // (선택) 기초명부에 부서 열이 있으면 초기값
     roster.set(code, {
       사원코드: code,
@@ -877,7 +877,7 @@ function rosterAsOf(baseDate) {
   // 4-3. 발령 순차 적용
   //   입/퇴사는 기초명부 날짜가 1차. 단, 인사발령의 입사/퇴사 행도 함께 인정(호환):
   //   - 입사: 기초명부에 아직 없는 신규자면 발령정보로 추가
-  //   - 퇴사: 해당 발령일부터 집계 제외
+  //   - 퇴사: 발령일(=마지막 근무일) 다음날부터 집계 제외(발령일 당일은 재직)
   for (const o of orders) {
     const code = idOf(o);
     if (!code) continue;
@@ -885,7 +885,7 @@ function rosterAsOf(baseDate) {
     const oDate = toISODate(o["발령일"]);
     const newEmp = o["변경고용형태"] ? normEmp(o["변경고용형태"]) : null;
 
-    if (type === "퇴사") { roster.delete(code); continue; }
+    if (type === "퇴사") { if (oDate < baseIso) roster.delete(code); continue; }  // 발령일(=마지막 근무일) 당일은 재직, 다음날부터 제외
 
     if (type === "입사" && !roster.has(code)) {
       roster.set(code, {
@@ -1991,9 +1991,9 @@ function runSelfTests() {
   const rMid = rosterAsOf("2024-01-14");
   assert("boundary: 입사일 전(2024-01-14) E007 미반영", !rMid.find(p => p.사원코드 === "E007"), "E007 present");
   assert("boundary: 입사일 당일(2024-01-15) E007 반영", !!rosterAsOf("2024-01-15").find(p => p.사원코드 === "E007"), "E007 absent");
-  // 퇴사일 경계: 퇴사일(2024-04-01) 전날 재직, 당일부터 제외
-  assert("boundary: 퇴사일 전(2024-03-31) E004 재직", !!rosterAsOf("2024-03-31").find(p => p.사원코드 === "E004"), "E004 absent");
-  assert("boundary: 퇴사일 당일(2024-04-01) E004 제외", !rosterAsOf("2024-04-01").find(p => p.사원코드 === "E004"), "E004 present");
+  // 퇴사일 경계: 퇴사일(2024-04-01)=마지막 근무일 → 당일 재직, 다음날부터 제외
+  assert("boundary: 퇴사일 당일(2024-04-01) E004 재직", !!rosterAsOf("2024-04-01").find(p => p.사원코드 === "E004"), "E004 absent");
+  assert("boundary: 퇴사일 다음날(2024-04-02) E004 제외", !rosterAsOf("2024-04-02").find(p => p.사원코드 === "E004"), "E004 present");
 
   // (4) 복합 발령: 한 행에 복직 + 부서이동 + 근무지이동이 같이 들어와도 모두 반영
   state.deptMaster = buildDeptMaster([
