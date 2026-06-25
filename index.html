@@ -249,6 +249,10 @@
   table.grid td.num.chg { box-shadow: inset 0 0 0 2px var(--main); border-radius: 3px; }
   .diff-note { font-size: 11px; color: var(--main); font-weight: 600; margin: 0 0 8px; }
   .diff-note .box { display:inline-block; width:11px; height:11px; box-shadow: inset 0 0 0 2px var(--main); border-radius:3px; vertical-align:-2px; margin:0 3px; }
+  .diff-note .diff-toggle { color:#41434f; cursor:pointer; user-select:none; }
+  .diff-note .diff-toggle input { vertical-align:-2px; margin-right:4px; cursor:pointer; }
+  .diff-note .sepbar { color: var(--border); margin:0 4px; }
+  .diff-note .sub { color: var(--muted); font-weight: 400; }
   .diff-note.empty { color: var(--muted); font-weight: 500; }
   /* 컬럼 그룹 색 (연한 파스텔) — 일일/직급별 공통. .esub = 소계/계 약간 진하게 */
   table.grid .e-gen { background:#eef4fc; }  table.grid .e-gen.esub { background:#e0ebf9; }   /* 파랑(일반직/정원내) */
@@ -473,8 +477,8 @@
       <input type="date" id="datePicker" max="2100-12-31" />
     </div>
     <div class="group">
-      <button id="prevOrderBtn" title="이전 발령일로">◀ 발령</button>
-      <button id="nextOrderBtn" title="다음 발령일로">발령 ▶</button>
+      <button id="prevOrderBtn" title="이전 변동 시점으로 (발령·입/퇴사)">◀ 변동</button>
+      <button id="nextOrderBtn" title="다음 변동 시점으로 (발령·입/퇴사)">변동 ▶</button>
     </div>
     <div class="slider-wrap">
       <label for="timeline">타임라인</label>
@@ -706,7 +710,8 @@ const state = {
   lastSync: null,   // 마지막 동기화 시각
   source: "none",   // "remote" | "demo"
   asOf: BASE_DATE,  // 현재 조회 기준일
-  orderDates: [],   // 슬라이더용 정렬된 고유 발령일
+  orderDates: [],   // 슬라이더용 정렬된 고유 변동 시점(발령일 + 입/퇴사일)
+  showDiff: true,   // 직전 변동 시점 대비 변동 칸(파란 테두리) 표시 on/off
   activeTab: "daily",
   rosterCache: []   // 현재 기준일 명부 (재정렬/검색용)
 };
@@ -731,6 +736,13 @@ function toISODate(v) {
   // ISO with time
   if (/^\d{4}-\d{2}-\d{2}T/.test(s)) return s.slice(0, 10);
   return s;
+}
+// yyyy-MM-dd → 다음날 yyyy-MM-dd (순수 날짜 연산, TZ 무관)
+function nextDay(iso) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso || ""));
+  if (!m) return "";
+  const d = new Date(Date.UTC(+m[1], +m[2] - 1, +m[3] + 1));
+  return d.toISOString().slice(0, 10);
 }
 function nowKSTString() {
   try {
@@ -1152,17 +1164,27 @@ function buildGradePivot(roster) {
 /* ============================================================
  * 8. 렌더링 — 일일표
  * ============================================================ */
-// 변동 표시 안내 캡션 갱신
+// 변동 표시 안내 캡션 + on/off 토글 갱신
 function updateDiffNote(id) {
   const el = document.getElementById(id);
   if (!el) return;
-  if (state.diffDate) {
+  const toggle = `<label class="diff-toggle"><input type="checkbox" ${state.showDiff ? "checked" : ""} onchange="toggleDiff(this.checked)"> 변동 표시</label>`;
+  if (!state.showDiff) {
+    el.className = "diff-note empty";
+    el.innerHTML = toggle;
+  } else if (state.diffDate) {
     el.className = "diff-note";
-    el.innerHTML = `<span class="box"></span> 직전 발령 시점(${escapeHtml(state.diffDate)}) 대비 인원이 바뀐 칸`;
+    el.innerHTML = `${toggle} <span class="sepbar">|</span> <span class="box"></span> 직전 변동 시점(${escapeHtml(state.diffDate)}) 대비 인원이 바뀐 칸 <span class="sub">(발령·입/퇴사 포함)</span>`;
   } else {
     el.className = "diff-note empty";
-    el.innerHTML = "· 직전 발령 시점이 없어 변동 표시 없음(가장 이른 시점)";
+    el.innerHTML = `${toggle} <span class="sepbar">|</span> 직전 변동 시점이 없어 표시할 변동 없음(가장 이른 시점)`;
   }
+}
+// 변동 표시 on/off — 두 표 모두 갱신(캡션 체크박스 동기화)
+function toggleDiff(on) {
+  state.showDiff = !!on;
+  renderDaily();
+  renderGrade();
 }
 function numCell(v, cls, chg) {
   const z = (v === 0) ? " zero" : "";
@@ -1178,9 +1200,9 @@ function renderDaily() {
   const roster = state.rosterCache;
   const pivot = buildDailyPivot(roster);
   const t = document.getElementById("dailyTable");
-  // 직전 발령 시점 대비 변동 비교용 기준 피벗(부서명 → 행)
+  // 직전 변동 시점 대비 변동 비교용 기준 피벗(부서명 → 행)
   const baseMap = new Map();
-  if (state.diffRoster) {
+  if (state.showDiff && state.diffRoster) {
     const bp = buildDailyPivot(state.diffRoster);
     for (const br of bp.rows) baseMap.set(br.dept, br);
     baseMap.set("합계", bp.total);
@@ -1240,7 +1262,7 @@ function renderGrade() {
   const pivot = buildGradePivot(roster);
   const t = document.getElementById("gradeTable");
   const baseMap = new Map();
-  if (state.diffRoster) {
+  if (state.showDiff && state.diffRoster) {
     const bp = buildGradePivot(state.diffRoster);
     for (const br of bp.rows) baseMap.set(br.dept, br);
     baseMap.set("합계", bp.total);
@@ -1739,6 +1761,16 @@ function buildTimeline() {
   for (const o of state.orders) {
     const d = toISODate(o["발령일"]);
     if (d) set.add(d);
+  }
+  // 입/퇴사는 인사발령이 아니라 기초명부의 입사일·퇴사일로 자동 처리되므로,
+  // 그 날짜도 '변동 시점'에 포함해야 슬라이더 이동·변동 표시가 정확해진다.
+  //   입사: 입사일 당일부터 집계됨 → 입사일이 변동 시점
+  //   퇴사: 퇴사일(마지막 근무일) 당일까지 재직 → 다음날부터 빠짐 → 퇴사일+1 이 변동 시점
+  for (const p of state.base) {
+    const hire = toISODate(p["입사일"]);
+    if (hire && hire > BASE_DATE) set.add(hire);
+    const leave = toISODate(p["퇴사일"]);
+    if (leave && leave >= BASE_DATE) { const nx = nextDay(leave); if (nx) set.add(nx); }
   }
   state.orderDates = [...set].sort();
   const slider = document.getElementById("timeline");
