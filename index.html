@@ -253,7 +253,7 @@
   .diff-note .diff-toggle input { vertical-align:-2px; margin-right:4px; cursor:pointer; }
   .diff-note .sepbar { color: var(--border); margin:0 4px; }
   .diff-note .sub { color: var(--muted); font-weight: 400; }
-  .diff-note.empty { color: var(--muted); font-weight: 500; }
+  .diff-note.off { color: var(--muted); font-weight: 500; }
   /* 컬럼 그룹 색 (연한 파스텔) — 일일/직급별 공통. .esub = 소계/계 약간 진하게 */
   table.grid .e-gen { background:#eef4fc; }  table.grid .e-gen.esub { background:#e0ebf9; }   /* 파랑(일반직/정원내) */
   table.grid .e-pro { background:#fdf2e8; }  table.grid .e-pro.esub { background:#fbe7d4; }   /* 주황(전문직) */
@@ -423,8 +423,8 @@
   /* ---------- 센터별 근무자 ---------- */
   .center-card { padding: 16px 18px; margin-top: 16px; }
   .center-card h3 { margin: 0 0 12px; font-size: 14px; }
-  /* 너비에 맞춰 칸 수가 바뀌되, 모든 칸(둘째 줄 포함)은 같은 너비 */
-  .center-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(158px, 1fr)); gap: 10px; align-items: start; }
+  /* 한 줄 최대 5칸. 좁아지면 칸 수가 줄되 모든 칸(둘째 줄 포함)은 같은 너비 */
+  .center-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(max(158px, calc((100% - 40px) / 5)), 1fr)); gap: 10px; align-items: start; }
   .center-box { border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
   .center-box .ch { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 12px; cursor: pointer; background: #fafbfd; }
   .center-box .ch:hover { background: var(--main-soft); }
@@ -1170,13 +1170,13 @@ function updateDiffNote(id) {
   if (!el) return;
   const toggle = `<label class="diff-toggle"><input type="checkbox" ${state.showDiff ? "checked" : ""} onchange="toggleDiff(this.checked)"> 변동 표시</label>`;
   if (!state.showDiff) {
-    el.className = "diff-note empty";
+    el.className = "diff-note off";
     el.innerHTML = toggle;
   } else if (state.diffDate) {
     el.className = "diff-note";
     el.innerHTML = `${toggle} <span class="sepbar">|</span> <span class="box"></span> 직전 변동 시점(${escapeHtml(state.diffDate)}) 대비 인원이 바뀐 칸 <span class="sub">(발령·입/퇴사 포함)</span>`;
   } else {
-    el.className = "diff-note empty";
+    el.className = "diff-note off";
     el.innerHTML = `${toggle} <span class="sepbar">|</span> 직전 변동 시점이 없어 표시할 변동 없음(가장 이른 시점)`;
   }
 }
