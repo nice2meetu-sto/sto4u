@@ -858,6 +858,7 @@ function rosterAsOf(baseDate) {
       성별: p["성별"] || "",
       근무지: locOf(p),
       입사일: hire,
+      비고: p["비고"] || "",
       상태: normStatus(p["상태"])             // (선택) 초기 상태. 없으면 재직
     });
   }
@@ -892,7 +893,7 @@ function rosterAsOf(baseDate) {
         부서코드: "", _fbDept: "", _fbBonbu: "", _fbOrder: null,
         직급: o["변경직급"] || "", 직책: o["변경직책"] || o["직책변경"] || "", 고용형태: newEmp || "일반직",
         성별: o["성별"] || o["변경성별"] || "", 근무지: o["변경근무지"] || "",
-        입사일: oDate, 상태: "재직"
+        입사일: oDate, 비고: o["비고"] || "", 상태: "재직"
       });
     }
     if (!roster.has(code)) continue;  // 재직 중 아닌(미입사/타사) 대상 발령은 무시
@@ -913,6 +914,8 @@ function rosterAsOf(baseDate) {
     if (o["변경직책"] || o["직책변경"]) pr.직책 = o["변경직책"] || o["직책변경"];
     if (o["변경근무지"]) pr.근무지 = o["변경근무지"];
     if (newEmp) pr.고용형태 = newEmp;
+    // 비고: '전문위원/별도직군' 표시는 발령 비고로도 부여 (덮어쓰지 않고 표시만 부여)
+    if (o["비고"] && /전문위원|별도직군/.test(String(o["비고"]))) pr.비고 = o["비고"];
   }
 
   // 4-4. 부서 속성 확정: 부서코드 → 부서마스터(조회일 기준) → 부서명/본부/표시순서
@@ -1406,8 +1409,8 @@ function jhCountHead(roster){
   const H = {}; [...JH_GEN, ...JH_PRO].forEach(k => H[k]=0); H.sep=0; H.gigan=0; H.genEtc=0; H.proEtc=0;
   for(const p of roster){
     const e = p.고용형태;
+    if(e === "개방형" || /전문위원|별도직군/.test(String(p.비고||""))){ H.sep++; continue; }
     if(e === "기간제"){ H.gigan++; continue; }
-    if(e === "개방형" || /별도직군/.test(String(p.비고||""))){ H.sep++; continue; }
     if(e === "전문직"){ const s=jhProfGrade(p.직급); if(s) H[s]++; else H.proEtc++; continue; }
     const g = jhGenGrade(p.직급); if(g) H[g]++; else H.genEtc++;   // 일반직 + 임원
   }

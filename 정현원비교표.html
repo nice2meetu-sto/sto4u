@@ -95,19 +95,20 @@ function rosterAsOf(base,orders,baseDate){
     const hire=iso(p["입사일"]),leave=iso(p["퇴사일"]);
     if(hire&&hire>b)continue;
     if(leave&&leave<=b)continue;
-    roster.set(code,{직급:p["직급"]||"",고용형태:normEmp(p["고용형태"]),상태:normStatus(p["상태"])});
+    roster.set(code,{직급:p["직급"]||"",고용형태:normEmp(p["고용형태"]),비고:p["비고"]||"",상태:normStatus(p["상태"])});
   }
   const ords=orders.map((o,i)=>({o,i})).filter(x=>iso(x.o["발령일"])&&iso(x.o["발령일"])<=b)
     .sort((a,c)=>{const x=iso(a.o["발령일"]),y=iso(c.o["발령일"]);return x<y?-1:x>y?1:a.i-c.i;}).map(x=>x.o);
   for(const o of ords){
     const code=idOf(o),type=normType(o["변동구분"]);
     if(type==="퇴사"){roster.delete(code);continue;}
-    if(type==="입사"&&!roster.has(code))roster.set(code,{직급:o["변경직급"]||"",고용형태:normEmp(o["변경고용형태"])||"일반직",상태:"재직"});
+    if(type==="입사"&&!roster.has(code))roster.set(code,{직급:o["변경직급"]||"",고용형태:normEmp(o["변경고용형태"])||"일반직",비고:o["비고"]||"",상태:"재직"});
     if(!roster.has(code))continue;
     const pr=roster.get(code);
     if(type==="휴직")pr.상태="휴직";else if(type==="파견")pr.상태="파견";else if(type==="복직")pr.상태="재직";
     if(o["변경직급"])pr.직급=o["변경직급"];
     if(o["변경고용형태"])pr.고용형태=normEmp(o["변경고용형태"]);
+    if(o["비고"]&&/전문위원|별도직군/.test(String(o["비고"])))pr.비고=o["비고"];
   }
   return [...roster.values()];
 }
@@ -128,8 +129,8 @@ function countHead(roster,includeHold){
   for(const p of roster){
     if(!includeHold&&p.상태!=="재직")continue;
     const e=p.고용형태;
+    if(e==="개방형"||e==="별도직군"||/전문위원|별도직군/.test(String(p.비고||""))){H.byeoldo++;continue;}
     if(e==="기간제"){H.gigan++;continue;}
-    if(e==="개방형"||e==="별도직군"){H.byeoldo++;continue;}
     if(e==="전문직"){const s=profGrade(p.직급);if(s)H.prof[s]++;else H.profEtc++;continue;}
     const g=genGrade(p.직급);if(g)H.gen[g]++;else H.genEtc++;   // 일반직+임원
   }
