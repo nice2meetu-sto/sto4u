@@ -419,8 +419,9 @@
   /* ---------- 센터별 근무자 ---------- */
   .center-card { padding: 16px 18px; margin-top: 16px; }
   .center-card h3 { margin: 0 0 12px; font-size: 14px; }
-  .center-grid { display: flex; flex-wrap: wrap; gap: 10px; }
-  .center-box { border: 1px solid var(--border); border-radius: 12px; min-width: 158px; flex: 1 1 158px; overflow: hidden; align-self: flex-start; }
+  /* 너비에 맞춰 칸 수가 바뀌되, 모든 칸(둘째 줄 포함)은 같은 너비 */
+  .center-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(158px, 1fr)); gap: 10px; align-items: start; }
+  .center-box { border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
   .center-box .ch { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 12px; cursor: pointer; background: #fafbfd; }
   .center-box .ch:hover { background: var(--main-soft); }
   .center-box .ch .cn { font-weight: 700; font-size: 13px; }
