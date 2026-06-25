@@ -1517,6 +1517,9 @@ function renderJeonghyeon(roster, asOf){
   const q = jhQuotaRec(quotaAsOf(state.quota, asOf));
   const c = jhCountHead(roster);
   const gsum = (rec,g) => g.reduce((s,k)=>s+(rec[k]||0),0);
+  // 전문직 정원이 '다+라' 그룹까지 나뉘어 입력된 시점은 가+나 / 다+라 두 칸으로,
+  // 통합(가~라 한 값) 시점은 가~라를 한 칸으로 표시 (정원·결원 행 공통)
+  const profSplit = ((q["다급"]||0)+(q["라급"]||0)) > 0;
   const head = `<thead>
     <tr><th rowspan="2" class="rl">구분</th>
       <th colspan="${JH_GEN.length+1}">일반직</th>
@@ -1531,8 +1534,13 @@ function renderJeonghyeon(roster, asOf){
     let s = `<tr class="${cls}"><td class="rl">${name}</td>`;
     JH_GEN.forEach(r => s += cell(rec[r]||0, false, false)); s += cell(rec.genSub||0, true, false);
     if(proMode === "group"){
-      JH_PRO_GROUPS.forEach((g,i) => { const v = isDiff ? (gsum(c,g)-gsum(q,g)) : gsum(rec,g);
-        s += `<td colspan="${g.length}" class="${i===0?'sep':''}${(isDiff&&v<0)?' neg':''}">${v}</td>`; });
+      if(profSplit){
+        JH_PRO_GROUPS.forEach((g,i) => { const v = isDiff ? (gsum(c,g)-gsum(q,g)) : gsum(rec,g);
+          s += `<td colspan="${g.length}" class="${i===0?'sep':''}${(isDiff&&v<0)?' neg':''}">${v}</td>`; });
+      } else {  // 통합 정원: 가~라 한 칸
+        const v = isDiff ? (gsum(c,JH_PRO)-gsum(q,JH_PRO)) : gsum(rec,JH_PRO);
+        s += `<td colspan="${JH_PRO.length}" class="sep${(isDiff&&v<0)?' neg':''}">${v}</td>`;
+      }
     } else { JH_PRO.forEach((r,i) => s += cell(rec[r]||0, false, i===0)); }
     s += cell(rec.proSub||0, true, false);
     s += cell(rec.sep||0, false, true) + cell(rec.total||0, true, true) + cell(rec.gigan||0, false, true) + cell(rec.grand||0, true, true);
