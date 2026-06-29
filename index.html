@@ -465,6 +465,7 @@
     <div style="display:flex; align-items:center; gap:14px;">
       <div id="syncInfo" class="sync"><span class="dot"></span><span id="syncText">초기화 중…</span></div>
       <button id="refreshBtn" class="primary">↻ 새로고침</button>
+      <button id="sheetBtn" title="원본 구글 시트 열기 (비밀번호 필요)">📄 구글 시트</button>
     </div>
   </header>
 
@@ -635,6 +636,9 @@
 // Apps Script 웹앱 배포 URL을 여기에 붙여넣으세요. (action=data 로 호출됨)
 // 비워두면 내장 데모 데이터로 동작합니다.
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycby9YvceUjbNbgoGmxPlwQ3wU7hFxbFZ4DQjhQMVqOXIUGjeDdTV-0oZx1T30MlHxN2P/exec";
+// 원본 구글 시트 (구글 시트 버튼 → 비밀번호 확인 후 새 탭으로 열기)
+const SHEET_URL = "https://docs.google.com/spreadsheets/d/1JsEod0DQlyfm7h0Jtr-wAnfLC7TjReZOlT_SQmWrvvI/edit?usp=sharing";
+const SHEET_PASSWORD = "stohr";
 
 // 기초명부 스냅샷 기준일 (이 날짜 이전 발령은 없음)
 const BASE_DATE = "2023-12-30";
@@ -1836,6 +1840,16 @@ function resolveDeptCodeByName(name, asOf) {
   }
   return best ? best.부서코드 : null;
 }
+// 구글 시트 버튼: 비밀번호 확인 후 새 탭으로 원본 시트 열기
+function openSheet() {
+  const pw = prompt("구글 시트 열람 비밀번호를 입력하세요.");
+  if (pw === null) return;                 // 취소
+  if (pw === SHEET_PASSWORD) {
+    window.open(SHEET_URL, "_blank", "noopener");
+  } else {
+    alert("비밀번호가 올바르지 않습니다.");
+  }
+}
 async function loadData() {
   setSync("loading", "동기화 중…");
   if (!SCRIPT_URL) {
@@ -1972,6 +1986,7 @@ function bindEvents() {
   document.getElementById("prevOrderBtn").onclick = () => stepOrderDate(-1);
   document.getElementById("nextOrderBtn").onclick = () => stepOrderDate(1);
   document.getElementById("refreshBtn").onclick = () => loadData();
+  document.getElementById("sheetBtn").onclick = () => openSheet();
   document.getElementById("rosterSearch").oninput = () => renderRoster();
   document.getElementById("filterEmp").onchange = () => renderRoster();
   document.getElementById("filterStatus").onchange = () => renderRoster();
