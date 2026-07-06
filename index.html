@@ -505,7 +505,7 @@
     <div class="card table-scroll">
       <table class="grid" id="dailyTable"></table>
     </div>
-    <p class="hint" style="margin-top:8px;">· 현재인원 = 합계 소계 − 사고내역 계 &nbsp;|&nbsp; 사고내역(휴직·휴가·파견·기타) 인원은 정원외 버킷 <b>인재경영팀(임)</b>으로 집계(모드 A). 부서명을 클릭하면 해당 기준일 구성원 명단을 볼 수 있습니다.</p>
+    <p class="hint" style="margin-top:8px;">· 현재인원 = 합계 소계 − 사고내역 계 &nbsp;|&nbsp; 사고내역(휴직·휴가·파견·기타) 인원은 정원외 버킷 <b id="daily-hint-bucket">인재경영팀(임)</b>으로 집계(모드 A). 부서명을 클릭하면 해당 기준일 구성원 명단을 볼 수 있습니다.</p>
 
     <div class="card center-card">
       <h3>센터별 근무자 현황 <span class="hint">(본사 제외 · 입사일 순 · <span style="background:#fff7d6;padding:0 4px;border-radius:3px;">기간제</span> · 센터 헤더 클릭 시 접기/펴기)</span></h3>
@@ -716,6 +716,7 @@ const state = {
   asOf: BASE_DATE,  // 현재 조회 기준일
   orderDates: [],   // 슬라이더용 정렬된 고유 변동 시점(발령일 + 입/퇴사일)
   showDiff: true,   // 직전 변동 시점 대비 변동 칸(파란 테두리) 표시 on/off
+  holdBucket: HOLD_BUCKET_DEPT,  // 정원외 버킷의 조회일 기준 현재 이름(부서마스터 이름 변경 시 따라감)
   activeTab: "daily",
   rosterCache: []   // 현재 기준일 명부 (재정렬/검색용)
 };
@@ -960,9 +961,17 @@ function rosterAsOf(baseDate) {
   return result;
 }
 
+// 정원외 버킷(인재경영팀(임))의 '조회일 기준' 현재 이름.
+//   버킷은 코드 상수(HOLD_BUCKET_DEPT)이지만, 부서마스터에서 이름이 바뀌면(예: 인사팀(임)) 따라간다.
+//   원래 이름으로 부서코드를 찾고(과거 이력으로도 매칭), 그 코드의 조회일 기준 최신 이름을 반환.
+function holdBucketName(asOf) {
+  const code = resolveDeptCodeByName(HOLD_BUCKET_DEPT, asOf);
+  if (code) { const m = resolveDept(code, asOf); if (m && m.부서명) return m.부서명; }
+  return HOLD_BUCKET_DEPT;
+}
 // 모드 A: 사고내역(상태≠재직) 인원의 집계상 소속 부서
 function effectiveDept(person) {
-  if (HOLD_BUCKET_MODE === "A" && person.상태 !== "재직") return HOLD_BUCKET_DEPT;
+  if (HOLD_BUCKET_MODE === "A" && person.상태 !== "재직") return state.holdBucket || HOLD_BUCKET_DEPT;
   return person.부서 || "(미지정)";
 }
 
@@ -984,6 +993,7 @@ function seatDepts(asOf) {
   return out;
 }
 function deptOrder(roster) {
+  const HB = state.holdBucket || HOLD_BUCKET_DEPT;   // 정원외 버킷의 조회일 기준 현재 이름
   // 1순위: DEPT_ORDER 로 부서 순서를 완전히 직접 지정한 경우
   if (DEPT_ORDER.length) {
     const set = new Set(DEPT_ORDER);
@@ -1001,13 +1011,13 @@ function deptOrder(roster) {
   const deptNum = new Map();   // 부서 → 표시순서(작은 값 우선)
   const deptSeen = new Map();
   // 정원외 버킷도 부서마스터에 (이름으로) 등록돼 있으면 본부·표시순서를 그대로 따른다.
-  const bm = resolveDeptCodeByName(HOLD_BUCKET_DEPT, state.asOf);
+  const bm = resolveDeptCodeByName(HB, state.asOf);
   const bucketMaster = bm ? resolveDept(bm, state.asOf) : null;
   let idx = 0;
   for (const p of roster) {
     const d = effectiveDept(p);
     if (!deptSeen.has(d)) deptSeen.set(d, idx++);
-    if (d === HOLD_BUCKET_DEPT) {
+    if (d === HB) {
       if (!deptBonbu.has(d)) deptBonbu.set(d, bucketMaster ? (bucketMaster.본부 || "") : null);
       if (bucketMaster && bucketMaster.표시순서 != null && !deptNum.has(d)) deptNum.set(d, bucketMaster.표시순서);
     } else {
@@ -1047,7 +1057,7 @@ function deptOrder(roster) {
 
   // 정렬 우선순위: ① 일반 본부 → ② 본부 미상 → ③ 정원외 버킷(부서마스터에 없을 때만 맨 끝)
   const level = (d) => {
-    if (d === HOLD_BUCKET_DEPT) return bucketMaster ? 0 : 2;  // 마스터에 있으면 일반 부서처럼 정렬
+    if (d === HB) return bucketMaster ? 0 : 2;  // 마스터에 있으면 일반 부서처럼 정렬
     const b = deptBonbu.get(d);
     return (b === "" || b == null) ? 1 : 0;
   };
@@ -1212,6 +1222,8 @@ function renderDaily() {
     baseMap.set("합계", bp.total);
   }
   updateDiffNote("dailyDiffNote");
+  const hb = document.getElementById("daily-hint-bucket");
+  if (hb) hb.textContent = state.holdBucket || HOLD_BUCKET_DEPT;
 
   let head = `<thead>
     <tr class="group">
@@ -1760,6 +1772,7 @@ function prevBoundaryDate(asOf) {
 }
 function recompute() {
   state.rosterCache = rosterAsOf(state.asOf);
+  state.holdBucket = holdBucketName(state.asOf);   // 정원외 버킷 이름을 조회일 기준으로 갱신
   // 직전 발령 시점 대비 변동 표시용 기준 명부
   state.diffDate = prevBoundaryDate(state.asOf);
   state.diffRoster = state.diffDate ? rosterAsOf(state.diffDate) : null;
