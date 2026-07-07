@@ -476,6 +476,7 @@
     <div class="group">
       <label for="datePicker">조회 기준일</label>
       <input type="date" id="datePicker" max="2100-12-31" />
+      <button id="todayBtn" title="오늘(KST) 기준으로">오늘</button>
     </div>
     <div class="group">
       <button id="prevOrderBtn" title="이전 변동 시점으로 (발령·입/퇴사)">◀ 변동</button>
@@ -1972,6 +1973,10 @@ function bindEvents() {
   document.getElementById("timeline").oninput = (e) => {
     const d = state.orderDates[+e.target.value];
     if (d) setAsOf(d, false);
+  };
+  document.getElementById("todayBtn").onclick = () => {
+    const today = toISODate(new Date());
+    setAsOf(today < BASE_DATE ? BASE_DATE : today, true);
   };
   document.getElementById("prevOrderBtn").onclick = () => stepOrderDate(-1);
   document.getElementById("nextOrderBtn").onclick = () => stepOrderDate(1);
