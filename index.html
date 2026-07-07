@@ -453,7 +453,6 @@
   table.jh2 td.neg { color: var(--warn); font-weight: 600; }
 
   /* ---------- 조직도 ---------- */
-  #panel-org .card{padding:14px 16px}
   .org-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px}
   .note{font-size:12px;color:var(--ink2);margin:0 0 14px}
   .org-legend{display:flex;gap:12px;font-size:11px;color:var(--ink2);flex-wrap:wrap;align-items:center}
@@ -463,8 +462,7 @@
   .org-chart{display:flex;flex-direction:column;gap:14px;align-items:center}
   .org-ceo,.org-jiksok{display:flex;justify-content:center;gap:10px;flex-wrap:wrap}
   .org-bonbus{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;width:100%;align-items:start}
-  .org-bonbu{background:transparent;border:none;padding:0;display:flex;flex-direction:column;gap:7px}
-  .org-bonbu-h{font-size:12px;font-weight:800;color:var(--ink2);letter-spacing:.02em;padding:0 2px}
+  .org-bonbu{border:1px solid var(--border);border-radius:14px;background:#fafbfc;padding:10px;display:flex;flex-direction:column;gap:8px}
   .org-team{border:1px solid var(--border);border-radius:12px;background:var(--card);overflow:hidden}
   .org-team.lead{border:2px solid var(--main)}
   .org-team.lead .org-team-h{background:var(--main-soft)}
@@ -596,7 +594,7 @@
 
   <!-- ③ 조직도 -->
   <section class="panel" id="panel-org">
-    <div class="card">
+    <div class="org-wrap">
       <div class="org-head">
         <h3 style="margin:0;font-size:15px">조직도 <span id="orgCaption" style="color:var(--ink2);font-weight:500;font-size:12px;margin-left:6px"></span></h3>
         <div class="org-legend"><span><i class="lg-ct"></i>기간제</span> <span>팀명 클릭 = 구성원 명단 · 이름 클릭 = 개인 상세</span></div>
@@ -1776,7 +1774,7 @@ function renderOrgChart(){
   if(jiksok.length) html += `<div class="org-jiksok">${jiksok.map(t=>orgTeamCard(t,byTeam)).join("")}</div>`;
   if(cols.length)   html += `<div class="org-bonbus">`+cols.map(b=>{
       const bt = rest.filter(t=> inGrid(t) && teamBonbu[t]===b);
-      return `<div class="org-bonbu"><div class="org-bonbu-h">${ggEsc(b)}</div>${bt.map(t=>orgTeamCard(t,byTeam)).join("")}</div>`;
+      return `<div class="org-bonbu">${bt.map(t=>orgTeamCard(t,byTeam)).join("")}</div>`;
     }).join("")+`</div>`;
   document.getElementById('orgChart').innerHTML = html || '<div class="org-empty">표시할 인원이 없습니다.</div>';
 }
