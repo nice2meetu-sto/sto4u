@@ -69,6 +69,8 @@
     margin: 0;
     font-weight: 700;
   }
+  .brand-h1 .xlink { font: inherit; color: #6b6f7a; opacity: .6; text-decoration: none; margin-left: 8px; }
+  .brand-h1 .xlink:hover { opacity: 1; color: #534AB7; text-decoration: underline; }
   .topbar .sub {
     font-size: 12px;
     color: var(--muted);
@@ -457,9 +459,11 @@
   <header class="topbar">
     <div class="brand">
       <div class="logo">STO</div>
-      <div>
-        <h1>서울관광재단 인력현황 관리 시스템</h1>
-        <div class="sub">2023.12.30 기준 명부 + 인사발령 리플레이 · 임의 기준일 현원 재구성</div>
+      <div style="display:flex;flex-direction:column;gap:2px">
+        <span style="font-size:11px;letter-spacing:.18em;color:#534AB7;font-weight:700">서울관광재단</span>
+        <h1 class="brand-h1" style="font-size:19px;font-weight:900;letter-spacing:-.01em;margin:0;font-family:'Noto Sans KR',sans-serif">
+          인력현황표<a class="xlink" href="https://nice2meetu-sto.github.io/hrtoday/">인원현황 대시보드</a>
+        </h1>
       </div>
     </div>
     <div style="display:flex; align-items:center; gap:14px;">
