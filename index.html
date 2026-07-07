@@ -699,6 +699,12 @@ const BONBU_ORDER = [
 // 부서 표시 순서를 완전히 직접 지정하고 싶으면 여기에 나열 (비워두면 본부순 → 부서 등장순)
 const DEPT_ORDER = [];
 
+// [센터별 근무자 현황] 센터(근무지) 표시 순서 — 여기에 적은 순서대로 먼저 나오고,
+// 목록에 없는 센터는 그 뒤에 명부 등장 순으로 붙습니다. 비워두면 전부 명부 등장 순.
+// 센터명은 근무지 값과 정확히 일치해야 합니다(공백 무시). 예:
+//   const CENTER_ORDER = ["다누림","명동","플라자","김포","인천T1","인천T2","컬처라운지","등산"];
+const CENTER_ORDER = [];
+
 /* ============================================================
  * 1. 전역 상태 (메모리 only — 브라우저 스토리지 사용 안 함)
  * ============================================================ */
@@ -1432,8 +1438,17 @@ function renderCenters(roster){
     groups.get(c).push(p);
   }
   const grid = document.getElementById("centerGrid");
+  // 센터 표시 순서: CENTER_ORDER 에 적힌 순서 먼저, 나머지는 명부 등장 순
+  const norm = s => String(s || "").replace(/\s+/g, "");
+  const rank = new Map(CENTER_ORDER.map((c, i) => [norm(c), i]));
+  const centers = [...groups.keys()].sort((a, b) => {
+    const ra = rank.has(norm(a)) ? rank.get(norm(a)) : Infinity;
+    const rb = rank.has(norm(b)) ? rank.get(norm(b)) : Infinity;
+    return ra !== rb ? ra - rb : 0;   // 동순위(둘 다 미지정)면 기존(명부 등장) 순서 유지
+  });
   let html = "";
-  for(const [center, members] of groups){
+  for(const center of centers){
+    const members = groups.get(center);
     if(center === "본사") continue;                  // 본사 제외
     members.sort((a,b) => String(a.입사일).localeCompare(String(b.입사일)));  // 입사일 오름차순
     const gigan = members.filter(m => m.고용형태 === "기간제").length;
