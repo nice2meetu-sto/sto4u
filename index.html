@@ -1988,7 +1988,7 @@ function recompute() {
   renderCenters(state.rosterCache);
   renderGrade();
   renderJeonghyeon(state.rosterCache, state.asOf);
-  renderOrgChart();
+  if (state.activeTab === "org") renderOrgChart();   // 조직도 탭이 열려 있을 때만 갱신(숨김이면 스킵)
   refreshRosterFilters();
   renderRoster();
 }
@@ -2195,6 +2195,7 @@ function bindEvents() {
       btn.classList.add("active");
       state.activeTab = btn.getAttribute("data-tab");
       document.getElementById("panel-" + state.activeTab).classList.add("active");
+      if (state.activeTab === "org") renderOrgChart();   // 조직도는 탭 열 때만 그림(지연 렌더)
     };
   });
   document.getElementById("datePicker").onchange = (e) => {
