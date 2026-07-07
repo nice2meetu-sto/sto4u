@@ -459,6 +459,7 @@
   .org-legend span{display:inline-flex;align-items:center;gap:5px}
   .org-legend i{width:11px;height:11px;border-radius:3px;display:inline-block;border:1px solid rgba(0,0,0,.08)}
   .org-legend .lg-ct{background:#fdf3cf}
+  .org-legend .lg-hj{background:#cfd2da}
   .org-chart{display:flex;flex-direction:column;gap:14px;align-items:center}
   .org-ceo,.org-jiksok{display:flex;justify-content:center;gap:10px;flex-wrap:wrap}
   .org-bonbus{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;width:100%;align-items:start}
@@ -481,7 +482,8 @@
   .org-chip .org-pos{font-size:10px;font-weight:700;color:var(--main);margin-right:3px}
   .org-chip em{font-style:normal;font-size:10px;font-weight:500;color:var(--ink2);margin-left:3px}
   .org-chip .org-chip-sub{font-size:11px;font-weight:700;color:var(--amber);white-space:nowrap;border-left:1px solid rgba(0,0,0,.14);padding-left:6px}
-  .org-chip.ct{background:#fdf3cf;border-color:#efe1a6}
+  .org-chip.ct{background:#fdf3cf;border-color:#efe1a6}   /* 기간제 */
+  .org-chip.hj{background:#cfd2da;border-color:#b9bec9}   /* 휴직 */
   .org-empty{font-size:12px;color:var(--ink2)}
   @media(max-width:640px){.org-bonbus{grid-template-columns:1fr}}
 
@@ -597,7 +599,7 @@
     <div class="org-wrap">
       <div class="org-head">
         <h3 style="margin:0;font-size:15px">조직도 <span id="orgCaption" style="color:var(--ink2);font-weight:500;font-size:12px;margin-left:6px"></span></h3>
-        <div class="org-legend"><span><i class="lg-ct"></i>기간제</span> <span>팀명 클릭 = 구성원 명단 · 이름 클릭 = 개인 상세</span></div>
+        <div class="org-legend"><span><i class="lg-hj"></i>휴직</span> <span><i class="lg-ct"></i>기간제</span> <span>팀명 클릭 = 구성원 명단 · 이름 클릭 = 개인 상세</span></div>
       </div>
       <p class="note" id="orgNote" style="display:none"></p>
       <div class="org-chart" id="orgChart"></div>
@@ -1715,7 +1717,7 @@ function orgMemberSort(a,b){
   return orgMemberRank(a)-orgMemberRank(b) || String(a.입사일||"").localeCompare(String(b.입사일||""));
 }
 function orgChip(p){
-  const cls = isContract(p) ? "ct" : "";
+  const cls = (String(p.상태||"").trim()==="휴직") ? "hj" : (isContract(p) ? "ct" : "");   // 휴직=짙은 회색, 기간제=노랑
   const jg = p.직급 ? `<em>${ggEsc(p.직급)}</em>` : "";
   const pos = String(p.직책||"").trim();
   const posTag = (pos && pos!=="팀원") ? `<span class="org-pos">${ggEsc(pos)}</span>` : "";
