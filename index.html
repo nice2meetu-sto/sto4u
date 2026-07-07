@@ -1759,7 +1759,13 @@ function renderOrgChart(){
     (byTeam[t] = byTeam[t] || []).push(p);
   }
   const teams = deptOrder(roster);                 // 본부순 → 표시순서로 정렬된 팀 목록(빈 좌석 포함)
-  teams.forEach(t=>{ if(teamBonbu[t]==null) teamBonbu[t]=""; });
+  // 구성원 0인 팀(빈 좌석)의 본부는 사람에서 못 읽으므로 부서마스터에서 해석 → 컬럼 이탈 방지
+  teams.forEach(t=>{
+    if(teamBonbu[t]!=null) return;
+    const code = resolveDeptCodeByName(t, state.asOf);
+    const m = code ? resolveDept(code, state.asOf) : null;
+    teamBonbu[t] = m ? String(m.본부||"").trim() : "";
+  });
   const isCEO = t => /대표이사/.test(t) || teamBonbu[t]==="대표이사실";
   const ceo = teams.filter(isCEO);
   const rest = teams.filter(t=>!isCEO(t));
