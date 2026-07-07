@@ -567,7 +567,7 @@
     <button class="tab-btn" data-tab="org">③ 조직도</button>
     <button class="tab-btn" data-tab="roster">④ 전체 재직자</button>
     <button class="tab-btn" data-tab="register">⑤ 인사발령 등록</button>
-    <button class="tab-btn" data-tab="hire">⑥ 입퇴사자 정보</button>
+    <button class="tab-btn" data-tab="hire">⑥ 입퇴사자 등록</button>
   </nav>
 
   <!-- ① 일일 -->
@@ -690,7 +690,7 @@
     <p class="hint" style="margin-top:8px;">· 사원코드는 <b>기타_사원코드</b> 탭(사원명→코드)에서 자동 변환됩니다. 변경부서는 입력한 부서명을 <b>발령일 기준</b>으로 부서마스터에서 부서코드로 변환해 <b>변경부서코드</b> 열에 저장합니다. 저장은 한 명당 1행씩 인사발령 시트에 추가됩니다.</p>
   </section>
 
-  <!-- ⑥ 입퇴사자 정보 -->
+  <!-- ⑥ 입퇴사자 등록 -->
   <section class="panel" id="panel-hire">
     <div class="card reg-card">
       <div class="reg-field" style="max-width:280px">
@@ -2000,7 +2000,7 @@ async function regSubmit() {
 }
 
 /* ============================================================
- * 11-3. 입퇴사자 정보 탭
+ * 11-3. 입퇴사자 등록 탭
  * ============================================================ */
 // 이름 → 기초명부 인원 목록 [{코드, 입사일, 명}] (동명이인 감지용). 없으면 기타_사원코드로 폴백.
 function findPeopleByName(name) {
@@ -2406,7 +2406,7 @@ function bindEvents() {
   document.getElementById("regAddRow").onclick = () => regAddPersonRow();
   document.getElementById("regSubmit").onclick = () => regSubmit();
   document.getElementById("regDate").onchange = () => regRecalc();
-  // 입퇴사자 정보 탭
+  // 입퇴사자 등록 탭
   document.getElementById("hireMode").onchange = () => hireSetMode();
   document.getElementById("hi_dept").addEventListener("input", () => hireInDeptRecalc());
   document.getElementById("hi_date").addEventListener("change", () => hireInDeptRecalc());
