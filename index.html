@@ -406,6 +406,10 @@
   .reg-table td.auto { color: var(--main); font-weight: 600; font-variant-numeric: tabular-nums; }
   .reg-table td.auto.bad { color: var(--warn); font-weight: 500; }
   .reg-auto { font-size: 10px; color: var(--muted); font-weight: 400; }
+  .reg-inline-auto { font-size: 11px; color: var(--main); font-weight: 600; margin-top: 2px; }
+  .reg-inline-auto.bad { color: var(--warn); }
+  .reg-field select { font-family: inherit; font-size: 13px; border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; background: var(--card); color: var(--text); }
+  td .reg-codesel { font-family: inherit; font-size: 12px; border: 1px solid var(--main); border-radius: 6px; padding: 3px 6px; background: var(--main-soft); }
   .reg-del { border: none; background: none; color: var(--warn); font-size: 16px; padding: 0 4px; }
   .reg-actions { display: flex; align-items: center; gap: 12px; margin-top: 14px; }
   .reg-status { font-size: 12px; color: var(--muted); }
@@ -563,6 +567,7 @@
     <button class="tab-btn" data-tab="org">③ 조직도</button>
     <button class="tab-btn" data-tab="roster">④ 전체 재직자</button>
     <button class="tab-btn" data-tab="register">⑤ 인사발령 등록</button>
+    <button class="tab-btn" data-tab="hire">⑥ 입퇴사자 정보</button>
   </nav>
 
   <!-- ① 일일 -->
@@ -683,6 +688,57 @@
       <div id="regResult" class="reg-result"></div>
     </div>
     <p class="hint" style="margin-top:8px;">· 사원코드는 <b>기타_사원코드</b> 탭(사원명→코드)에서 자동 변환됩니다. 변경부서는 입력한 부서명을 <b>발령일 기준</b>으로 부서마스터에서 부서코드로 변환해 <b>변경부서코드</b> 열에 저장합니다. 저장은 한 명당 1행씩 인사발령 시트에 추가됩니다.</p>
+  </section>
+
+  <!-- ⑥ 입퇴사자 정보 -->
+  <section class="panel" id="panel-hire">
+    <div class="card reg-card">
+      <div class="reg-field" style="max-width:280px">
+        <label for="hireMode">구분 *</label>
+        <select id="hireMode">
+          <option value="입사">입사 — 기초명부에 추가</option>
+          <option value="퇴사">퇴사 — 퇴사일 입력</option>
+        </select>
+      </div>
+
+      <!-- 입사 -->
+      <div id="hireInForm">
+        <h3 class="reg-h" style="margin-top:16px;">입사자 정보 <span class="reg-sub">(기초명부에 새 행 추가 · 상태=재직, 퇴사일·비고는 빈칸)</span></h3>
+        <div class="reg-grid">
+          <div class="reg-field"><label for="hi_date">입사일 *</label><input type="date" id="hi_date" min="2000-01-01" max="2100-12-31" /></div>
+          <div class="reg-field"><label for="hi_code">사원코드 *</label><input type="text" id="hi_code" placeholder="예: E200" /></div>
+          <div class="reg-field"><label for="hi_name">사원명 *</label><input type="text" id="hi_name" placeholder="홍길동" /></div>
+          <div class="reg-field"><label for="hi_dept">부서(부서명) *</label><input type="text" id="hi_dept" placeholder="경영지원팀" /><span id="hi_deptcode" class="reg-inline-auto">부서코드 —</span></div>
+          <div class="reg-field"><label for="hi_grade">직급</label><input type="text" id="hi_grade" placeholder="예: 4급 / 주임" /></div>
+          <div class="reg-field"><label for="hi_title">직책</label><input type="text" id="hi_title" placeholder="예: 팀원 / 팀장" /></div>
+          <div class="reg-field"><label for="hi_emp">고용형태</label><input type="text" id="hi_emp" placeholder="예: 일반직 / 기간제" /></div>
+          <div class="reg-field"><label for="hi_sex">성별</label><select id="hi_sex"><option value=""></option><option>남</option><option>여</option></select></div>
+          <div class="reg-field"><label for="hi_loc">근무지</label><input type="text" id="hi_loc" placeholder="예: 본사 / 센터A" /></div>
+          <div class="reg-field"><label for="hi_sub">대체(대상 사번)</label><input type="text" id="hi_sub" placeholder="대체근무 대상 사원코드" /></div>
+        </div>
+        <div class="reg-actions">
+          <button id="hireInSubmit" class="primary">기초명부에 추가</button>
+          <span id="hireInStatus" class="reg-status"></span>
+        </div>
+        <div id="hireInResult" class="reg-result"></div>
+      </div>
+
+      <!-- 퇴사 -->
+      <div id="hireOutForm" style="display:none;">
+        <h3 class="reg-h" style="margin-top:16px;">퇴사 처리 <span class="reg-sub">(기초명부의 퇴사일 기록 · 이름으로 사람 확인 후 저장)</span></h3>
+        <div class="reg-grid">
+          <div class="reg-field"><label for="ho_name">사람(이름) *</label><input type="text" id="ho_name" placeholder="홍길동" /><span id="ho_match" class="reg-inline-auto">—</span></div>
+          <div class="reg-field"><label for="ho_pickwrap">동명이인 선택</label><span id="ho_pickwrap"><select id="ho_pick" style="display:none;"></select><span id="ho_picknote" class="reg-inline-auto">중복 없음</span></span></div>
+          <div class="reg-field"><label for="ho_date">퇴사일(마지막 근무일) *</label><input type="date" id="ho_date" min="2000-01-01" max="2100-12-31" /></div>
+        </div>
+        <div class="reg-actions">
+          <button id="hireOutSubmit" class="primary">퇴사일 저장</button>
+          <span id="hireOutStatus" class="reg-status"></span>
+        </div>
+        <div id="hireOutResult" class="reg-result"></div>
+      </div>
+    </div>
+    <p class="hint" style="margin-top:8px;">· 입사: 부서는 <b>입사일 기준</b>으로 부서마스터에서 부서코드로 자동 변환돼 <b>기초명부</b>에 추가됩니다(퇴사일·비고 빈칸, 상태=재직). · 퇴사: 이름으로 찾아 <b>사원코드·입사일</b>을 확인하고(동명이인은 선택) 퇴사일을 기록합니다. · 저장하려면 Apps Script를 <b>최신 Code.gs로 재배포</b>해야 합니다(addBase·setLeave 추가).</p>
   </section>
 
   <p class="footer-note">단일 HTML + 순수 JS · GitHub Pages 호스팅 · Google Apps Script GET JSON API 연동 · 모든 날짜 KST 기준</p>
@@ -1846,14 +1902,21 @@ function regRecalc() {
     tr.querySelector(".reg-idx").textContent = i + 1;
     const name = tr.querySelector(".reg-name").value.trim();
     const dept = tr.querySelector(".reg-dept").value.trim();
-    // 사원코드
+    // 사원코드 (동명이인이면 select 로 선택)
     const codeCell = tr.querySelector(".reg-code");
     if (!name) { codeCell.textContent = "—"; codeCell.classList.remove("bad"); }
-    else if (state.emapByName.size === 0) { codeCell.textContent = "명부 미로드"; codeCell.classList.add("bad"); }
+    else if (state.emapByName.size === 0 && !(state.base || []).length) { codeCell.textContent = "명부 미로드"; codeCell.classList.add("bad"); }
     else {
-      const code = state.emapByName.get(name);
-      codeCell.textContent = code || "코드없음";
-      codeCell.classList.toggle("bad", !code);
+      const ppl = findPeopleByName(name);
+      if (!ppl.length) { codeCell.textContent = "코드없음"; codeCell.classList.add("bad"); }
+      else if (ppl.length === 1) { codeCell.textContent = ppl[0].코드 || "코드없음"; codeCell.classList.toggle("bad", !ppl[0].코드); }
+      else {
+        const prev = tr.querySelector(".reg-codesel") ? tr.querySelector(".reg-codesel").value : "";
+        codeCell.innerHTML = `<select class="reg-codesel">${ppl.map(x => `<option value="${escapeAttr(x.코드)}">${escapeHtml(x.코드)} · ${escapeHtml(x.입사일 || "입사일?")}</option>`).join("")}</select>`;
+        codeCell.classList.remove("bad");
+        const sel = codeCell.querySelector(".reg-codesel");
+        if (prev && [...sel.options].some(o => o.value === prev)) sel.value = prev;
+      }
     }
     // 변경부서코드
     const dcCell = tr.querySelector(".reg-deptcode");
@@ -1894,7 +1957,12 @@ async function regSubmit() {
     const dept = tr.querySelector(".reg-dept").value.trim();
     if (!name && !dept) continue;            // 빈 행 건너뜀
     if (!name) { status.textContent = "사원명이 빈 행이 있습니다."; return; }
-    const 사원코드 = state.emapByName.get(name) || "";
+    // 동명이인 select 가 있으면 그 값, 없으면 단일 매칭 코드
+    const sel = tr.querySelector(".reg-codesel");
+    let 사원코드;
+    if (sel) 사원코드 = sel.value;
+    else { const ppl = findPeopleByName(name); 사원코드 = ppl.length ? ppl[0].코드 : ""; }
+    if (!사원코드) { status.textContent = `'${name}'의 사원코드를 찾을 수 없습니다.`; return; }
     const 변경부서코드 = dept ? (state.deptMaster.has(dept) ? dept : (resolveDeptCodeByName(dept, 발령일) || "")) : "";
     if (dept && !변경부서코드) { status.textContent = `'${name}'의 부서 '${dept}'를 발령일 기준 부서코드로 변환할 수 없습니다.`; return; }
     // 변경부서 컬럼에 '코드'를 저장 (변경부서코드 컬럼이 따로 있으면 거기에도 동일 코드 기록)
@@ -1929,6 +1997,121 @@ async function regSubmit() {
     document.getElementById("regRows").innerHTML = "";
     regAddPersonRow();
   }
+}
+
+/* ============================================================
+ * 11-3. 입퇴사자 정보 탭
+ * ============================================================ */
+// 이름 → 기초명부 인원 목록 [{코드, 입사일, 명}] (동명이인 감지용). 없으면 기타_사원코드로 폴백.
+function findPeopleByName(name) {
+  const target = String(name || "").replace(/\s+/g, "");
+  if (!target) return [];
+  const out = [];
+  for (const p of (state.base || [])) {
+    if (String(p["사원명"] ?? "").replace(/\s+/g, "") !== target) continue;
+    out.push({ 코드: String(p["사원코드"] ?? p["사번"] ?? "").trim(), 입사일: toISODate(p["입사일"]), 명: String(p["사원명"] ?? "").trim() });
+  }
+  if (!out.length && state.emapByName.has(name)) out.push({ 코드: state.emapByName.get(name), 입사일: "", 명: name });
+  return out;
+}
+function hireSetMode() {
+  const m = document.getElementById("hireMode").value;
+  document.getElementById("hireInForm").style.display = (m === "입사") ? "" : "none";
+  document.getElementById("hireOutForm").style.display = (m === "퇴사") ? "" : "none";
+}
+// 입사: 부서명 → 부서코드(입사일 기준) 미리보기
+function hireInDeptRecalc() {
+  const dept = document.getElementById("hi_dept").value.trim();
+  const asOf = document.getElementById("hi_date").value || toISODate(new Date());
+  const el = document.getElementById("hi_deptcode");
+  if (!dept) { el.textContent = "부서코드 —"; el.classList.remove("bad"); return; }
+  const dc = state.deptMaster.has(dept) ? dept : resolveDeptCodeByName(dept, asOf);
+  el.textContent = dc ? ("부서코드 " + dc) : "부서코드 없음";
+  el.classList.toggle("bad", !dc);
+}
+function hireInReset() {
+  ["hi_date", "hi_code", "hi_name", "hi_dept", "hi_grade", "hi_title", "hi_emp", "hi_loc", "hi_sub"].forEach(id => { const el = document.getElementById(id); if (el) el.value = ""; });
+  document.getElementById("hi_sex").value = "";
+  hireInDeptRecalc();
+}
+async function hireInSubmit() {
+  const status = document.getElementById("hireInStatus"), result = document.getElementById("hireInResult");
+  result.innerHTML = "";
+  const 입사일 = document.getElementById("hi_date").value;
+  const 사원코드 = document.getElementById("hi_code").value.trim();
+  const 사원명 = document.getElementById("hi_name").value.trim();
+  const dept = document.getElementById("hi_dept").value.trim();
+  if (!입사일) { status.textContent = "입사일을 입력하세요."; return; }
+  if (!사원코드) { status.textContent = "사원코드를 입력하세요."; return; }
+  if (!사원명) { status.textContent = "사원명을 입력하세요."; return; }
+  if (!SCRIPT_URL) { status.textContent = "데모 모드에서는 저장할 수 없습니다."; return; }
+  let 부서코드 = "";
+  if (dept) {
+    부서코드 = state.deptMaster.has(dept) ? dept : (resolveDeptCodeByName(dept, 입사일) || "");
+    if (!부서코드) { status.textContent = `부서 '${dept}'를 입사일 기준 부서코드로 변환할 수 없습니다.`; return; }
+  }
+  const payload = {
+    action: "addBase", 입사일, 사원코드, 사원명, 부서코드,
+    직급: document.getElementById("hi_grade").value.trim(),
+    직책: document.getElementById("hi_title").value.trim(),
+    고용형태: document.getElementById("hi_emp").value.trim(),
+    성별: document.getElementById("hi_sex").value,
+    근무지: document.getElementById("hi_loc").value.trim(),
+    대체: document.getElementById("hi_sub").value.trim(),
+    퇴사일: "", 비고: "", 상태: "재직"
+  };
+  const btn = document.getElementById("hireInSubmit"); btn.disabled = true; status.textContent = "저장 중…";
+  try {
+    const qs = Object.entries(payload).map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`).join("&");
+    const res = await fetch(SCRIPT_URL + (SCRIPT_URL.includes("?") ? "&" : "?") + qs, { method: "GET", redirect: "follow" });
+    const j = await res.json();
+    if (j && j.ok) { status.textContent = "완료"; result.innerHTML = `<div class="ok">✔ ${escapeHtml(사원명)} (${escapeHtml(사원코드)}) 기초명부에 추가됨</div>`; await loadData(); hireInReset(); }
+    else { status.textContent = "실패"; result.innerHTML = `<div class="err">✗ ${escapeHtml((j && j.error) || "알 수 없음")}</div>`; }
+  } catch (e) { status.textContent = "실패"; result.innerHTML = `<div class="err">✗ ${escapeHtml(e.message)}</div>`; }
+  btn.disabled = false;
+}
+// 퇴사: 이름 검색 → 사원코드·입사일 확인 (동명이인 select)
+function hireOutSearch() {
+  const name = document.getElementById("ho_name").value.trim();
+  const matchEl = document.getElementById("ho_match");
+  const pick = document.getElementById("ho_pick");
+  const note = document.getElementById("ho_picknote");
+  const reset = (msg, bad) => { matchEl.textContent = msg; matchEl.classList.toggle("bad", !!bad); pick.style.display = "none"; pick.innerHTML = ""; note.style.display = ""; note.textContent = "중복 없음"; };
+  if (!name) { reset("—", false); return; }
+  const ppl = findPeopleByName(name);
+  if (!ppl.length) { reset("일치하는 사람 없음", true); note.textContent = "—"; return; }
+  if (ppl.length === 1) { reset(`✔ ${ppl[0].코드} · 입사일 ${ppl[0].입사일 || "?"}`, false); return; }
+  matchEl.textContent = `동명이인 ${ppl.length}명 — 오른쪽에서 선택`; matchEl.classList.remove("bad");
+  pick.innerHTML = ppl.map(x => `<option value="${escapeAttr(x.코드)}" data-hire="${escapeAttr(x.입사일 || "")}">${escapeHtml(x.코드)} · 입사일 ${escapeHtml(x.입사일 || "?")}</option>`).join("");
+  pick.style.display = ""; note.style.display = "none";
+}
+function hireOutChosen() {
+  const pick = document.getElementById("ho_pick");
+  if (pick.style.display !== "none" && pick.options.length) {
+    const o = pick.options[pick.selectedIndex];
+    return { 코드: pick.value, 입사일: o.getAttribute("data-hire") || "" };
+  }
+  const ppl = findPeopleByName(document.getElementById("ho_name").value.trim());
+  return ppl.length === 1 ? { 코드: ppl[0].코드, 입사일: ppl[0].입사일 } : null;
+}
+async function hireOutSubmit() {
+  const status = document.getElementById("hireOutStatus"), result = document.getElementById("hireOutResult");
+  result.innerHTML = "";
+  const 퇴사일 = document.getElementById("ho_date").value;
+  const chosen = hireOutChosen();
+  if (!chosen) { status.textContent = "사람을 정확히 지정하세요(동명이인은 선택)."; return; }
+  if (!퇴사일) { status.textContent = "퇴사일을 입력하세요."; return; }
+  if (!SCRIPT_URL) { status.textContent = "데모 모드에서는 저장할 수 없습니다."; return; }
+  const btn = document.getElementById("hireOutSubmit"); btn.disabled = true; status.textContent = "저장 중…";
+  try {
+    const payload = { action: "setLeave", 사원코드: chosen.코드, 입사일: chosen.입사일 || "", 퇴사일 };
+    const qs = Object.entries(payload).map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`).join("&");
+    const res = await fetch(SCRIPT_URL + (SCRIPT_URL.includes("?") ? "&" : "?") + qs, { method: "GET", redirect: "follow" });
+    const j = await res.json();
+    if (j && j.ok) { status.textContent = "완료"; result.innerHTML = `<div class="ok">✔ ${escapeHtml(chosen.코드)} 퇴사일 ${escapeHtml(퇴사일)} 저장됨</div>`; await loadData(); document.getElementById("ho_name").value = ""; document.getElementById("ho_date").value = ""; hireOutSearch(); }
+    else { status.textContent = "실패"; result.innerHTML = `<div class="err">✗ ${escapeHtml((j && j.error) || "알 수 없음")}</div>`; }
+  } catch (e) { status.textContent = "실패"; result.innerHTML = `<div class="err">✗ ${escapeHtml(e.message)}</div>`; }
+  btn.disabled = false;
 }
 
 /* ============================================================
@@ -2223,6 +2406,14 @@ function bindEvents() {
   document.getElementById("regAddRow").onclick = () => regAddPersonRow();
   document.getElementById("regSubmit").onclick = () => regSubmit();
   document.getElementById("regDate").onchange = () => regRecalc();
+  // 입퇴사자 정보 탭
+  document.getElementById("hireMode").onchange = () => hireSetMode();
+  document.getElementById("hi_dept").addEventListener("input", () => hireInDeptRecalc());
+  document.getElementById("hi_date").addEventListener("change", () => hireInDeptRecalc());
+  document.getElementById("hireInSubmit").onclick = () => hireInSubmit();
+  document.getElementById("ho_name").addEventListener("input", () => hireOutSearch());
+  document.getElementById("hireOutSubmit").onclick = () => hireOutSubmit();
+  hireSetMode();
   document.getElementById("regType").onchange = () => {
     const t = document.getElementById("regType").value;
     document.getElementById("regStatus").textContent =

@@ -35,6 +35,10 @@ function doGet(e) {
       return jsonOut(getData());
     } else if (action === "addOrder") {
       return jsonOut(addOrder(e.parameter));
+    } else if (action === "addBase") {
+      return jsonOut(addBase(e.parameter));     // 입사: 기초명부에 1행 추가
+    } else if (action === "setLeave") {
+      return jsonOut(setLeave(e.parameter));    // 퇴사: 기초명부의 퇴사일 수정
     }
     return jsonOut({ error: "unknown action: " + action });
   } catch (err) {
@@ -110,6 +114,62 @@ function addOrder(params) {
   });
   sheet.appendRow(rowData);
   return { ok: true, appended: rowData, row: sheet.getLastRow() };
+}
+
+/**
+ * (입사) 기초명부 탭에 1행 추가. 쿼리 파라미터 키를 헤더와 매칭해 append.
+ * 예) ?action=addBase&입사일=2026-07-01&사원코드=E200&사원명=홍길동&부서코드=D202&...
+ */
+function addBase(params) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName(SHEET_BASE);
+  if (!sheet) return { ok: false, error: "시트 없음: " + SHEET_BASE };
+  var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0]
+    .map(function (h) { return String(h).trim(); });
+  var rowData = headers.map(function (h) {
+    return (h && params[h] !== undefined) ? params[h] : "";
+  });
+  sheet.appendRow(rowData);
+  return { ok: true, appended: rowData, row: sheet.getLastRow() };
+}
+
+/**
+ * (퇴사) 기초명부에서 사원코드(+선택적으로 입사일)로 행을 찾아 퇴사일을 기록.
+ * 예) ?action=setLeave&사원코드=E200&입사일=2020-01-01&퇴사일=2026-07-31
+ */
+function setLeave(params) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName(SHEET_BASE);
+  if (!sheet) return { ok: false, error: "시트 없음: " + SHEET_BASE };
+  var code  = String(params["사원코드"] || "").trim();
+  var leave = String(params["퇴사일"]   || "").trim();
+  var hire  = String(params["입사일"]   || "").trim();
+  if (!code)  return { ok: false, error: "사원코드가 필요합니다." };
+  if (!leave) return { ok: false, error: "퇴사일이 필요합니다." };
+
+  var lastRow = sheet.getLastRow(), lastCol = sheet.getLastColumn();
+  var values = sheet.getRange(1, 1, lastRow, lastCol).getValues();
+  var headers = values[0].map(function (h) { return String(h).trim(); });
+  function colOf(re) { for (var c = 0; c < headers.length; c++) { if (re.test(headers[c])) return c; } return -1; }
+  var cCode  = colOf(/^(사원코드|사번)$/);
+  var cLeave = colOf(/^퇴사일$/);
+  var cHire  = colOf(/^입사일$/);
+  if (cCode  < 0) return { ok: false, error: "기초명부에 '사원코드' 열이 없습니다." };
+  if (cLeave < 0) return { ok: false, error: "기초명부에 '퇴사일' 열이 없습니다." };
+
+  var found = -1, matched = 0;
+  for (var r = 1; r < values.length; r++) {
+    if (String(values[r][cCode]).trim() !== code) continue;
+    if (hire && cHire >= 0) {
+      var hv = values[r][cHire];
+      hv = (hv instanceof Date) ? Utilities.formatDate(hv, TZ, "yyyy-MM-dd") : String(hv).trim();
+      if (hv !== hire) continue;
+    }
+    matched++; found = r;
+  }
+  if (found < 0) return { ok: false, error: "해당 인원 행을 찾지 못했습니다: " + code };
+  sheet.getRange(found + 1, cLeave + 1).setValue(leave);
+  return { ok: true, 사원코드: code, 퇴사일: leave, row: found + 1, matched: matched };
 }
 
 /** ContentService 로 JSON 출력 */
