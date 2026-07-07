@@ -703,7 +703,7 @@
 
       <!-- 입사 -->
       <div id="hireInForm">
-        <h3 class="reg-h" style="margin-top:16px;">입사자 정보 <span class="reg-sub">(기초명부에 새 행 추가 · 상태=재직, 퇴사일·비고는 빈칸)</span></h3>
+        <h3 class="reg-h" style="margin-top:16px;">입사자 정보 <span class="reg-sub">(기초명부에 새 행 추가 · 상태=입사예정, 퇴사일·비고는 빈칸)</span></h3>
         <div class="reg-grid">
           <div class="reg-field"><label for="hi_date">입사일 *</label><input type="date" id="hi_date" min="2000-01-01" max="2100-12-31" /></div>
           <div class="reg-field"><label for="hi_code">사원코드 *</label><input type="text" id="hi_code" placeholder="예: E200" /></div>
@@ -738,7 +738,7 @@
         <div id="hireOutResult" class="reg-result"></div>
       </div>
     </div>
-    <p class="hint" style="margin-top:8px;">· 입사: 부서는 <b>입사일 기준</b>으로 부서마스터에서 부서코드로 자동 변환돼 <b>기초명부</b>에 추가됩니다(퇴사일·비고 빈칸, 상태=재직). · 퇴사: 이름으로 찾아 <b>사원코드·입사일</b>을 확인하고(동명이인은 선택) 퇴사일을 기록합니다. · 저장하려면 Apps Script를 <b>최신 Code.gs로 재배포</b>해야 합니다(addBase·setLeave 추가).</p>
+    <p class="hint" style="margin-top:8px;">· 입사: 부서는 <b>입사일 기준</b>으로 부서마스터에서 부서코드로 자동 변환돼 <b>기초명부</b>에 추가됩니다(퇴사일·비고 빈칸, 상태=입사예정). · 퇴사: 이름으로 찾아 <b>사원코드·입사일</b>을 확인하고(동명이인은 선택) 퇴사일을 기록합니다. · 저장하려면 Apps Script를 <b>최신 Code.gs로 재배포</b>해야 합니다(addBase·setLeave 추가).</p>
   </section>
 
   <p class="footer-note">단일 HTML + 순수 JS · GitHub Pages 호스팅 · Google Apps Script GET JSON API 연동 · 모든 날짜 KST 기준</p>
@@ -2058,7 +2058,7 @@ async function hireInSubmit() {
     성별: document.getElementById("hi_sex").value,
     근무지: document.getElementById("hi_loc").value.trim(),
     대체: document.getElementById("hi_sub").value.trim(),
-    퇴사일: "", 비고: "", 상태: "재직"
+    퇴사일: "", 비고: "", 상태: "입사예정"
   };
   const btn = document.getElementById("hireInSubmit"); btn.disabled = true; status.textContent = "저장 중…";
   try {
