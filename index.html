@@ -1766,14 +1766,14 @@ function renderOrgChart(){
     const fromMaster = m ? String(m.본부||"").trim() : "";
     teamBonbu[t] = fromMaster || String((byTeam[t] && byTeam[t][0] && byTeam[t][0].본부) || "").trim();
   });
-  const isCEO = t => /대표이사/.test(t) || teamBonbu[t]==="대표이사실";
+  const isCEO = t => /대표이사/.test(t);          // 대표이사 좌석만 최상단 단독
   const ceo = teams.filter(isCEO);
   const rest = teams.filter(t=>!isCEO(t));
-  const jiksok = rest.filter(t=> { const b=teamBonbu[t]; return b==="" || b==="직속" || b==="직속부서"; });
+  const jiksok = rest.filter(t=> { const b=teamBonbu[t]; return b==="" || b==="직속" || b==="직속부서" || b==="대표이사실"; });  // 대표이사실 소속(감사관·홍보팀 등)은 직속 줄
   // 본부 컬럼 순서: BONBU_ORDER 우선(대표이사실·직속부서 제외), 그 뒤 데이터 등장 본부
   const inGrid = t => !isCEO(t) && !jiksok.includes(t);
   const bonbuSeq = BONBU_ORDER.filter(b=> b!=="대표이사실" && b!=="직속부서");
-  [...new Set(rest.map(t=>teamBonbu[t]))].forEach(b=>{ if(b && !bonbuSeq.includes(b) && b!=="직속부서") bonbuSeq.push(b); });
+  [...new Set(rest.map(t=>teamBonbu[t]))].forEach(b=>{ if(b && !bonbuSeq.includes(b) && b!=="직속부서" && b!=="대표이사실") bonbuSeq.push(b); });
   const cols = bonbuSeq.filter(b => rest.some(t=> inGrid(t) && teamBonbu[t]===b));
   let html="";
   if(ceo.length)    html += `<div class="org-ceo">${ceo.map(t=>orgTeamCard(t,byTeam)).join("")}</div>`;
