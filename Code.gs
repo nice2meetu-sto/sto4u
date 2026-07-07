@@ -157,19 +157,36 @@ function setLeave(params) {
   if (cCode  < 0) return { ok: false, error: "기초명부에 '사원코드' 열이 없습니다." };
   if (cLeave < 0) return { ok: false, error: "기초명부에 '퇴사일' 열이 없습니다." };
 
-  var found = -1, matched = 0;
+  // 사원코드 일치 행을 먼저 수집. 사원코드는 유일한 것이 정상이므로 1건이면 그대로 사용.
+  // 같은 사원코드가 여러 행일 때만 입사일로 좁힌다(날짜 형식은 정규화해서 비교).
+  var codeRows = [];
   for (var r = 1; r < values.length; r++) {
-    if (String(values[r][cCode]).trim() !== code) continue;
-    if (hire && cHire >= 0) {
-      var hv = values[r][cHire];
-      hv = (hv instanceof Date) ? Utilities.formatDate(hv, TZ, "yyyy-MM-dd") : String(hv).trim();
-      if (hv !== hire) continue;
-    }
-    matched++; found = r;
+    if (String(values[r][cCode]).trim() === code) codeRows.push(r);
   }
-  if (found < 0) return { ok: false, error: "해당 인원 행을 찾지 못했습니다: " + code };
-  sheet.getRange(found + 1, cLeave + 1).setValue(leave);
-  return { ok: true, 사원코드: code, 퇴사일: leave, row: found + 1, matched: matched };
+  if (!codeRows.length) return { ok: false, error: "해당 사원코드 행을 찾지 못했습니다: " + code };
+
+  var target = -1;
+  if (codeRows.length === 1) {
+    target = codeRows[0];
+  } else if (hire && cHire >= 0) {
+    var narrowed = codeRows.filter(function (r) { return ymd(values[r][cHire]) === ymd(hire); });
+    if (narrowed.length === 1) target = narrowed[0];
+    else if (narrowed.length > 1) return { ok: false, error: "사원코드·입사일이 모두 중복된 행이 있습니다: " + code };
+    else return { ok: false, error: "사원코드는 있으나 입사일이 일치하는 행이 없습니다: " + code };
+  } else {
+    return { ok: false, error: "사원코드가 중복되어 입사일이 필요합니다: " + code };
+  }
+  sheet.getRange(target + 1, cLeave + 1).setValue(leave);
+  return { ok: true, 사원코드: code, 퇴사일: leave, row: target + 1, matched: codeRows.length };
+}
+
+/** 날짜 셀/문자열을 yyyy-MM-dd 로 정규화 (Date·다양한 구분자 허용) */
+function ymd(v) {
+  if (v instanceof Date) return Utilities.formatDate(v, TZ, "yyyy-MM-dd");
+  var s = String(v == null ? "" : v).trim();
+  var m = s.match(/(\d{4})\D+(\d{1,2})\D+(\d{1,2})/);
+  if (m) return m[1] + "-" + ("0" + m[2]).slice(-2) + "-" + ("0" + m[3]).slice(-2);
+  return s;
 }
 
 /** ContentService 로 JSON 출력 */
