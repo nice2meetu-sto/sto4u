@@ -43,18 +43,23 @@
     padding: 0 20px 64px;          /* 상단 패딩 제거 — 헤더가 top:0 고정 */
   }
 
+  /* 헤더 + 타임라인(조회 기준일)까지 한 덩어리로 상단 고정 */
+  .sticky-head {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    background: var(--bg);
+    margin: 0 -20px;               /* .app 좌우 패딩 상쇄 → 배경이 컨테이너 폭 가득 */
+    padding: 0 20px;               /* 내부 요소는 다시 20px 안쪽으로 정렬 */
+  }
   header.topbar {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 16px;
     flex-wrap: wrap;
-    position: sticky;              /* 상단 고정(대시보드와 동일) */
-    top: 0;
-    z-index: 30;
-    margin: 0 -20px 16px;          /* .app 좌우 패딩(20px) 상쇄 → 컨테이너 폭 가득 */
+    margin: 0 -20px 16px;          /* 래퍼 좌우 패딩(20px) 상쇄 → 헤더 바 폭 가득 */
     padding: 16px 24px;            /* 대시보드 헤더와 동일 */
-    background: var(--bg);
   }
   .topbar .brand {
     display: flex;
@@ -447,7 +452,8 @@
 <body>
 <div class="app">
 
-  <!-- ============ Top bar ============ -->
+  <!-- ============ Top bar + Controls (한 덩어리로 상단 고정) ============ -->
+  <div class="sticky-head">
   <header class="topbar">
     <div class="brand">
       <div style="display:flex;flex-direction:column;gap:2px;align-items:flex-start;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale">
@@ -483,6 +489,7 @@
       <span id="asofBadge" class="asof-badge">—</span>
     </div>
   </div>
+  </div><!-- /.sticky-head -->
 
   <!-- ============ KPI 카드 (어느 탭이든 상단 고정) ============ -->
   <div class="kpi-row" id="kpiRow"></div>
