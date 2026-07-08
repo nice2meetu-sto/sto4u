@@ -1835,7 +1835,10 @@ function ggGradeOf(p){
   return null;
 }
 function orgNameOf(sb){
-  const p=(state.base||[]).find(x=>String(x["사원코드"]??x["사번"]??"")===String(sb));
+  const key=String(sb??"").trim();
+  if(!key) return "(이름없음)";
+  const match=x=>String(x["사원코드"]??x["사번"]??"").trim()===key;
+  const p=(state.base||[]).find(match) || (state.rosterCache||[]).find(match);
   return p ? (p["사원명"]||"(이름없음)") : "(이름없음)";
 }
 function orgMemberRank(p){
@@ -1937,7 +1940,7 @@ function orgPerson(sabun){
   if(!p) return;
   const pos=String(p.직책||"").trim();
   const rep=String(p.대체||"").trim();
-  let repHtml=""; if(rep){ const nm=orgNameOf(rep); const disp=(nm&&nm!=="(이름없음)")?nm:rep; repHtml=`<div class="pp-rep">↔ 대체근무: ${ggEsc(disp)}</div>`; }
+  let repHtml=""; if(rep){ const nm=orgNameOf(rep); if(nm && nm!=="(이름없음)") repHtml=`<div class="pp-rep">↔ ${ggEsc(nm)} 대체근무</div>`; }
   const meta=[p.직급,p.고용형태,p.입사일].filter(Boolean).join(" · ");
   document.getElementById('ppBody').innerHTML =
     `<div class="pp-name">${ggEsc(p.사원명)}${pos?`<span class="pp-pos">${ggEsc(pos)}</span>`:""}</div>`+
