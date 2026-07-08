@@ -2407,19 +2407,18 @@ function buildEmapByName(rows) {
   }
   return map;
 }
-// 부서명 + 발령일 → 부서코드 (적용일 ≤ 발령일 중 이름이 일치하는 최신 줄의 코드)
+// 부서명 + 날짜 → 부서코드.
+//   '그 날짜에 유효한(적용일 ≤ 날짜 중 최신) 이름'이 입력명과 같은 코드만 반환.
+//   → 과거에만 쓰였고 그 날짜엔 이미 다른 이름이 된 팀은 매칭되지 않음(예: 2026년 '스마트관광팀').
 function resolveDeptCodeByName(name, asOf) {
   const target = String(name || "").replace(/\s+/g, "");
   if (!target) return null;
-  let best = null;
   for (const [code, arr] of state.deptMaster) {
-    for (const e of arr) {
-      if (String(e.부서명).replace(/\s+/g, "") === target && e.적용일 <= asOf) {
-        if (!best || e.적용일 > best.적용일) best = { 적용일: e.적용일, 부서코드: code };
-      }
-    }
+    let chosen = null;
+    for (const e of arr) { if (e.적용일 <= asOf) chosen = e; else break; }   // 날짜 시점의 유효 행(적용일 asc)
+    if (chosen && String(chosen.부서명 || "").replace(/\s+/g, "") === target) return code;
   }
-  return best ? best.부서코드 : null;
+  return null;
 }
 // 구글 시트 버튼: 비밀번호 확인 후 새 탭으로 원본 시트 열기
 function openSheet() {
