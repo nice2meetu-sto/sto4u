@@ -1603,7 +1603,7 @@ function rosterPerson(code) {
       return `<tr><td>${escapeHtml(발령일)}</td><td class="c-type">${escapeHtml(변동구분)}</td><td>${escapeHtml(부서)}</td><td>${escapeHtml(직급)}</td><td>${escapeHtml(직책)}</td><td>${escapeHtml(근무지)}</td></tr>`;
     }).join("");
     histHtml = `<div class="pp-htbl-wrap"><table class="pp-htbl">
-      <thead><tr><th>발령일</th><th>변동구분</th><th>변경부서</th><th class="c-narrow">직급</th><th class="c-narrow2">직책</th><th>근무지</th></tr></thead>
+      <thead><tr><th>발령일</th><th>구분</th><th>변경부서</th><th class="c-narrow">직급</th><th class="c-narrow2">직책</th><th>근무지</th></tr></thead>
       <tbody>${rowsHtml}</tbody></table></div>`;
   }
   document.getElementById('ppBody').innerHTML =
