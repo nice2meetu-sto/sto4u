@@ -521,9 +521,10 @@
   .pp-hist-title .pp-hist-sub{font-size:11px;font-weight:500;color:var(--ink2);margin-left:4px}
   .pp-htbl-wrap{margin-top:8px;max-height:300px;overflow:auto}
   .pp-htbl{width:100%;border-collapse:collapse;font-size:12px}
-  .pp-htbl th,.pp-htbl td{border:1px solid var(--border);padding:4px 6px;text-align:center;white-space:nowrap}
+  .pp-htbl th,.pp-htbl td{border:none;border-bottom:1px solid var(--border);padding:4px 6px;text-align:center;white-space:nowrap}
   .pp-htbl thead th{background:#f0f1f6;font-weight:700;color:#41434f;position:sticky;top:0}
   .pp-htbl td{color:var(--ink);font-weight:500;font-variant-numeric:tabular-nums}
+  .pp-htbl td.c-type{color:var(--main);font-weight:800}
   .pp-htbl .c-narrow{width:2.2em}
   .pp-htbl .c-narrow2{width:3.6em}
   .pp-hist-empty{font-size:12.5px;color:var(--ink2);margin-top:8px}
@@ -1599,7 +1600,7 @@ function rosterPerson(code) {
       const 직급 = o["변경직급"] || "";
       const 직책 = o["변경직책"] || o["직책변경"] || "";
       const 근무지 = o["변경근무지"] || "";
-      return `<tr><td>${escapeHtml(발령일)}</td><td>${escapeHtml(변동구분)}</td><td>${escapeHtml(부서)}</td><td>${escapeHtml(직급)}</td><td>${escapeHtml(직책)}</td><td>${escapeHtml(근무지)}</td></tr>`;
+      return `<tr><td>${escapeHtml(발령일)}</td><td class="c-type">${escapeHtml(변동구분)}</td><td>${escapeHtml(부서)}</td><td>${escapeHtml(직급)}</td><td>${escapeHtml(직책)}</td><td>${escapeHtml(근무지)}</td></tr>`;
     }).join("");
     histHtml = `<div class="pp-htbl-wrap"><table class="pp-htbl">
       <thead><tr><th>발령일</th><th>변동구분</th><th>변경부서</th><th class="c-narrow">직급</th><th class="c-narrow2">직책</th><th>근무지</th></tr></thead>
