@@ -1568,7 +1568,7 @@ function renderRoster() {
   });
   t.querySelectorAll("tbody tr.roster-row").forEach(tr => { tr.onclick = () => rosterPerson(tr.getAttribute("data-code")); });
 }
-// 발령 행의 변경부서(코드/이름) → 조회 기준일 기준 부서명으로 변환
+// 발령 행의 변경부서(코드/이름) → 그 '발령일 시점'의 부서명으로 역추적 변환
 function orderDeptName(o, asOf) {
   const cand = [o["변경부서코드"], o["변경부서"], o["부서코드"], o["부서"]].map(v => String(v ?? "").trim()).find(v => v);
   if (!cand) return "";
@@ -1595,7 +1595,7 @@ function rosterPerson(code) {
     const rowsHtml = hist.map(o => {
       const 발령일 = toISODate(o["발령일"]);
       const 변동구분 = o["변동구분"] || "";
-      const 부서 = orderDeptName(o, asOf);
+      const 부서 = orderDeptName(o, 발령일);   // 발령일 시점의 부서명으로 역추적
       const 직급 = o["변경직급"] || "";
       const 직책 = o["변경직책"] || o["직책변경"] || "";
       const 근무지 = o["변경근무지"] || "";
