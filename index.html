@@ -515,9 +515,9 @@
   .pp-name .pp-pos{font-size:12px;font-weight:700;color:var(--main)}
   .pp-line{margin-top:6px;font-size:14px;color:var(--ink2);font-weight:600}
   .pp-rep{margin-top:10px;font-size:14px;font-weight:800;color:var(--amber)}
-  /* 전체 재직자: 클릭 이름 + 인사발령 이력 팝업 */
-  .roster-name{cursor:pointer;color:var(--main);font-weight:600;text-decoration:underline;text-decoration-color:rgba(83,74,183,.35)}
-  .roster-name:hover{text-decoration-color:var(--main)}
+  /* 전체 재직자: 행 클릭 → 인사발령 이력 팝업 (행 전체 호버) */
+  table.list tbody tr.roster-row{cursor:pointer}
+  table.list tbody tr.roster-row:hover{background:var(--main-soft)}
   .pp-hist-title{margin-top:14px;padding-top:12px;border-top:1px solid var(--border);font-size:12.5px;font-weight:800;color:var(--ink)}
   .pp-hist-title .pp-hist-sub{font-size:11px;font-weight:500;color:var(--ink2);margin-left:4px}
   .pp-hist{margin-top:8px;max-height:280px;overflow:auto;display:flex;flex-direction:column;gap:6px}
@@ -1539,9 +1539,9 @@ function renderRoster() {
     body += `<tr><td colspan="${ROSTER_COLS.length}"><div class="empty">조건에 맞는 인원이 없습니다.</div></td></tr>`;
   } else {
     for (const p of list) {
-      body += "<tr>";
+      body += `<tr class="roster-row" data-code="${escapeAttr(p.사원코드)}">`;
       body += `<td>${escapeHtml(p.사원코드)}</td>`;
-      body += `<td><span class="roster-name" data-code="${escapeAttr(p.사원코드)}">${escapeHtml(p.사원명)}</span></td>`;
+      body += `<td>${escapeHtml(p.사원명)}</td>`;
       body += `<td>${escapeHtml(p.부서)}</td>`;
       body += `<td>${escapeHtml(p.직급)}</td>`;
       body += `<td>${escapeHtml(p.직책)}</td>`;
@@ -1566,7 +1566,7 @@ function renderRoster() {
       renderRoster();
     };
   });
-  t.querySelectorAll(".roster-name").forEach(el => { el.onclick = () => rosterPerson(el.getAttribute("data-code")); });
+  t.querySelectorAll("tbody tr.roster-row").forEach(tr => { tr.onclick = () => rosterPerson(tr.getAttribute("data-code")); });
 }
 // 발령 행의 변경부서(코드/이름) → 조회 기준일 기준 부서명으로 변환
 function orderDeptName(o, asOf) {
