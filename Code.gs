@@ -143,7 +143,6 @@ function setLeave(params) {
   if (!sheet) return { ok: false, error: "시트 없음: " + SHEET_BASE };
   var code  = String(params["사원코드"] || "").trim();
   var leave = String(params["퇴사일"]   || "").trim();
-  var hire  = String(params["입사일"]   || "").trim();
   if (!code)  return { ok: false, error: "사원코드가 필요합니다." };
   if (!leave) return { ok: false, error: "퇴사일이 필요합니다." };
 
@@ -153,40 +152,18 @@ function setLeave(params) {
   function colOf(re) { for (var c = 0; c < headers.length; c++) { if (re.test(headers[c])) return c; } return -1; }
   var cCode  = colOf(/^(사원코드|사번)$/);
   var cLeave = colOf(/^퇴사일$/);
-  var cHire  = colOf(/^입사일$/);
   if (cCode  < 0) return { ok: false, error: "기초명부에 '사원코드' 열이 없습니다." };
   if (cLeave < 0) return { ok: false, error: "기초명부에 '퇴사일' 열이 없습니다." };
 
-  // 사원코드 일치 행을 먼저 수집. 사원코드는 유일한 것이 정상이므로 1건이면 그대로 사용.
-  // 같은 사원코드가 여러 행일 때만 입사일로 좁힌다(날짜 형식은 정규화해서 비교).
-  var codeRows = [];
+  // 사원코드(사번) 기준으로만 찾는다. 상태(재직/입사예정)·입사일은 보지 않음.
+  // 비교는 숫자·문자·공백 차이를 흡수하기 위해 문자열 trim 후 대조.
+  var target = -1, matched = 0;
   for (var r = 1; r < values.length; r++) {
-    if (String(values[r][cCode]).trim() === code) codeRows.push(r);
+    if (String(values[r][cCode]).trim() === code) { matched++; if (target < 0) target = r; }
   }
-  if (!codeRows.length) return { ok: false, error: "해당 사원코드 행을 찾지 못했습니다: " + code };
-
-  var target = -1;
-  if (codeRows.length === 1) {
-    target = codeRows[0];
-  } else if (hire && cHire >= 0) {
-    var narrowed = codeRows.filter(function (r) { return ymd(values[r][cHire]) === ymd(hire); });
-    if (narrowed.length === 1) target = narrowed[0];
-    else if (narrowed.length > 1) return { ok: false, error: "사원코드·입사일이 모두 중복된 행이 있습니다: " + code };
-    else return { ok: false, error: "사원코드는 있으나 입사일이 일치하는 행이 없습니다: " + code };
-  } else {
-    return { ok: false, error: "사원코드가 중복되어 입사일이 필요합니다: " + code };
-  }
+  if (target < 0) return { ok: false, error: "해당 사원코드 행을 찾지 못했습니다: " + code };
   sheet.getRange(target + 1, cLeave + 1).setValue(leave);
-  return { ok: true, 사원코드: code, 퇴사일: leave, row: target + 1, matched: codeRows.length };
-}
-
-/** 날짜 셀/문자열을 yyyy-MM-dd 로 정규화 (Date·다양한 구분자 허용) */
-function ymd(v) {
-  if (v instanceof Date) return Utilities.formatDate(v, TZ, "yyyy-MM-dd");
-  var s = String(v == null ? "" : v).trim();
-  var m = s.match(/(\d{4})\D+(\d{1,2})\D+(\d{1,2})/);
-  if (m) return m[1] + "-" + ("0" + m[2]).slice(-2) + "-" + ("0" + m[3]).slice(-2);
-  return s;
+  return { ok: true, 사원코드: code, 퇴사일: leave, row: target + 1, matched: matched };
 }
 
 /** ContentService 로 JSON 출력 */
