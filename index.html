@@ -621,7 +621,7 @@
       <select id="filterStatus"><option value="">상태 전체</option></select>
       <select id="filterDept"><option value="">부서 전체</option></select>
       <button id="downloadBtn">⤓ 엑셀(CSV) 다운로드</button>
-      <button id="dbDownloadBtn" title="기준일 기준 총원+퇴직자 전체 · 타 시트용 확장 데이터">⤓ DB 다운로드</button>
+      <button id="dbDownloadBtn" title="기초명부 전원(재직·휴직·파견·입사예정·퇴직 모두)을 기준일 기준으로 가공한 확장 데이터 · 타 시트용">⤓ DB 다운로드</button>
       <span class="count" id="rosterCount">—</span>
     </div>
     <div class="card table-scroll">
@@ -1016,7 +1016,9 @@ function resolveOrderDept(o, asOf) {
  * ============================================================ */
 function rosterAsOf(baseDate, opts) {
   const baseIso = toISODate(baseDate);
-  const includeLeft = !!(opts && opts.includeLeft);   // true면 퇴사자도 포함(DB 다운로드용)
+  const includeLeft = !!(opts && opts.includeLeft);       // true면 퇴사자도 포함
+  const includeFuture = !!(opts && opts.includeFuture);   // true면 입사예정(미래 입사)도 포함
+  // (둘 다 true = 기초명부 전원을 기준일 기준으로 가공 — DB 다운로드용)
 
   // 컬럼 별칭: 기초명부는 사번/사업장, 인사발령은 사원코드/근무지 를 쓸 수 있어 모두 허용
   const idOf  = p => String(p["사원코드"] ?? p["사번"] ?? "").trim();
@@ -1030,7 +1032,7 @@ function rosterAsOf(baseDate, opts) {
     if (!code) continue;
     const hire = toISODate(p["입사일"]);
     const leave = toISODate(p["퇴사일"]);
-    if (hire && hire > baseIso) continue;     // 아직 입사 전
+    if (!includeFuture && hire && hire > baseIso) continue;     // 아직 입사 전
     if (!includeLeft && leave && leave < baseIso) continue;   // 이미 퇴사 (퇴사일 다음날부터 제외, 퇴사일 당일은 재직)
     const fb = parseDept(p["부서"]);          // (선택) 기초명부에 부서 열이 있으면 초기값
     roster.set(code, {
@@ -2212,7 +2214,7 @@ function downloadRosterCSV() {
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
 }
-// DB 다운로드 — 기준일 기준 총원 + 퇴직자 전체(확장 데이터). 타 시트 기초데이터용.
+// DB 다운로드 — 기초명부 전원(재직·휴직·파견·입사예정·퇴직자 전부)을 기준일 기준으로 가공한 확장 데이터.
 //   컬럼 순서: 사원명·사번·부서(명)·직급·직위(직책)·고용형태·성별·근무지·입사일·퇴사일·대체·비고
 const DB_COLS = [
   ["사원명", "사원명"], ["사번", "사원코드"], ["부서", "부서"], ["직급", "직급"], ["직위", "직책"],
@@ -2220,7 +2222,7 @@ const DB_COLS = [
   ["퇴사일", "퇴사일"], ["대체", "대체"], ["비고", "비고"]
 ];
 function downloadDbCSV() {
-  const list = rosterAsOf(state.asOf, { includeLeft: true })   // 퇴직자 포함
+  const list = rosterAsOf(state.asOf, { includeLeft: true, includeFuture: true })   // 기초명부 전원
     .slice().sort((a, b) => String(a.사원코드).localeCompare(String(b.사원코드), "ko"));
   const headers = DB_COLS.map(c => c[0]);
   const rows = list.map(p => DB_COLS.map(c => csvCell(p[c[1]] ?? "")));
