@@ -515,6 +515,18 @@
   .pp-name .pp-pos{font-size:12px;font-weight:700;color:var(--main)}
   .pp-line{margin-top:6px;font-size:14px;color:var(--ink2);font-weight:600}
   .pp-rep{margin-top:10px;font-size:14px;font-weight:800;color:var(--amber)}
+  /* 전체 재직자: 클릭 이름 + 인사발령 이력 팝업 */
+  .roster-name{cursor:pointer;color:var(--main);font-weight:600;text-decoration:underline;text-decoration-color:rgba(83,74,183,.35)}
+  .roster-name:hover{text-decoration-color:var(--main)}
+  .pp-hist-title{margin-top:14px;padding-top:12px;border-top:1px solid var(--border);font-size:12.5px;font-weight:800;color:var(--ink)}
+  .pp-hist-title .pp-hist-sub{font-size:11px;font-weight:500;color:var(--ink2);margin-left:4px}
+  .pp-hist{margin-top:8px;max-height:280px;overflow:auto;display:flex;flex-direction:column;gap:6px}
+  .pp-h{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px;font-size:12.5px;border-left:2px solid var(--main-line);padding-left:8px}
+  .pp-h .pp-hd{color:var(--ink2);font-variant-numeric:tabular-nums;font-weight:600}
+  .pp-h .pp-ht{color:var(--main);font-weight:800}
+  .pp-h .pp-hc{color:var(--ink)}
+  .pp-h .pp-hn{color:var(--ink2);font-size:11.5px}
+  .pp-hist-empty{font-size:12.5px;color:var(--ink2)}
 </style>
 </head>
 <body>
@@ -1529,7 +1541,7 @@ function renderRoster() {
     for (const p of list) {
       body += "<tr>";
       body += `<td>${escapeHtml(p.사원코드)}</td>`;
-      body += `<td>${escapeHtml(p.사원명)}</td>`;
+      body += `<td><span class="roster-name" data-code="${escapeAttr(p.사원코드)}">${escapeHtml(p.사원명)}</span></td>`;
       body += `<td>${escapeHtml(p.부서)}</td>`;
       body += `<td>${escapeHtml(p.직급)}</td>`;
       body += `<td>${escapeHtml(p.직책)}</td>`;
@@ -1554,6 +1566,49 @@ function renderRoster() {
       renderRoster();
     };
   });
+  t.querySelectorAll(".roster-name").forEach(el => { el.onclick = () => rosterPerson(el.getAttribute("data-code")); });
+}
+// 발령 행의 변경부서(코드/이름) → 조회 기준일 기준 부서명으로 변환
+function orderDeptName(o, asOf) {
+  const cand = [o["변경부서코드"], o["변경부서"], o["부서코드"], o["부서"]].map(v => String(v ?? "").trim()).find(v => v);
+  if (!cand) return "";
+  const code = state.deptMaster.has(cand) ? cand : resolveDeptCodeByName(cand, asOf);
+  if (code) { const m = resolveDept(code, asOf); return m ? (m.부서명 || cand) : cand; }
+  return cand;
+}
+// 전체 재직자: 이름 클릭 → 인사 카드 + 기준일 이전 인사발령 이력(오래된순)
+function rosterPerson(code) {
+  const p = (state.rosterCache || []).find(x => String(x.사원코드) === String(code));
+  if (!p) return;
+  const asOf = state.asOf;
+  const pos = String(p.직책 || "").trim();
+  const line1 = [p.직급, p.고용형태, p.부서, p.근무지].filter(Boolean).join(" · ");
+  const line2 = [p.입사일 ? ("입사 " + p.입사일) : "", p.상태].filter(Boolean).join(" · ");
+  const idOf = o => String(o["사원코드"] ?? o["사번"] ?? "").trim();
+  const hist = (state.orders || [])
+    .filter(o => idOf(o) === String(code) && toISODate(o["발령일"]) && toISODate(o["발령일"]) <= asOf)
+    .slice()
+    .sort((a, b) => { const x = toISODate(a["발령일"]), y = toISODate(b["발령일"]); return x < y ? -1 : x > y ? 1 : (a.__idx || 0) - (b.__idx || 0); });
+  let histHtml;
+  if (!hist.length) histHtml = `<div class="pp-hist-empty">기준일 이전 인사발령 기록이 없습니다.</div>`;
+  else histHtml = hist.map(o => {
+    const parts = [];
+    if (o["변경직급"]) parts.push("직급→" + o["변경직급"]);
+    if (o["변경직책"] || o["직책변경"]) parts.push("직책→" + (o["변경직책"] || o["직책변경"]));
+    const dn = orderDeptName(o, asOf); if (dn) parts.push("부서→" + dn);
+    if (o["변경근무지"]) parts.push("근무지→" + o["변경근무지"]);
+    if (o["변경고용형태"]) parts.push("고용형태→" + o["변경고용형태"]);
+    const chg = parts.join(", ");
+    const note = String(o["비고"] || "").trim();
+    return `<div class="pp-h"><span class="pp-hd">${escapeHtml(toISODate(o["발령일"]))}</span><b class="pp-ht">${escapeHtml(o["변동구분"] || "")}</b>${chg ? `<span class="pp-hc">${escapeHtml(chg)}</span>` : ""}${note ? `<span class="pp-hn">${escapeHtml(note)}</span>` : ""}</div>`;
+  }).join("");
+  document.getElementById('ppBody').innerHTML =
+    `<div class="pp-name">${escapeHtml(p.사원명)}${pos ? `<span class="pp-pos">${escapeHtml(pos)}</span>` : ""}</div>` +
+    (line1 ? `<div class="pp-line">${escapeHtml(line1)}</div>` : "") +
+    (line2 ? `<div class="pp-line">${escapeHtml(line2)}</div>` : "") +
+    `<div class="pp-hist-title">인사발령 이력 <span class="pp-hist-sub">(기준일 ${escapeHtml(asOf)} 이전 · 오래된순)</span></div>` +
+    `<div class="pp-hist">${histHtml}</div>`;
+  document.getElementById('ppBg').classList.add('open');
 }
 
 function refreshRosterFilters() {
