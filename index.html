@@ -1940,7 +1940,7 @@ function orgPerson(sabun){
   if(!p) return;
   const pos=String(p.직책||"").trim();
   const rep=String(p.대체||"").trim();
-  let repHtml=""; if(rep){ const nm=orgNameOf(rep); if(nm && nm!=="(이름없음)") repHtml=`<div class="pp-rep">↔ ${ggEsc(nm)} 대체근무</div>`; }
+  let repHtml=""; if(rep){ const nm=orgNameOf(rep); if(nm && nm!=="(이름없음)") repHtml=`<div class="pp-rep">${ggEsc(nm)}</div>`; }
   const meta=[p.직급,p.고용형태,p.입사일].filter(Boolean).join(" · ");
   document.getElementById('ppBody').innerHTML =
     `<div class="pp-name">${ggEsc(p.사원명)}${pos?`<span class="pp-pos">${ggEsc(pos)}</span>`:""}</div>`+
