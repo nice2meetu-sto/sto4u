@@ -621,6 +621,7 @@
       <select id="filterStatus"><option value="">상태 전체</option></select>
       <select id="filterDept"><option value="">부서 전체</option></select>
       <button id="downloadBtn">⤓ 엑셀(CSV) 다운로드</button>
+      <button id="dbDownloadBtn" title="기준일 기준 총원+퇴직자 전체 · 타 시트용 확장 데이터">⤓ DB 다운로드</button>
       <span class="count" id="rosterCount">—</span>
     </div>
     <div class="card table-scroll">
@@ -1013,8 +1014,9 @@ function resolveOrderDept(o, asOf) {
 /* ============================================================
  * 4. 핵심 알고리즘 — 기준일 명부 재구성 (발령 리플레이)
  * ============================================================ */
-function rosterAsOf(baseDate) {
+function rosterAsOf(baseDate, opts) {
   const baseIso = toISODate(baseDate);
+  const includeLeft = !!(opts && opts.includeLeft);   // true면 퇴사자도 포함(DB 다운로드용)
 
   // 컬럼 별칭: 기초명부는 사번/사업장, 인사발령은 사원코드/근무지 를 쓸 수 있어 모두 허용
   const idOf  = p => String(p["사원코드"] ?? p["사번"] ?? "").trim();
@@ -1029,7 +1031,7 @@ function rosterAsOf(baseDate) {
     const hire = toISODate(p["입사일"]);
     const leave = toISODate(p["퇴사일"]);
     if (hire && hire > baseIso) continue;     // 아직 입사 전
-    if (leave && leave < baseIso) continue;   // 이미 퇴사 (퇴사일 다음날부터 제외, 퇴사일 당일은 재직)
+    if (!includeLeft && leave && leave < baseIso) continue;   // 이미 퇴사 (퇴사일 다음날부터 제외, 퇴사일 당일은 재직)
     const fb = parseDept(p["부서"]);          // (선택) 기초명부에 부서 열이 있으면 초기값
     roster.set(code, {
       사원코드: code,
@@ -1044,6 +1046,7 @@ function rosterAsOf(baseDate) {
       성별: p["성별"] || "",
       근무지: locOf(p),
       입사일: hire,
+      퇴사일: leave,                           // DB 다운로드용(원본 퇴사일)
       비고: p["비고"] || "",
       대체: p["대체"] || "",                    // (선택) 대체근무 대상 사번(조직도용)
       상태: normStatus(p["상태"])             // (선택) 초기 상태. 없으면 재직
@@ -1072,7 +1075,7 @@ function rosterAsOf(baseDate) {
     const oDate = toISODate(o["발령일"]);
     const newEmp = o["변경고용형태"] ? normEmp(o["변경고용형태"]) : null;
 
-    if (type === "퇴사") { if (oDate < baseIso) roster.delete(code); continue; }  // 발령일(=마지막 근무일) 당일은 재직, 다음날부터 제외
+    if (type === "퇴사") { if (!includeLeft && oDate < baseIso) roster.delete(code); continue; }  // 발령일(=마지막 근무일) 당일은 재직, 다음날부터 제외
 
     if (type === "입사" && !roster.has(code)) {
       roster.set(code, {
@@ -1080,7 +1083,7 @@ function rosterAsOf(baseDate) {
         부서코드: "", _fbDept: "", _fbBonbu: "", _fbOrder: null,
         직급: o["변경직급"] || "", 직책: o["변경직책"] || o["직책변경"] || "", 고용형태: newEmp || "일반직",
         성별: o["성별"] || o["변경성별"] || "", 근무지: o["변경근무지"] || "",
-        입사일: oDate, 비고: o["비고"] || "", 대체: o["대체"] || "", 상태: "재직"
+        입사일: oDate, 퇴사일: "", 비고: o["비고"] || "", 대체: o["대체"] || "", 상태: "재직"
       });
     }
     if (!roster.has(code)) continue;  // 재직 중 아닌(미입사/타사) 대상 발령은 무시
@@ -2209,6 +2212,29 @@ function downloadRosterCSV() {
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
 }
+// DB 다운로드 — 기준일 기준 총원 + 퇴직자 전체(확장 데이터). 타 시트 기초데이터용.
+//   컬럼 순서: 사원명·사번·부서(명)·직급·직위(직책)·고용형태·성별·근무지·입사일·퇴사일·대체·비고
+const DB_COLS = [
+  ["사원명", "사원명"], ["사번", "사원코드"], ["부서", "부서"], ["직급", "직급"], ["직위", "직책"],
+  ["고용형태", "고용형태"], ["성별", "성별"], ["근무지", "근무지"], ["입사일", "입사일"],
+  ["퇴사일", "퇴사일"], ["대체", "대체"], ["비고", "비고"]
+];
+function downloadDbCSV() {
+  const list = rosterAsOf(state.asOf, { includeLeft: true })   // 퇴직자 포함
+    .slice().sort((a, b) => String(a.사원코드).localeCompare(String(b.사원코드), "ko"));
+  const headers = DB_COLS.map(c => c[0]);
+  const rows = list.map(p => DB_COLS.map(c => csvCell(p[c[1]] ?? "")));
+  const csv = "﻿" + [headers.map(csvCell).join(","), ...rows.map(r => r.join(","))].join("\r\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `DB전체_${state.asOf}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
 function csvCell(v) {
   const s = String(v ?? "");
   if (/[",\r\n]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
@@ -2480,6 +2506,7 @@ function bindEvents() {
   document.getElementById("filterStatus").onchange = () => renderRoster();
   document.getElementById("filterDept").onchange = () => renderRoster();
   document.getElementById("downloadBtn").onclick = () => downloadRosterCSV();
+  document.getElementById("dbDownloadBtn").onclick = () => downloadDbCSV();
   document.getElementById("regAddRow").onclick = () => regAddPersonRow();
   document.getElementById("regSubmit").onclick = () => regSubmit();
   document.getElementById("regDate").onchange = () => regRecalc();
