@@ -1833,14 +1833,15 @@ function renderOrgChart(){
     (byTeam[t] = byTeam[t] || []).push(p);
   }
   const teams = deptOrder(roster);                 // 본부순 → 표시순서로 정렬된 팀 목록(빈 좌석 포함)
-  // 모든 팀의 본부를 부서마스터(조회일 기준)에서 통일 해석 → 빈/유인원 팀 일관, 자리 이탈 방지.
-  //   마스터에 본부가 없으면(기초명부/발령의 본부값 등) 소속 인원의 본부로 폴백.
+  // 팀의 본부: 인원이 있으면 그 사람의 '실제 부서코드' 기준 본부(=일일/직급별 표와 동일).
+  //   빈 좌석(인원 0)만 이름으로 부서마스터를 해석해 자리 이탈 방지.
   const teamBonbu = {};
   teams.forEach(t=>{
+    const memberBonbu = String((byTeam[t] && byTeam[t][0] && byTeam[t][0].본부) || "").trim();
+    if (memberBonbu) { teamBonbu[t] = memberBonbu; return; }
     const code = resolveDeptCodeByName(t, state.asOf);
     const m = code ? resolveDept(code, state.asOf) : null;
-    const fromMaster = m ? String(m.본부||"").trim() : "";
-    teamBonbu[t] = fromMaster || String((byTeam[t] && byTeam[t][0] && byTeam[t][0].본부) || "").trim();
+    teamBonbu[t] = m ? String(m.본부 || "").trim() : "";
   });
   const isCEO = t => /대표이사/.test(t);          // 대표이사 좌석만 최상단 단독
   const ceo = teams.filter(isCEO);
