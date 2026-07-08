@@ -1590,22 +1590,28 @@ function rosterPerson(code) {
     .filter(o => idOf(o) === String(code) && toISODate(o["발령일"]) && toISODate(o["발령일"]) <= asOf)
     .slice()
     .sort((a, b) => { const x = toISODate(a["발령일"]), y = toISODate(b["발령일"]); return x < y ? -1 : x > y ? 1 : (a.__idx || 0) - (b.__idx || 0); });
-  let histHtml;
-  if (!hist.length) histHtml = `<div class="pp-hist-empty">기준일 이전 인사발령 기록이 없습니다.</div>`;
-  else {
-    const rowsHtml = hist.map(o => {
-      const 발령일 = toISODate(o["발령일"]);
-      const 변동구분 = o["변동구분"] || "";
-      const 부서 = orderDeptName(o, 발령일);   // 발령일 시점의 부서명으로 역추적
-      const 직급 = o["변경직급"] || "";
-      const 직책 = o["변경직책"] || o["직책변경"] || "";
-      const 근무지 = o["변경근무지"] || "";
-      return `<tr><td>${escapeHtml(발령일)}</td><td class="c-type">${escapeHtml(변동구분)}</td><td>${escapeHtml(부서)}</td><td>${escapeHtml(직급)}</td><td>${escapeHtml(직책)}</td><td>${escapeHtml(근무지)}</td></tr>`;
-    }).join("");
-    histHtml = `<div class="pp-htbl-wrap"><table class="pp-htbl">
-      <thead><tr><th>발령일</th><th>구분</th><th>변경부서</th><th class="c-narrow">직급</th><th class="c-narrow2">직책</th><th>근무지</th></tr></thead>
-      <tbody>${rowsHtml}</tbody></table></div>`;
+  const histRow = (발령일, 구분, 부서, 직급, 직책, 근무지) =>
+    `<tr><td>${escapeHtml(발령일)}</td><td class="c-type">${escapeHtml(구분)}</td><td>${escapeHtml(부서)}</td><td>${escapeHtml(직급)}</td><td>${escapeHtml(직책)}</td><td>${escapeHtml(근무지)}</td></tr>`;
+  // 맨 위: 기초명부 데이터 합성 행 — ①입사일 ≤ 시작일 → '기초'(2023-12-30), ②이후 입사 → '입사'(입사일)
+  let baseRowHtml = "";
+  const bp = (state.base || []).find(x => String(x["사원코드"] ?? x["사번"] ?? "").trim() === String(code));
+  if (bp) {
+    const hire = toISODate(bp["입사일"]);
+    const synthDate = (!hire || hire <= BASE_DATE) ? BASE_DATE : hire;
+    const synthType = (!hire || hire <= BASE_DATE) ? "기초" : "입사";
+    baseRowHtml = histRow(synthDate, synthType, orderDeptName(bp, synthDate),
+      bp["직급"] || "", bp["직책"] || "", bp["근무지"] || bp["사업장"] || "");
   }
+  const rowsHtml = hist.map(o => {
+    const 발령일 = toISODate(o["발령일"]);
+    return histRow(발령일, o["변동구분"] || "", orderDeptName(o, 발령일),   // 발령일 시점의 부서명으로 역추적
+      o["변경직급"] || "", o["변경직책"] || o["직책변경"] || "", o["변경근무지"] || "");
+  }).join("");
+  let histHtml;
+  if (!baseRowHtml && !rowsHtml) histHtml = `<div class="pp-hist-empty">기준일 이전 인사발령 기록이 없습니다.</div>`;
+  else histHtml = `<div class="pp-htbl-wrap"><table class="pp-htbl">
+      <thead><tr><th>발령일</th><th>구분</th><th>변경부서</th><th class="c-narrow">직급</th><th class="c-narrow2">직책</th><th>근무지</th></tr></thead>
+      <tbody>${baseRowHtml}${rowsHtml}</tbody></table></div>`;
   document.getElementById('ppBody').innerHTML =
     `<div class="pp-name">${escapeHtml(p.사원명)}${pos ? `<span class="pp-pos">${escapeHtml(pos)}</span>` : ""}</div>` +
     (line1 ? `<div class="pp-line">${escapeHtml(line1)}</div>` : "") +
