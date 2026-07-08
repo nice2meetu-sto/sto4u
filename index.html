@@ -1801,7 +1801,7 @@ function orgChip(p){
   const sb=String(p.사원코드??"").replace(/\\/g,"\\\\").replace(/'/g,"\\'");
   return `<span class="org-chip ${cls}" onclick="orgPerson('${sb}')" title="${ggEsc(tip)}"><span class="org-chip-main">${posTag}${ggEsc(p.사원명)}${jg}</span>${repTag}</span>`;
 }
-function orgTeamCard(team, byTeam){
+function orgTeamCard(team, byTeam, bonbu){
   const mem=(byTeam[team]||[]).slice().sort(orgMemberSort);
   const arg = String(team).replace(/\\/g,"\\\\").replace(/'/g,"\\'");
   let inner;
@@ -1816,7 +1816,9 @@ function orgTeamCard(team, byTeam){
       return `<div class="org-locgrp">${label}<div class="org-locmem">${chips}</div></div>`;
     }).join("");
   }
-  const lead = /대표이사/.test(team) || mem.some(p=>{ const z=String(p.직책||"").trim(); return z==="대표이사"||z==="본부장"; });
+  // 대표이사 좌석 or 본부 헤더(부서명=본부명) 카드는 공석이어도 항상 리더(보라 테두리)
+  const headerSeat = /대표이사/.test(team) || (bonbu && String(team).trim() === String(bonbu).trim());
+  const lead = headerSeat || mem.some(p=>{ const z=String(p.직책||"").trim(); return z==="대표이사"||z==="본부장"; });
   return `<div class="org-team${lead?' lead':''}">
     <button class="org-team-h" onclick="openGGDeptModal('${arg}')"><span class="otname">${ggEsc(team)}</span><span class="otcnt">${mem.length}</span></button>
     <div class="org-mem">${inner}</div>
@@ -1853,11 +1855,11 @@ function renderOrgChart(){
   [...new Set(rest.map(t=>teamBonbu[t]))].forEach(b=>{ if(b && !bonbuSeq.includes(b) && b!=="직속부서" && b!=="대표이사실") bonbuSeq.push(b); });
   const cols = bonbuSeq.filter(b => rest.some(t=> inGrid(t) && teamBonbu[t]===b));
   let html="";
-  if(ceo.length)    html += `<div class="org-ceo">${ceo.map(t=>orgTeamCard(t,byTeam)).join("")}</div>`;
-  if(jiksok.length) html += `<div class="org-jiksok">${jiksok.map(t=>orgTeamCard(t,byTeam)).join("")}</div>`;
+  if(ceo.length)    html += `<div class="org-ceo">${ceo.map(t=>orgTeamCard(t,byTeam,teamBonbu[t])).join("")}</div>`;
+  if(jiksok.length) html += `<div class="org-jiksok">${jiksok.map(t=>orgTeamCard(t,byTeam,teamBonbu[t])).join("")}</div>`;
   if(cols.length)   html += `<div class="org-bonbus">`+cols.map(b=>{
       const bt = rest.filter(t=> inGrid(t) && teamBonbu[t]===b);
-      return `<div class="org-bonbu">${bt.map(t=>orgTeamCard(t,byTeam)).join("")}</div>`;
+      return `<div class="org-bonbu">${bt.map(t=>orgTeamCard(t,byTeam,teamBonbu[t])).join("")}</div>`;
     }).join("")+`</div>`;
   document.getElementById('orgChart').innerHTML = html || '<div class="org-empty">표시할 인원이 없습니다.</div>';
 }
