@@ -1,0 +1,2053 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>STO 행동 약속 자율 점검</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<style>
+:root{
+  --ink:#242B36; --sub:#6B7484; --paper:#F6F6F2; --card:#FFF;
+  --line:#E4E4DC; --trust:#2C4C99; --trust-soft:#EBF0FB;
+  --done:#2F8A63; --done-soft:#E9F5EF;
+  --trying:#C08A2D; --trying-soft:#FBF3E2;
+  --na:#8A93A3; --na-soft:#EFF1F4;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  font-family:"Pretendard Variable",Pretendard,-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  background:var(--paper); color:var(--ink); line-height:1.6; letter-spacing:-0.01em;
+  -webkit-font-smoothing:antialiased;
+  word-break:keep-all; overflow-wrap:break-word;
+}
+.wrap{max-width:640px;margin:0 auto;padding:40px 24px 80px;transition:max-width .25s ease}
+.wrap.wide{max-width:980px}
+.screen{display:none}
+.screen.active{display:block;animation:rise .63s cubic-bezier(.22,.72,.25,1) both}
+@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+/* 누른 카드 위치에서 화면이 커지며 이어지는 전환 */
+.screen.active.zoomin{animation:zoomin .78s cubic-bezier(.22,.72,.25,1) both;
+  transform-origin:var(--ox,50%) var(--oy,40%)}
+@keyframes zoomin{from{opacity:0;transform:scale(.88)}to{opacity:1;transform:none}}
+/* 카드가 눌리며 확대되는 순간 */
+.launching{animation:launch .36s cubic-bezier(.3,.6,.3,1) both !important;position:relative;z-index:5}
+@keyframes launch{to{transform:scale(1.06);opacity:.25}}
+@keyframes cardpop{from{opacity:0;transform:scale(.9) translateY(6px)}to{opacity:1;transform:none}}
+@keyframes unfold{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+@media(prefers-reduced-motion:reduce){
+  .screen.active,.screen.active.zoomin,.reveal.show,.launching,.round-grid .rd-card{animation:none!important}
+  *{transition:none!important}
+}
+
+.eyebrow{display:flex;align-items:center;gap:8px;font-size:.8rem;font-weight:700;color:var(--trust);margin-bottom:14px}
+.eyebrow .dot{width:8px;height:8px;background:var(--trust);border-radius:2px;transform:rotate(45deg)}
+h1{font-size:1.65rem;font-weight:800;line-height:1.35;letter-spacing:-0.02em}
+.lede{margin-top:10px;color:var(--sub);font-size:.95rem}
+
+.pledge{margin-top:24px;background:var(--trust);color:#fff;border-radius:16px;padding:22px 24px}
+.pledge p{font-size:.98rem;font-weight:600}
+.pledge h2{font-size:.8rem;font-weight:700;opacity:.85;letter-spacing:.04em;margin-top:12px;margin-bottom:4px}
+.pledge ul{list-style:none;margin-top:0}
+.pledge li{display:flex;gap:9px;font-size:.87rem;opacity:.94;padding:4px 0}
+.pledge li::before{content:"";flex:none;width:7px;height:7px;border-radius:50%;background:#fff;opacity:.8;margin-top:8px}
+
+.btn{display:block;width:100%;margin-top:22px;background:var(--ink);color:#fff;border:none;border-radius:13px;
+  padding:15px;font-size:1rem;font-weight:700;font-family:inherit;cursor:pointer;transition:opacity .12s,transform .12s}
+.btn:hover{opacity:.92}.btn:active{transform:scale(.99)}
+.btn:disabled{background:#C9CDD4;color:#FFF;opacity:1;cursor:default}
+.btn.secondary{background:transparent;color:var(--sub);font-weight:600;padding:10px;margin-top:10px}
+.btn.ghost{background:#fff;color:var(--ink);border:1.5px solid var(--line)}
+.btn:focus-visible,.opt:focus-visible,input:focus-visible,.focus-item:focus-visible,.round-card:focus-visible,.role-card:focus-visible,.linkish:focus-visible{outline:3px solid var(--trust);outline-offset:2px}
+.time{margin-top:14px;text-align:center;font-size:.82rem;color:var(--sub)}
+.linkish{display:block;margin:18px auto 0;background:none;border:none;font-family:inherit;
+  font-size:.83rem;color:var(--sub);text-decoration:underline;cursor:pointer}
+
+/* 인트로 내 접이식 인증 */
+.reveal{display:none}
+.reveal.show{display:block;animation:unfold .28s ease both}
+.field{margin-top:16px}
+.field label{display:block;font-size:.85rem;font-weight:700;margin-bottom:7px}
+.field input{width:100%;border:1.5px solid var(--line);border-radius:12px;background:#fff;
+  padding:14px 16px;font-size:1rem;font-family:inherit}
+.field input:focus{border-color:var(--trust);outline:none}
+.auth-inner{width:100%;text-align:center}
+.field-row{display:flex;gap:10px;margin-top:16px}
+.field-row .field{flex:1;min-width:0;margin-top:0;display:flex;align-items:center;gap:9px}
+.field-row label{margin:0;flex:none;font-size:.85rem}
+.field-row input{flex:1;min-width:0;text-align:center;padding:12px 10px}
+.err{margin-top:14px;background:#FDF0EF;border:1px solid #F0C8C4;color:#A4362B;
+  border-radius:12px;padding:13px 16px;font-size:.88rem;display:none}
+.err.show{display:block}
+.loading{display:none;text-align:center;color:var(--sub);font-size:.88rem;margin-top:14px}
+.loading.show{display:flex;align-items:center;justify-content:center;gap:9px}
+.loading.show::before{content:"";flex:none;width:16px;height:16px;border-radius:50%;
+  border:2.5px solid var(--line);border-top-color:var(--trust);
+  animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){.loading.show::before{animation:none;border-top-color:var(--trust)}}
+
+/* 대시보드 */
+.dash-hello{background:var(--card);border:1px solid var(--line);border-radius:15px;padding:18px 20px;margin-top:20px;
+  display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
+.dash-hello .who{font-size:1.05rem;font-weight:800}
+.dash-hello .meta{font-size:.83rem;color:var(--sub);font-weight:600}
+.next-info{margin-top:12px;background:var(--trust-soft);border-radius:12px;padding:12px 16px;font-size:.88rem;color:var(--trust);font-weight:600}
+.round-list{margin-top:18px;display:flex;flex-direction:column;gap:11px}
+.round-card{width:100%;text-align:left;background:var(--card);border:1.5px solid var(--line);border-radius:15px;
+  padding:17px 19px;font-family:inherit;display:flex;align-items:center;gap:14px;transition:border-color .13s}
+.round-card .rname{font-size:1rem;font-weight:800}
+.round-card .rmeta{font-size:.8rem;color:var(--sub);margin-top:2px}
+.round-card .grow{flex:1}
+.round-card.clickable{cursor:pointer}
+.round-card.clickable:hover{border-color:var(--trust)}
+.round-card.disabled{opacity:.6}
+.state{flex:none;font-size:.78rem;font-weight:700;border-radius:99px;padding:5px 12px;white-space:nowrap}
+.state.done{background:var(--done-soft);color:var(--done)}
+.state.open{background:var(--trust-soft);color:var(--trust)}
+.state.miss{background:var(--na-soft);color:var(--na)}
+.state.wait{background:var(--na-soft);color:var(--na)}
+.round-card .arrow{flex:none;color:var(--sub);font-size:.9rem}
+
+/* 역할 선택(테스트) */
+.role-list{margin-top:20px;display:flex;flex-direction:column;gap:11px}
+.role-card{width:100%;text-align:left;background:var(--card);border:1.5px solid var(--line);border-radius:15px;
+  padding:16px 19px;font-family:inherit;cursor:pointer;transition:border-color .13s}
+.role-card:hover{border-color:var(--trust)}
+.role-card .rn{font-size:1rem;font-weight:800}
+.role-card .rp{font-size:.84rem;color:var(--sub);margin-top:3px}
+.testbadge{display:inline-block;background:var(--trying-soft);color:var(--trying);font-size:.75rem;
+  font-weight:800;border-radius:99px;padding:4px 12px;margin-bottom:12px}
+
+/* 체크리스트 */
+.quiz-head{display:flex;align-items:baseline;justify-content:space-between}
+.quiz-role{font-size:1.3rem;font-weight:800}
+.quiz-role em{font-style:normal;color:var(--trust)}
+.round-tag{font-size:.82rem;color:var(--sub);font-weight:600}
+.lastfocus{margin-top:14px;background:var(--trust-soft);border-radius:12px;padding:13px 16px;font-size:.88rem}
+.lastfocus b{color:var(--trust)}
+.quiz-sticky{position:sticky;top:0;z-index:20;background:var(--paper);padding:12px 0 8px;margin:-12px 0 0}
+.progress{height:6px;background:var(--line);border-radius:99px;margin:14px 0 4px;overflow:hidden}
+.progress .bar{height:100%;width:0;background:var(--trust);border-radius:99px;transition:width .25s ease}
+.progress-num{font-size:.78rem;color:var(--sub);text-align:right}
+.section-tag{display:inline-flex;align-items:center;gap:7px;margin:26px 0 4px;font-size:.8rem;font-weight:800;color:var(--trust)}
+.section-tag .sq{width:9px;height:9px;background:var(--trust);border-radius:2px;transform:rotate(45deg)}
+.section-tag.qt-hq{color:#9A7E4E} .section-tag.qt-hq .sq{background:#9A7E4E}
+.section-tag.qt-leader{color:#CE7F35} .section-tag.qt-leader .sq{background:#CE7F35}
+.section-tag.qt-middle{color:#6E9E45} .section-tag.qt-middle .sq{background:#6E9E45}
+.section-tag.qt-member{color:#B7952C} .section-tag.qt-member .sq{background:#B7952C}
+.promise-line{font-size:.88rem;color:var(--sub);margin-bottom:12px}
+.item{background:var(--card);border:1px solid var(--line);border-radius:15px;padding:19px 20px;margin-bottom:12px}
+.item .q{font-size:.98rem;font-weight:700;line-height:1.55}
+.item .q .num{color:var(--trust);margin-right:6px;font-weight:800}
+.item .subnote{margin-top:6px;font-size:.8rem;color:var(--sub)}
+.opts{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:14px}
+.opt{border:1.5px solid var(--line);background:#fff;border-radius:11px;padding:11px 4px;
+  font-family:inherit;font-size:.87rem;font-weight:700;color:var(--sub);cursor:pointer;transition:all .13s}
+.opt:hover{border-color:#c8ccc2}
+.opt[data-v="실천했다"].on{background:var(--done-soft);border-color:var(--done);color:var(--done)}
+.opt[data-v="노력 중이다"].on{background:var(--trying-soft);border-color:var(--trying);color:var(--trying)}
+.opt[data-v="상황이 없었다"].on{background:var(--na-soft);border-color:var(--na);color:var(--na)}
+.tip{display:none;margin-top:13px;background:var(--trying-soft);border-left:3px solid var(--trying);
+  border-radius:0 10px 10px 0;padding:12px 15px;font-size:.88rem;line-height:1.65}
+.tip.show{display:block}
+.tip b{display:block;font-size:.76rem;color:var(--trying);letter-spacing:.03em;margin-bottom:4px}
+.tip.v-did{background:var(--done-soft);border-left-color:var(--done)}
+.tip.v-did b{color:var(--done)}
+.tip.v-na{background:var(--na-soft);border-left-color:var(--na)}
+.tip.v-na b{color:var(--na)}
+
+/* 메인 슬라이딩 약속 카드 */
+.promo{margin-top:22px}
+.promo-label{font-size:.8rem;font-weight:800;color:var(--trust);margin-bottom:8px;
+  display:flex;align-items:center;justify-content:space-between;gap:10px}
+.promo-label .pl-left{display:flex;align-items:center;gap:7px}
+.promo-label .sq{width:9px;height:9px;background:var(--trust);border-radius:2px;transform:rotate(45deg)}
+.promo-card{width:100%;text-align:center;background:var(--card);border:1.5px solid var(--line);border-radius:15px;
+  padding:17px 19px;font-family:inherit;cursor:pointer;transition:opacity .35s ease,border-color .13s;display:block}
+.promo-card:hover{border-color:var(--trust)}
+.promo-card.fading{opacity:0}
+.promo-card .pr{font-size:.98rem;font-weight:800}
+.promo-card .pp{font-size:1.04rem;color:var(--sub);margin-top:6px;line-height:1.5}
+.promo-card .pgo{font-size:.78rem;color:var(--trust);font-weight:700;margin-top:8px}
+.promo-dots{display:flex;align-items:center;gap:5px}
+.promo-dots button{width:8px;height:8px;padding:0;border:none;border-radius:50%;background:#D8DBD4;
+  cursor:pointer;transition:background .2s,transform .2s}
+.promo-dots button:hover{background:#B4BAB0;transform:scale(1.15)}
+.promo-dots button.on{background:var(--trust);transform:scale(1.15)}
+
+/* 메인 참여 일정 카드 (1차/2차/3차) */
+.sched{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:22px}
+.sched-label{grid-column:1/-1;font-size:.8rem;font-weight:800;color:var(--trust);
+  display:flex;align-items:center;gap:7px;margin-bottom:-2px}
+.sched-label .sq{width:9px;height:9px;background:var(--trust);border-radius:2px;transform:rotate(45deg)}
+.sched-card{background:var(--card);border:1.5px solid var(--line);border-radius:12px;
+  padding:9px 8px;text-align:center}
+.sched-card.now{border-color:var(--trust);background:var(--trust-soft)}
+.sched-card.done{opacity:.55}
+.sched-card.hasresult{cursor:pointer;opacity:1;font-family:inherit;width:100%;
+  transition:border-color .13s,transform .13s,box-shadow .13s}
+.sched-card.hasresult:hover{border-color:var(--trust);transform:translateY(-2px);
+  box-shadow:0 8px 16px -12px rgba(36,43,54,.4)}
+.sched-more{font-size:.7rem;font-weight:700;color:var(--trust);white-space:nowrap}
+.sched-sep{color:var(--line);font-size:.7rem}
+
+/* 회차 결과 모달 */
+.modal{position:fixed;inset:0;z-index:100;display:none;align-items:center;justify-content:center;padding:20px}
+.modal.show{display:flex;animation:fadein .42s ease both}
+@keyframes fadein{from{opacity:0}to{opacity:1}}
+.modal-dim{position:absolute;inset:0;background:rgba(28,33,42,.5)}
+.modal-box{position:relative;background:var(--paper);border-radius:18px;width:100%;max-width:520px;
+  max-height:88vh;overflow-y:auto;padding:20px;
+  animation:pop .57s cubic-bezier(.22,.72,.25,1) both;
+  transform-origin:var(--mox,50%) var(--moy,50%)}
+@keyframes pop{from{opacity:0;transform:scale(.82)}to{opacity:1;transform:none}}
+@media(prefers-reduced-motion:reduce){.modal.show,.modal-box{animation:none}}
+.modal-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.modal-titlerow{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.modal-title{font-size:1.15rem;font-weight:800;line-height:1.35}
+.modal-close{flex:none;background:none;border:none;font-size:1.5rem;line-height:1;color:var(--sub);
+  cursor:pointer;font-family:inherit;padding:0 2px}
+.modal-close:hover{color:var(--ink)}
+.modal-join{font-size:.85rem;color:var(--sub);font-weight:600}
+.rt-tabs{display:flex;gap:6px;margin-top:14px;flex-wrap:wrap}
+/* 미선택 탭은 회색 — 카드용 테마 규칙보다 우선하도록 선택자 강화 */
+.rt-tabs .rt-tab{background:#ECEDE8;border:1.5px solid #DFE1DA;border-radius:99px;padding:6px 13px;
+  font-family:inherit;font-size:.82rem;font-weight:700;color:#8A9099;cursor:pointer;transition:all .13s}
+.rt-tabs .rt-tab:hover{background:#E3E5DE;color:var(--sub)}
+.rt-tabs .rt-tab.on{color:var(--ink)}
+.rt-tabs .rt-tab.on.rt-tab-letter{background:#2C4C99;border-color:#2C4C99;color:#FFFFFF}
+.rt-tabs .rt-tab.on.t-common{background:#E9F3FB;border-color:#96C2E6}
+.rt-tabs .rt-tab.on.t-leader{background:#FDF1E3;border-color:#EBB57E}
+.rt-tabs .rt-tab.on.t-middle{background:#EFF7E8;border-color:#AED18F}
+.rt-tabs .rt-tab.on.t-member{background:#FCF7E0;border-color:#E3CD75}
+.rt-block{background:var(--card);border:1.5px solid var(--line);border-radius:13px;
+  padding:12px 16px;margin-top:8px}
+.rt-block.t-common{border-color:#96C2E6}
+.rt-block.t-leader{border-color:#EBB57E}
+.rt-block.t-middle{border-color:#AED18F}
+.rt-block.t-member{border-color:#E3CD75}
+/* 강조 2개만 배경색, 나머지는 흰 배경 + 테마 테두리 */
+.rt-block.best.t-common,.rt-block.next.t-common{background:#F2F8FD}
+.rt-block.best.t-leader,.rt-block.next.t-leader{background:#FEF8F1}
+.rt-block.best.t-middle,.rt-block.next.t-middle{background:#F5FAF1}
+.rt-block.best.t-member,.rt-block.next.t-member{background:#FDFBEF}
+.rt-block.rest{background:var(--card);padding:10px 15px}
+.rt-block.rest .rt-q{font-size:.88rem;font-weight:600;margin-top:0}
+.rt-block.rest .rt-bar i{background:var(--trust)}
+.rt-block.rest .rt-num{color:var(--trust)}
+.rt-restlabel{margin:14px 0 -2px;font-size:.78rem;font-weight:800;color:var(--sub)}
+
+/* 레터 탭 */
+.rt-letter{background:var(--card);border:1.5px solid var(--line);border-radius:14px;
+  padding:20px 22px;margin-top:12px}
+.lt-icon{font-size:1.4rem;line-height:1}
+.lt-title{margin-top:8px;font-size:1.08rem;font-weight:800;line-height:1.4}
+.lt-intro{margin-top:11px;font-size:.9rem;color:var(--sub);line-height:1.72}
+.lt-intro b{color:var(--trust)}
+.lt-block{margin-top:17px;padding-top:15px;border-top:1px dashed var(--line)}
+.lt-h{font-size:.93rem;font-weight:800;line-height:1.5}
+.lt-p{margin-top:6px;font-size:.88rem;color:var(--sub);line-height:1.72}
+.lt-p b{color:var(--done);font-weight:800}
+.lt-outro{margin-top:18px;background:var(--trust-soft);border-radius:11px;
+  padding:13px 15px;font-size:.88rem;color:var(--trust);font-weight:700;line-height:1.65}
+
+/* 회차 간 변화 카드 */
+.rt-chglabel{margin:18px 0 0;font-size:.82rem;font-weight:800;color:var(--done)}
+.rt-chg{margin-top:8px;background:var(--done-soft);border:1.5px solid #BBE0CD;
+  border-radius:13px;padding:13px 16px}
+.rt-chg + .rt-chg{margin-top:8px}
+.rt-chg.flat{background:var(--trust-soft);border-color:#BBD0EE}
+.chg-q{font-size:.89rem;font-weight:700;line-height:1.45}
+.chg-row{display:flex;align-items:center;gap:8px;margin-top:8px;flex-wrap:wrap}
+.chg-from{font-size:.84rem;color:var(--sub);font-weight:700}
+.chg-ar{font-size:.84rem;color:var(--sub)}
+.chg-to{font-size:.95rem;font-weight:800;color:var(--done)}
+.rt-chg.flat .chg-to{color:var(--trust)}
+.chg-badge{margin-left:auto;font-size:.78rem;font-weight:800;color:#fff;
+  background:var(--done);border-radius:99px;padding:3px 10px;white-space:nowrap}
+.rt-chg.flat .chg-badge{background:var(--trust)}
+#rt-join-btn{margin-top:16px;padding:13px}
+.rt-label{font-size:.79rem;font-weight:800;display:flex;align-items:center;gap:6px}
+.rt-block.best .rt-label{color:var(--done)}
+.rt-block.next .rt-label{color:var(--trying)}
+.rt-q{font-size:.92rem;font-weight:700;line-height:1.5;margin-top:5px}
+.rt-rate{margin-top:7px;display:flex;align-items:center;gap:9px}
+.rt-bar{flex:1;height:6px;background:var(--line);border-radius:99px;overflow:hidden}
+.rt-bar i{display:block;height:100%;border-radius:99px}
+.rt-block.best .rt-bar i{background:var(--done)}
+.rt-block.next .rt-bar i{background:var(--trying)}
+.rt-num{font-size:.82rem;font-weight:800}
+.rt-block.best .rt-num{color:var(--done)}
+.rt-block.next .rt-num{color:var(--trying)}
+.rt-foot{margin-top:14px;font-size:.8rem;color:var(--sub);text-align:center}
+.sched-r{font-size:.88rem;font-weight:800;line-height:1.3}
+.sched-d{font-size:.72rem;color:var(--sub);margin-top:2px;line-height:1.35}
+.sched-foot{display:flex;align-items:center;justify-content:center;gap:6px;margin-top:3px;
+  min-height:1.05rem;flex-wrap:nowrap}
+.sched-s{font-size:.7rem;font-weight:700;color:var(--sub)}
+.sched-card.now .sched-s{color:var(--trust)}
+/* 진행 중 — 글자가 차례로 일렁이는 효과 */
+.sched-s .wv{display:inline-block;animation:wave 1.6s ease-in-out infinite}
+@keyframes wave{
+  0%,60%,100%{transform:translateY(0);opacity:.75}
+  30%{transform:translateY(-3px);opacity:1}
+}
+@media(prefers-reduced-motion:reduce){.sched-s .wv{animation:none;opacity:1}}
+
+/* 참여 현황 — 회차 가로 배치 */
+.round-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:18px;align-items:stretch}
+@media(max-width:720px){.round-grid{grid-template-columns:1fr}}
+.round-grid .rd-card{animation:cardpop .75s cubic-bezier(.22,.72,.25,1) both}
+.rd-card{background:var(--card);border:1.5px solid var(--line);border-radius:15px;padding:17px 18px;
+  font-family:inherit;text-align:left;display:flex;flex-direction:column;gap:9px}
+.rd-card.clickable{cursor:pointer;transition:border-color .13s,transform .13s,box-shadow .13s}
+.rd-card.clickable:hover{border-color:var(--trust);transform:translateY(-2px);
+  box-shadow:0 10px 20px -14px rgba(36,43,54,.4)}
+.rd-card.disabled{opacity:.62}
+.rd-top{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.rd-name{font-size:1rem;font-weight:800}
+.rd-date{font-size:.76rem;color:var(--sub);line-height:1.45}
+.rd-mini{display:flex;gap:6px;padding-top:10px;border-top:1px dashed var(--line)}
+.rd-mini div{flex:1;text-align:center}
+.rd-mini b{display:block;font-size:1.15rem;font-weight:800;line-height:1.3}
+.rd-mini span{font-size:.7rem;color:var(--sub);font-weight:600}
+.rd-focus{font-size:.79rem;line-height:1.5;background:var(--trust-soft);border-radius:9px;padding:9px 11px}
+.rd-focus b{color:var(--trust);font-size:.72rem;display:block;margin-bottom:2px}
+.rd-empty{font-size:.8rem;color:var(--sub);margin-top:auto}
+.rd-more{font-size:.76rem;font-weight:700;color:var(--trust);margin-top:auto}
+
+/* 체크리스트 상단 — 지난 회차 카드 */
+.lastcard{margin:14px 0 4px;background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.lc-head{width:100%;text-align:left;background:none;border:none;font-family:inherit;
+  padding:15px 18px;cursor:pointer;display:block;transition:background .13s}
+.lc-head:hover{background:#FAFAF7}
+.lc-row{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.lc-round{font-size:.92rem;font-weight:800}
+.lc-counts{display:flex;gap:5px}
+.lc-counts .chip{font-size:.73rem;padding:3px 9px}
+.lc-focus{margin-top:9px;font-size:.83rem;line-height:1.5;color:var(--ink)}
+.lc-focus b{color:var(--trust);font-size:.72rem;display:block;margin-bottom:2px}
+.lc-toggle{display:inline-block;margin-top:9px;font-size:.76rem;font-weight:700;color:var(--trust)}
+.lc-body{display:none;padding:0 18px 6px}
+.lastcard.open .lc-body{display:block;animation:unfold .25s ease both}
+
+/* 시작 전 따라 적기 (지난 회차 과제 약속) */
+.trace-card{margin:14px 0 4px;background:var(--card);border:1px solid var(--line);
+  border-radius:14px;padding:17px 19px}
+.tc-title{font-size:.95rem;font-weight:800}
+.tc-sub{font-size:.81rem;color:var(--sub);margin-top:4px;line-height:1.5}
+.tc-row{margin-top:14px}
+.tc-line{display:flex;align-items:baseline;gap:8px;margin-bottom:7px}
+.tc-tag{flex:none;display:inline-block;font-size:.71rem;font-weight:800;border-radius:99px;
+  padding:3px 10px;border:1px solid transparent}
+.tc-tag.t-common{background:#E9F3FB;border-color:#96C2E6;color:#2F6DA8}
+.tc-tag.t-leader{background:#FDF1E3;border-color:#EBB57E;color:#B4661F}
+.tc-tag.t-middle{background:#EFF7E8;border-color:#AED18F;color:#537A34}
+.tc-tag.t-member{background:#FCF7E0;border-color:#E3CD75;color:#8E7115}
+.tc-tag.t-hq{background:#F5EFE4;border-color:#CDBB99;color:#7C6435}
+.tc-ref{flex:1;min-width:0;font-size:.88rem;color:#79808D;line-height:1.5;
+  word-break:keep-all;letter-spacing:-0.01em}
+.tc-input{width:100%;padding:11px 15px;font-size:.88rem;font-family:inherit;font-weight:700;
+  letter-spacing:-0.01em;border:1.5px solid var(--line);border-radius:11px;background:#fff;color:var(--ink)}
+.tc-input:focus{border-color:var(--trust);outline:none}
+.tc-input.ok{border-color:var(--done);background:var(--done-soft)}
+.tc-msg{font-size:.76rem;color:var(--sub);margin-top:6px;min-height:1rem}
+.tc-msg.ok{color:var(--done);font-weight:700}
+.tc-all{margin-top:14px;padding-top:12px;border-top:1px dashed var(--line);
+  font-size:.83rem;font-weight:700;color:var(--sub);text-align:center}
+.tc-all.ok{color:var(--done)}
+
+/* 결과 — 지난 회차 비교 */
+.cmp-block{margin-top:26px}
+.cmp-block h3{font-size:1rem;font-weight:800}
+.cmp-block .cmp-sub{font-size:.83rem;color:var(--sub);margin-top:4px}
+.cmp-list{margin-top:12px;background:var(--card);border:1px solid var(--line);border-radius:15px;padding:6px 18px}
+.cmp-row{padding:13px 0;border-bottom:1px dashed var(--line)}
+.cmp-row:last-child{border-bottom:none}
+.cmp-q{font-size:.87rem;font-weight:600;line-height:1.5}
+.cmp-chips{display:flex;align-items:center;gap:7px;margin-top:8px;flex-wrap:wrap}
+.cmp-ar{color:var(--sub);font-size:.85rem}
+.cmp-up{display:inline-block;margin-left:7px;vertical-align:middle;white-space:nowrap;
+  font-size:.72rem;font-weight:800;color:var(--done);background:var(--done-soft);
+  border-radius:99px;padding:2px 8px}
+
+/* 역할별 테마색 (옅은 배경) */
+.t-leader{background:#FDF1E3;border-color:#EBB57E}
+.t-leader:hover{border-color:#D89453}
+.t-middle{background:#EFF7E8;border-color:#AED18F}
+.t-middle:hover{border-color:#8BBB63}
+.t-member{background:#FCF7E0;border-color:#E3CD75}
+.t-member:hover{border-color:#CDB14A}
+.t-common{background:#E9F3FB;border-color:#96C2E6}
+.t-common:hover{border-color:#66A5D8}
+.t-hq{background:#F5EFE4;border-color:#CDBB99}
+.t-hq:hover{border-color:#B3A07A}
+
+/* 역할 구경 화면 */
+.browse-promise{margin-top:14px;background:var(--trust);color:#fff;border-radius:14px;padding:16px 20px;
+  font-size:.95rem;font-weight:700;line-height:1.6}
+.browse-promise.t-leader{background:#FDF1E3;border:1.5px solid #EBB57E;color:var(--ink)}
+.browse-promise.t-middle{background:#EFF7E8;border:1.5px solid #AED18F;color:var(--ink)}
+.browse-promise.t-member{background:#FCF7E0;border:1.5px solid #E3CD75;color:var(--ink)}
+.browse-promise.t-common{background:#E9F3FB;border:1.5px solid #96C2E6;color:var(--ink)}
+.browse-promise.t-hq{background:#F5EFE4;border:1.5px solid #CDBB99;color:var(--ink)}
+.pledge-write{margin-top:28px;background:var(--card);border:1px solid var(--line);border-radius:15px;padding:19px 20px;text-align:center}
+.pw-title{font-size:.95rem;font-weight:800}
+.pw-box{position:relative;display:inline-block;max-width:100%;margin-top:13px}
+.pw-sizer{display:block;visibility:hidden;white-space:pre;
+  padding:13px 24px;font-size:.95rem;font-weight:700;letter-spacing:-0.01em;
+  border:1.5px solid transparent}
+.pw-ghost{position:absolute;left:0;top:0;right:0;padding:13px 24px;font-size:.95rem;
+  color:#C7CCD5;pointer-events:none;white-space:pre;overflow:hidden;letter-spacing:-0.01em;text-align:left}
+#pw-input{position:absolute;left:0;top:0;width:100%;height:100%;
+  padding:13px 24px;font-size:.95rem;font-family:inherit;letter-spacing:-0.01em;
+  border:1.5px solid var(--line);border-radius:12px;background:transparent;color:var(--ink);
+  text-align:left;font-weight:700}
+#pw-input:focus{border-color:var(--trust);outline:none}
+.pw-box.ok #pw-input{border-color:var(--done);background:var(--done-soft)}
+.pw-box.ok .pw-ghost{color:transparent}
+.pw-hint{margin-top:9px;font-size:.8rem;color:var(--sub)}
+.pw-hint.ok{color:var(--done);font-weight:700}
+
+.quiz-promise{margin:10px 0 16px;font-size:.9rem;
+  position:sticky;top:86px;z-index:15;padding:12px 20px;
+  box-shadow:0 0 0 8px var(--paper), 0 8px 16px -10px rgba(36,43,54,.25)}
+#s-quiz.qt-hq .quiz-role em{color:#9A7E4E}
+#s-quiz.qt-hq .progress .bar{background:#9A7E4E}
+#s-quiz.qt-leader .quiz-role em{color:#CE7F35}
+#s-quiz.qt-leader .progress .bar{background:#CE7F35}
+#s-quiz.qt-middle .quiz-role em{color:#6E9E45}
+#s-quiz.qt-middle .progress .bar{background:#6E9E45}
+#s-quiz.qt-member .quiz-role em{color:#B7952C}
+#s-quiz.qt-member .progress .bar{background:#B7952C}
+.browse-item{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px;margin-top:11px}
+.browse-item .q{font-size:.94rem;font-weight:700;line-height:1.55}
+.browse-item .q .num{color:var(--trust);margin-right:6px;font-weight:800}
+.browse-item .bt{margin-top:8px;font-size:.83rem;color:var(--sub);line-height:1.6}
+.browse-item .bt b{color:var(--trying);font-size:.76rem;display:block;margin-bottom:2px}
+
+/* 결과·회차 상세 */
+.result-card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:26px 24px;text-align:center;margin-top:20px}
+.result-title{font-size:1.25rem;font-weight:800;line-height:1.4}
+.result-sub{margin-top:8px;font-size:.92rem;color:var(--sub)}
+.count-row{display:flex;justify-content:center;gap:22px;margin-top:18px;padding-top:18px;border-top:1px dashed var(--line)}
+.count b{display:block;font-size:1.4rem;font-weight:800}
+.count span{font-size:.78rem;color:var(--sub);font-weight:600}
+.count.c-did b{color:var(--done)}.count.c-try b{color:var(--trying)}.count.c-na b{color:var(--na)}
+.focus-block{margin-top:26px}
+.focus-block h3{font-size:1rem;font-weight:800}
+.focus-block p{font-size:.85rem;color:var(--sub);margin-top:4px}
+.focus-list{margin-top:12px;display:flex;flex-direction:column;gap:8px}
+.focus-free{width:100%;margin-top:12px;border:1.5px solid var(--line);border-radius:12px;
+  background:#fff;padding:14px 16px;font-size:.93rem;font-family:inherit;line-height:1.6;
+  color:var(--ink);resize:vertical}
+.focus-free:focus{border-color:var(--trust);outline:none}
+.focus-note{margin-top:8px;font-size:.8rem;color:var(--sub)}
+.pw-sub{font-size:.84rem;color:var(--sub);line-height:1.6;margin-top:6px}
+#pw-free .focus-free{margin-top:11px;text-align:left}
+.focus-item{text-align:left;background:#fff;border:1.5px solid var(--line);border-radius:12px;padding:13px 15px;
+  font-family:inherit;font-size:.9rem;font-weight:600;cursor:pointer;line-height:1.5;width:100%;transition:all .13s}
+.focus-item:hover{border-color:var(--trust)}
+.focus-item.on{background:var(--trust-soft);border-color:var(--trust);color:var(--trust);font-weight:700}
+.hist-list{background:var(--card);border:1px solid var(--line);border-radius:15px;padding:8px 20px;margin-top:16px}
+.hist-item{border-bottom:1px dashed var(--line)}
+.hist-item:last-child{border-bottom:none}
+.hist-q{display:flex;justify-content:space-between;gap:14px;align-items:flex-start;padding:12px 8px;margin:0 -8px;
+  font-size:.88rem;cursor:pointer;border-radius:9px;transition:background .13s}
+.hist-q:hover{background:#F4F4EE}
+.hist-tip{display:none;margin:2px 0 12px;background:var(--trying-soft);border-left:3px solid var(--trying);
+  border-radius:0 10px 10px 0;padding:11px 14px;font-size:.85rem;line-height:1.6}
+.hist-tip b{display:block;font-size:.74rem;color:var(--trying);letter-spacing:.03em;margin-bottom:3px}
+.hist-item.open .hist-tip{display:block;animation:unfold .25s ease both}
+.hist-q .qt{flex:1;line-height:1.5}
+.chip{flex:none;font-size:.78rem;font-weight:700;border-radius:99px;padding:4px 11px;white-space:nowrap}
+.chip.did{background:var(--done-soft);color:var(--done)}
+.chip.try{background:var(--trying-soft);color:var(--trying)}
+.chip.na{background:var(--na-soft);color:var(--na)}
+.hist-focus{margin-top:14px;background:var(--trust-soft);border-radius:10px;padding:12px 15px;font-size:.87rem}
+.hist-focus b{color:var(--trust)}
+.rv-link{margin-left:auto;background:none;border:none;font-family:inherit;font-size:.78rem;
+  color:var(--trust);font-weight:700;cursor:pointer;text-decoration:underline;white-space:nowrap}
+
+.done-mark{width:70px;height:70px;margin:34px auto 0;display:block}
+.done-title{text-align:center;font-size:1.35rem;font-weight:800;margin-top:18px}
+.done-sub{text-align:center;color:var(--sub);font-size:.92rem;margin-top:10px}
+.done-sum{margin-top:22px;display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+@media(max-width:560px){.done-sum{grid-template-columns:1fr}}
+.ds-card{background:var(--card);border:1.5px solid var(--line);border-radius:14px;padding:15px 14px;text-align:center}
+.ds-card.none{opacity:.55}
+.ds-round{font-size:.88rem;font-weight:800}
+.ds-date{font-size:.72rem;color:var(--sub);margin-top:3px}
+.ds-counts{display:flex;gap:4px;margin-top:11px;padding-top:10px;border-top:1px dashed var(--line)}
+.ds-counts div{flex:1}
+.ds-counts b{display:block;font-size:1.05rem;font-weight:800;line-height:1.3}
+.ds-counts span{font-size:.68rem;color:var(--sub);font-weight:600}
+.ds-empty{margin-top:14px;font-size:.78rem;color:var(--sub)}
+#fireworks{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:90;display:none}
+#fireworks.on{display:block}
+footer{margin-top:48px;text-align:center;font-size:.75rem;color:#A6ACB8;line-height:1.7}
+
+/* ===== 모션: 등장 스태거 + 호버 리프트 ===== */
+.screen.active > *{animation:rise .75s cubic-bezier(.22,.7,.3,1) both}
+.screen.active > *:nth-child(2){animation-delay:.05s}
+.screen.active > *:nth-child(3){animation-delay:.1s}
+.screen.active > *:nth-child(4){animation-delay:.15s}
+.screen.active > *:nth-child(5){animation-delay:.2s}
+.screen.active > *:nth-child(6){animation-delay:.25s}
+.screen.active > *:nth-child(7){animation-delay:.3s}
+.screen.active > *:nth-child(8){animation-delay:.35s}
+
+.round-list > *,.role-list > *,.focus-list > *,.hist-list > *{animation:rise .75s cubic-bezier(.22,.7,.3,1) both}
+.round-list > *:nth-child(2),.role-list > *:nth-child(2){animation-delay:.07s}
+.round-list > *:nth-child(3),.role-list > *:nth-child(3){animation-delay:.14s}
+.round-list > *:nth-child(4),.role-list > *:nth-child(4){animation-delay:.21s}
+.focus-list > *:nth-child(2),.hist-list > *:nth-child(2){animation-delay:.04s}
+.focus-list > *:nth-child(3),.hist-list > *:nth-child(3){animation-delay:.08s}
+.focus-list > *:nth-child(4),.hist-list > *:nth-child(4){animation-delay:.12s}
+.focus-list > *:nth-child(5),.hist-list > *:nth-child(5){animation-delay:.16s}
+.focus-list > *:nth-child(6),.hist-list > *:nth-child(6){animation-delay:.2s}
+.focus-list > *:nth-child(7),.hist-list > *:nth-child(7){animation-delay:.24s}
+.focus-list > *:nth-child(8),.hist-list > *:nth-child(8){animation-delay:.28s}
+#quiz-body > *{animation:rise .75s cubic-bezier(.22,.7,.3,1) both}
+
+.btn,.role-card,.promo-card,.round-card,.opt,.focus-item{
+  transition:transform .25s ease, box-shadow .25s ease, border-color .15s ease,
+             background .15s ease, opacity .15s ease}
+.btn:hover{transform:translateY(-2px);box-shadow:0 12px 22px -12px rgba(36,43,54,.35);opacity:1}
+.btn.secondary:hover,.btn:disabled:hover{transform:none;box-shadow:none}
+.btn.secondary:hover{color:var(--ink)}
+.role-card:hover,.promo-card:hover{transform:translateY(-3px);box-shadow:0 14px 24px -14px rgba(36,43,54,.25)}
+.round-card.clickable:hover{transform:translateY(-3px);box-shadow:0 14px 24px -14px rgba(36,43,54,.22)}
+.opt:hover{transform:translateY(-1px)}
+.focus-item:hover{transform:translateY(-2px);box-shadow:0 10px 18px -12px rgba(36,43,54,.18)}
+.linkish:hover,.change-role:hover,.rv-link:hover{color:var(--trust)}
+@media(prefers-reduced-motion:reduce){
+  *{animation:none!important;transition:none!important;transform:none!important}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- ① 인트로 (+ 접이식 본인 확인) -->
+<section class="screen active" id="s-intro">
+  <div class="eyebrow"><span class="dot"></span>서울관광재단 신뢰 회복 프로젝트</div>
+  <h1 id="intro-title"></h1>
+  <p class="lede" id="intro-desc"></p>
+  <div class="pledge">
+    <p id="pledge-main"></p>
+    <h2 id="pledge-title"></h2>
+    <ul id="pledge-list"></ul>
+  </div>
+
+  <div class="promo">
+    <div class="promo-label">
+      <span class="pl-left"><span class="sq"></span>우리의 행동 약속</span>
+      <span class="promo-dots" id="promo-dots"></span>
+    </div>
+    <button class="promo-card" id="promo-card" onclick="promoClick()"></button>
+  </div>
+
+  <div class="sched" id="sched">
+    <div class="sched-label"><span class="sq"></span>2026 점검 일정</div>
+  </div>
+
+  <button class="btn" id="btn-start" onclick="revealAuth()">점검 참여하기</button>
+
+  <div class="reveal" id="auth-box">
+    <div class="auth-inner">
+      <p class="lede" id="auth-label" style="margin-top:20px"></p>
+      <div class="field-row">
+        <div class="field"><label for="in-name">이름</label><input id="in-name" autocomplete="off" placeholder="서관광"></div>
+        <div class="field"><label for="in-empno">사번</label><input id="in-empno" autocomplete="off" placeholder="사번을 입력해주세요"></div>
+      </div>
+      <div class="err" id="auth-err"></div>
+      <button class="btn" id="btn-auth" onclick="doAuth()">확인</button>
+      <p class="loading" id="auth-loading">확인 중입니다…</p>
+    </div>
+  </div>
+
+  <p class="time">소요 시간 약 1분 · 8문항</p>
+  <button class="linkish" onclick="go('s-test-role')">역할별 문항 미리 체험해 보기 (테스트)</button>
+</section>
+
+<!-- ② 참여 현황 대시보드 -->
+<section class="screen" id="s-dash">
+  <div class="eyebrow"><span class="dot"></span>나의 참여 현황</div>
+  <h1><span id="dash-name"></span>님,<br>안녕하세요</h1>
+  <div class="dash-hello">
+    <span class="who">2026 행동 약속 점검</span>
+    <span class="meta" id="dash-meta"></span>
+  </div>
+  <div class="next-info" id="next-info"></div>
+  <div class="round-list" id="round-list"></div>
+  <button class="btn secondary" onclick="location.reload()">처음으로</button>
+</section>
+
+<!-- ③ 테스트 역할 선택 -->
+<section class="screen" id="s-test-role">
+  <div class="eyebrow"><span class="dot"></span>테스트 체험</div>
+  <span class="testbadge">체험판 · 응답이 저장되지 않습니다</span>
+  <h1>체험할 역할을<br>선택해 주세요</h1>
+  <p class="lede">공통 3문항 + 역할별 5문항을 그대로 체험할 수 있습니다.</p>
+  <div class="role-list" id="test-role-list"></div>
+  <button class="btn secondary" onclick="location.reload()">처음으로</button>
+</section>
+
+<!-- ④ 체크리스트 -->
+<section class="screen" id="s-quiz">
+  <div class="quiz-sticky">
+    <div class="quiz-head">
+      <div class="quiz-role"><em id="quiz-name"></em>의 한 달</div>
+      <span class="round-tag" id="quiz-round"></span>
+    </div>
+    <div class="progress"><div class="bar" id="bar"></div></div>
+    <p class="progress-num"><span id="answered">0</span> / 8</p>
+  </div>
+  <div class="lastcard" id="lastcard" style="display:none">
+    <button class="lc-head" id="lc-head" type="button">
+      <div class="lc-row">
+        <span class="lc-round" id="lc-round"></span>
+        <span class="lc-counts" id="lc-counts"></span>
+      </div>
+      <div class="lc-focus" id="lc-focus"></div>
+      <span class="lc-toggle" id="lc-toggle">문항별 응답 보기 ▾</span>
+    </button>
+    <div class="lc-body" id="lc-body"></div>
+  </div>
+  <div class="trace-card" id="trace-card" style="display:none">
+    <p class="tc-title">시작하기 전에, 이 두 줄을 새겨볼까요?</p>
+    <p class="tc-sub" id="tc-sub"></p>
+    <div id="tc-rows"></div>
+    <p class="tc-all" id="tc-all"></p>
+  </div>
+
+  <div id="quiz-body"></div>
+  <div class="pledge-write" id="pledge-write">
+    <p class="pw-title" id="pw-title">마지막으로, 이달의 약속을 직접 새겨주세요</p>
+    <div class="pw-box">
+      <span class="pw-sizer" id="pw-sizer"></span>
+      <span class="pw-ghost" id="pw-ghost"></span>
+      <input id="pw-input" autocomplete="off" spellcheck="false" aria-label="행동 약속 따라 적기">
+    </div>
+    <p class="pw-hint" id="pw-hint">위 약속 문구를 그대로 입력하면 결과를 확인할 수 있습니다.</p>
+    <div id="pw-free" style="display:none">
+      <p class="pw-sub" id="pw-free-sub"></p>
+      <textarea id="focus-free" class="focus-free" rows="3" maxlength="200"></textarea>
+    </div>
+  </div>
+  <button class="btn" id="btn-result" disabled onclick="showResult()">결과 확인하기</button>
+  <button class="btn secondary" onclick="location.reload()" id="quiz-exit">그만두기</button>
+</section>
+
+<!-- ⑤ 결과 + 다짐 -->
+<section class="screen" id="s-result">
+  <div class="eyebrow"><span class="dot"></span><span id="result-eyebrow">이달의 점검 결과</span></div>
+
+  <div id="final-head" style="display:none">
+    <svg class="done-mark" viewBox="0 0 72 72" aria-hidden="true">
+      <rect x="16" y="16" width="40" height="40" rx="8" transform="rotate(45 36 36)" fill="#2C4C99"/>
+      <path d="M26 36.5 L33 43.5 L47 29.5" fill="none" stroke="#fff" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <h1 class="done-title" id="final-title"></h1>
+    <p class="done-sub" id="final-desc"></p>
+    <div class="done-sum" id="final-sum"></div>
+  </div>
+
+  <div class="result-card" id="result-card">
+    <div class="result-title" id="result-title"></div>
+    <div class="result-sub" id="result-sub"></div>
+    <div class="count-row">
+      <div class="count c-did"><b id="n-did">0</b><span>실천했다</span></div>
+      <div class="count c-try"><b id="n-try">0</b><span>노력 중이다</span></div>
+      <div class="count c-na"><b id="n-na">0</b><span>상황 없었다</span></div>
+    </div>
+  </div>
+  <div class="cmp-block" id="cmp-block" style="display:none">
+    <h3 id="cmp-title"></h3>
+    <p class="cmp-sub">지난 회차에 어떻게 답했는지 나란히 확인해 보세요.</p>
+    <div class="cmp-list" id="cmp-list"></div>
+  </div>
+
+  <div class="focus-block">
+    <h3 id="focus-title">다음 달, 하나만 고른다면</h3>
+    <p id="focus-sub">다음 한 달 동안 조금 더 신경 쓰고 싶은 약속 하나를 골라 주세요. (선택 사항)</p>
+    <div class="focus-list" id="focus-list"></div>
+  </div>
+  <button class="btn" id="btn-submit" onclick="doSubmit()">제출하기</button>
+  <p class="loading" id="submit-loading">제출 중입니다…</p>
+  <button class="btn ghost" onclick="openPeek('s-result')">다른 역할의 약속 구경하기</button>
+  <button class="btn secondary" id="btn-edit" onclick="go('s-quiz')">응답 수정하기</button>
+</section>
+
+<!-- 역할 선택(구경) -->
+<section class="screen" id="s-peek">
+  <div class="eyebrow"><span class="dot"></span>다른 역할 구경하기</div>
+  <h1>어떤 역할의 약속이<br>궁금하세요?</h1>
+  <p class="lede">각 역할이 매달 점검하는 약속과 문항을 볼 수 있습니다.</p>
+  <div class="role-list" id="peek-role-list"></div>
+  <button class="btn secondary" onclick="go(peekReturnTo)">돌아가기</button>
+</section>
+
+<!-- 역할별 문항 구경 -->
+<section class="screen" id="s-browse">
+  <div class="eyebrow"><span class="dot"></span>행동 약속 구경하기</div>
+  <h1 id="browse-title"></h1>
+  <div class="browse-promise" id="browse-promise"></div>
+  <div id="browse-body"></div>
+  <button class="btn ghost" id="browse-back" onclick="browseBack()">돌아가기</button>
+</section>
+
+<!-- ⑥ 완료 -->
+<section class="screen" id="s-done">
+  <svg class="done-mark" viewBox="0 0 72 72" aria-hidden="true">
+    <rect x="16" y="16" width="40" height="40" rx="8" transform="rotate(45 36 36)" fill="#2C4C99"/>
+    <path d="M26 36.5 L33 43.5 L47 29.5" fill="none" stroke="#fff" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+  <h1 class="done-title" id="done-title"></h1>
+  <p class="done-sub" id="done-desc"></p>
+  <div class="done-sum" id="done-sum" style="display:none"></div>
+  <button class="btn ghost" onclick="renderDash(); go('s-dash')">나의 참여 현황 보기</button>
+  <button class="btn secondary" onclick="location.reload()">처음으로</button>
+</section>
+
+<!-- ⑦ 회차별 결과 요약 -->
+<section class="screen" id="s-roundview">
+  <div class="eyebrow"><span class="dot"></span><span id="rv-eyebrow"></span><button class="rv-link" onclick="openPeek('s-roundview')">다른 역할 약속 보기 ›</button></div>
+  <div class="result-card">
+    <div class="result-title" id="rv-title"></div>
+    <div class="result-sub" id="rv-sub"></div>
+    <div class="count-row">
+      <div class="count c-did"><b id="rv-did">0</b><span>실천했다</span></div>
+      <div class="count c-try"><b id="rv-try">0</b><span>노력 중이다</span></div>
+      <div class="count c-na"><b id="rv-na">0</b><span>상황 없었다</span></div>
+    </div>
+  </div>
+  <div class="hist-list" id="rv-list"></div>
+  <div class="hist-focus" id="rv-focus" style="display:none"></div>
+  <button class="btn ghost" onclick="go('s-dash')">참여 현황으로</button>
+</section>
+
+<div class="modal" id="rt-modal">
+  <div class="modal-dim" onclick="closeRoundResult()"></div>
+  <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="rt-title">
+    <div class="modal-head">
+      <div class="modal-titlerow">
+        <span class="modal-title" id="rt-title"></span>
+        <span class="modal-join" id="rt-join"></span>
+      </div>
+      <button class="modal-close" onclick="closeRoundResult()" aria-label="닫기">×</button>
+    </div>
+    <div class="rt-tabs" id="rt-tabs"></div>
+    <div id="rt-body"></div>
+    <button class="btn" id="rt-join-btn" onclick="joinFromResult()"></button>
+  </div>
+</div>
+
+<footer>4대 행동 약속 자율 체크리스트 · 서울관광재단 인사팀</footer>
+</div>
+
+<canvas id="fireworks" aria-hidden="true"></canvas>
+
+<script>
+/* =========================================================
+   설정 — 이 블록만 수정하면 문항·문구·연결이 바뀝니다
+   ========================================================= */
+const GAS_URL = "https://script.google.com/macros/s/AKfycbyjfuszUnYPCkcoiYQFC-ip_j02gJCPljysVLj0ygkHlm_hz-u6tYg2sq6Rl0hS3Ugufw/exec";
+
+const TEXTS = {
+  intro_title: "이달의 행동 약속,\n나를 점검합니다",
+  intro_desc: "매월 한 번, 행동 약속을 스스로 돌아보는 1분 점검입니다. \n평가가 아니라 각자의 자리에서 지난 한 달을 돌아보는 시간입니다.",
+  pledge_title: "먼저, 조직이 약속합니다",
+  pledge_main: "이 점검은 평가가 아니라, 서로를 위한 노력입니다.",
+  pledges: [
+    "분기별 조직·인사 제도 설명회 정례화",
+    "인사·조직 주요 현안 사전 공지제도 운영",
+    "Pulse Index 대시보드 구축 및 신뢰지표 설정",
+    "소통창구 개선 및 헷갈리는 제도 안내서 배포"
+  ],
+  auth_label: "이름과 사번을 입력하면 참여 현황과 본인 문항이 표시됩니다.\n개인별 응답은 참여 집계 외에 사용하지 않습니다.",
+  auth_fail: "입력하신 정보를 명단에서 찾을 수 없습니다. 이름과 사번을 다시 확인해 주세요. 계속 문제가 있으면 인사팀으로 문의해 주세요.",
+  done_title: "이달의 점검을 마쳤습니다",
+  done_desc: "참여해 주셔서 감사합니다. 다음 회차는 다음 달에 열립니다.",
+  done_title_final: "2026 행동약속 체크리스트에\n참여해주셔서 감사합니다",
+  done_desc_final: "올해 세 번의 점검, 이렇게 기록되었습니다.",
+  tip_label: "이렇게 해볼까요?",
+  test_done_title: "체험을 마쳤습니다",
+  test_done_desc: "체험판 응답은 저장되지 않았습니다. 실제 점검은 이름과 사번으로 참여해 주세요."
+};
+
+const PRINCIPLES = {
+  HQ: ["일은 직급만큼, 책임은 함께, 의견은 존중"],
+  LEADER: ["일은 직급만큼, 책임은 함께, 의견은 존중"],
+  MIDDLE: ["후배에게는 업무적 방향을, 팀장에게는 팀의 목소리를"],
+  MEMBER: ["내 몫이 힘든 만큼, 다른 이의 몫도 이해"],
+  COMMON: ["지킬 건 지키고, 애매한 건 함께", "직장 내 인권 보호는 기본"]
+};
+
+const ROLE_CODE = { "본부장":"HQ", "팀장":"LEADER", "중간관리자":"MIDDLE", "실무자":"MEMBER" };
+const THEME_CLASS = { "본부장":"t-hq", "팀장":"t-leader", "중간관리자":"t-middle", "실무자":"t-member", "공통":"t-common" };
+/* 대원칙을 문장별 큰따옴표로 묶어 연결 */
+const pj = arr => arr.map(p => '"' + p + '"').join(' \u00B7 ');
+
+/* key: C1~C3(공통), R1~R5(역할별) — 응답로그 시트 열과 1:1 대응 */
+const ITEMS = {
+  COMMON: [
+    {key:"C1", q:"마주치는 동료에게 직급, 친분과 관계없이 인사를 건넸다", tip:"내일 출근길, 엘리베이터에서 처음 만나는 사람에게 목례부터 해보세요. 하루 한 명이면 충분합니다."},
+    {key:"C2", q:"다른 팀(본부)의 요청에 거절할 사유부터 찾지 않았다", tip:"요청을 받으면 '안 되는 이유' 대신 '되는 범위'부터 적어보는건 어떨까요? 전부는 어려워도 일부는 도울 수 있는 경우가 대부분입니다."},
+    {key:"C3", q:"나의 말과 행동이 동료에게 상처가 되지 않았는지 돌아봤다", tip:"퇴근길에 오늘 했던 말 중 다시 담고 싶은 말이 있었는지 하나만 떠올려보세요. 있었다면, 내일 만회할 기회가 있습니다."}
+  ],
+  HQ: [
+    {key:"R1", q:"팀 간 업무의 난이도와 양에 편차가 없는지 확인했다", tip:"팀별 사업 수와 인원 현황을 한 장에 놓고 보는 시간을 가져보는건 어떨까요? 숫자로 나란히 보면 조정할 지점이 눈에 들어옵니다."},
+    {key:"R2", q:"본부 업무의 상급 보고를 실무자에게 맡기지 않고 내 단계에서 직접 수행했다", tip:"'내용은 담당팀이 제일 잘 아니까' 대신, 다음 보고 전에 담당팀에게 10분 브리핑을 요청해 보세요. 본부장의 목소리로 본부를 대표해 전하는 보고는 같은 내용도 한층 힘 있게 전달될 수 있습니다."},
+    {key:"R3", q:"문서 양식이나 세부 표현보다, 업무의 방향과 기준을 제시하는 데 집중했다", tip:"보고를 받을 때 문구 수정 대신 '이 일의 목표가 뭐였죠?'를 먼저 물어보세요. 방향이 맞으면 표현은 맡겨도 됩니다."},
+    {key:"R4", q:"팀의 의견을 들은 사안에 대해, 결정을 미루지 않고 제때 내려주었다", tip:"판단이 어려운 사안이라면 '○일까지 결정해서 알려주겠다'는 기한이라도 먼저 제시해보는 건 어떨까요? 기다리는 쪽은 기한만 있어도 움직일 수 있습니다."},
+    {key:"R5", q:"팀장의 연차에 사유를 묻지 않았다", tip:"'굳이 지금?', '왜?'가 떠오를 땐, 팀장이 이미 시기와 공백까지 헤아려 올린 연차라는 걸 믿어보세요. 언제 쓰는 게 적절한지와 빈자리를 어떻게 채울지는 쓰는 사람이 그 누구보다 가장 잘 알고 있습니다."}
+  ],
+  LEADER: [
+    {key:"R1", q:"팀원 간 업무의 난이도와 양에 편차가 없는지 확인했다", tip:"팀원별 담당 업무를 한 줄씩만 적어보세요. 목록을 만들다 보면 몰린 사람이 보이고, 보이는 순간이 조정의 시작입니다."},
+    {key:"R2", q:"팀 업무의 상급 보고를 실무자에게 맡기지 않고 내 단계에서 직접 수행했다", tip:"'내용은 담당자가 제일 잘 아니까' 대신, 다음 보고 전에 실무자에게 10분 브리핑을 요청해 보세요. 팀장의 목소리로 팀을 대표해 전하는 보고는 같은 내용도 한층 힘 있게 전달될 수 있습니다."},
+    {key:"R3", q:"문서 양식이나 세부 표현보다, 업무의 방향과 기준을 제시하는 데 집중했다", tip:"피드백을 하기 전에 '이건 방향의 문제인가, 취향의 문제인가' 한 번만 자문해 보세요. 취향이면 담당자를 믿고 넘어가는 것도 좋은 방법입니다."},
+    {key:"R4", q:"팀원의 의견을 들은 사안에 대해, 결정을 미루지 않고 제때 내려주었다", tip:"회의를 마칠 때 '결정된 것 / 미결인 것 / 결정 기한' 세 줄로 정리해 공유해 보세요. 미룬 결정도 기한이 생기면 약속이 됩니다."},
+    {key:"R5", q:"팀원의 연차에 사유를 묻지 않았다", tip:"'굳이 지금?', '왜?'가 떠오를 땐, 팀원이 이미 시기와 공백까지 헤아려 올린 연차라는 걸 믿어보세요. 언제 쓰는 게 적절한지와 빈자리를 어떻게 채울지는 쓰는 사람이 그 누구보다 가장 잘 알고 있습니다."}
+  ],
+  MIDDLE: [
+    {key:"R1", q:"후배의 질문에 경험은 참고로 보태고, 방향은 함께 고민했다", tip:"후배의 질문에 바로 답이 어려우면 '어디까지 해봤어요?'부터 물어보면 어떨까요? 그리고 그때의 내 경험은 정답이 아니라 참고자료로 건네면 충분합니다."},
+    {key:"R2", q:"다른 팀원들이 겪는 어려움이나 분위기를 팀장에게 알렸다", tip:"팀원이 직접 말하기 어려운 이야기일수록, 선배의 입을 거치면 한결 가볍게 올라갑니다. '요즘 ○○님이 좀 버거워 보여요'도, '요즘 분위기 좋아요'도 팀장님께는 가장 귀한 정보입니다. 지나가는 말로도 충분해요."},
+    {key:"R3", q:"취합이나 자료 요청시, 목적과 기준을 함께 안내했다", tip:"취합 요청을 보낼 때 '왜 필요한지 / 언제까지 / 어떤 형식으로' 세 가지를 넣어보세요. 받는 사람의 시간이 절반으로 줄어듭니다."},
+    {key:"R4", q:"담당 사업 외에도 팀 전체 업무의 진행 상황을 파악하려 했다", tip:"회의에서 내 담당 외 안건 하나에 질문이나 의견을 보태보세요. 팀 전체가 보이기 시작하는 가장 쉬운 방법입니다."},
+    {key:"R5", q:"연차 일정을 팀에 미리 알렸다", tip:"같이 일하는 팀을 배려한 사전 공유는 센스! 업무 공백 질문은 승인에 대한 고민이 아니라 빈자리를 함께 챙기려는 확인이니, 가볍게 답해보면 어떨까요?"}
+  ],
+  MEMBER: [
+    {key:"R1", q:"다른 부서, 동료에게 요청하기 전, 스스로 확인할 수 있는 부분을 먼저 확인했다", tip:"질문을 보내기 전, 그룹웨어 검색창에 키워드 두 개만 먼저 쳐보세요. 3분의 검색이 서로의 30분을 아껴줍니다. 또, 요청 메시지에 '무슨 일 때문에, 언제까지' 두 가지만 붙이면 받는 쪽의 첫 마음이 달라집니다."},
+    {key:"R2", q:"다른 팀의 업무를 가볍게 말하거나 폄하하지 않았다", tip:"다른 팀 업무 이야기가 나오면 '그 팀도 사정이 있겠지' 한 박자만. 내 일이 존중받고 싶은 만큼, 그 한 박자가 나를 지켜줍니다."},
+    {key:"R3", q:"나에게 온 요청도 상대가 고민 끝에 보낸 것으로 여기고 성의 있게 응답했다", tip:"바로 처리하기 어려운 요청에는 '확인했습니다, ○일까지 답드릴게요' 한 줄이라도 먼저 보내보세요. 기다림은 무소식일 때 가장 깁니다."},
+    {key:"R4", q:"메일, 단체 메신저의 확인과 회신을 미루지 않았다", tip:"당장 답하기 어려우면 이모지 반응이라도 남겨보세요. '읽었다'는 신호 하나로도 단절감이 줄어듭니다."},
+    {key:"R5", q:"연차 일정을 팀에 미리 알렸다", tip:"같이 일하는 팀을 배려한 사전 공유는 센스! 업무 공백 질문은 승인에 대한 고민이 아니라 빈자리를 함께 챙기려는 확인이니, 가볍게 답해보면 어떨까요?"}
+  ]
+};
+
+const SCALE = ["실천했다","노력 중이다","상황이 없었다"];
+const TIP_TRIGGER = "노력 중이다";
+const CHIP_CLASS = {"실천했다":"did","노력 중이다":"try","상황이 없었다":"na"};
+/* 서버 연결 실패 시 회차 표시에 쓰는 예비 정보 */
+const FALLBACK_ROUNDS = [
+  {name:"1차", desc:"8월 31일까지"},
+  {name:"2차", desc:"9월 1일 오픈 · 9월 30일까지"},
+  {name:"3차", desc:"10월 1일 오픈 · 10월 31일까지"}
+];
+/* 메인 화면 참여 일정 카드 (표시 전용) */
+const SCHEDULE = [
+  {name:"1차", period:"8월 1일 ~ 8월 31일"},
+  {name:"2차", period:"9월 1일 ~ 9월 30일"},
+  {name:"3차", period:"10월 1일 ~ 10월 31일"}
+];
+const DEFAULT_CURRENT = "3차";   // 서버 응답 전 기본 표시 회차
+
+/* 마지막 회차에는 '다음 달 다짐' 대신 자유 입력을 받습니다 (응답로그 '다음달다짐' 열에 그대로 저장) */
+const FREE_FOCUS = {
+  "3차": {
+    title: "내년에 우리 조직에 이런 약속이 하나 더 있으면 좋겠다",
+    sub: "올해 세 번의 점검을 마치며, 내년에 더하고 싶은 약속이 있다면 적어 주세요. (선택 사항)",
+    placeholder: "예) 회의 시간은 서로를 위해 꼭 지킨다"
+  }
+};
+let currentRoundName = DEFAULT_CURRENT;   // 서버 확인 시 갱신
+
+/* 회차별 결과 요약 (수동 입력 — 회차 종료 후 통계 시트 값으로 갱신)
+   key: 문항 키만 적으면 문항 문장은 위 ITEMS에서 자동으로 가져옵니다.
+   rate: 실천율(%) */
+const ROUND_RESULTS = {
+  "1차": {
+    join: "127명이 참여했습니다",
+    roles: {
+      "공통":       { best:"C1", next:"C3",
+                      rates:{ C1:88.2, C2:85.6, C3:75.4 } },
+      "팀장":       { best:"R5", next:"R3",
+                      rates:{ R5:91.7, R2:75.0, R4:66.7, R1:58.3, R3:50.0 } },
+      "중간관리자": { best:"R5", next:"R1",
+                      rates:{ R5:85.2, R3:73.1, R2:54.2, R1:51.9, R4:51.9 } },
+      "실무자":     { best:"R3", next:"R4",
+                      rates:{ R3:96.6, R2:93.0, R1:92.0, R5:91.9, R4:87.4 } }
+    }
+  },
+  "2차": {
+    join: "104명이 참여했습니다",
+    letter: {
+      title: "2차 점검, 이렇게 지나갔어요",
+      intro: "9월 한 달 동안 <b>104명</b>이 자신의 한 달을 돌아봤습니다.<br>1차에 이어 두 번째로 적어 내려간 약속들, 어떤 변화가 있었는지 모아봤어요.",
+      blocks: [
+        { h:"가장 크게 달라진 건 중간관리자였습니다.",
+          p:"‘담당 사업 외에도 팀 전체 업무의 진행 상황을 파악하려 했다’가 51.9%에서 <b>77.3%</b>로 올랐어요. 1차에서 가장 낮았던 자리에서 가장 많이 움직인 한 달이었습니다." },
+        { h:"관리자 약속 중 가장 크게 오른 항목도 있었어요.",
+          p:"‘팀 업무의 상급 보고를 내 단계에서 직접 수행했다’가 75.0%에서 <b>91.7%</b>로, 한 달 만에 16.7%p 올랐습니다. 관리자 다섯 약속 중 상승 폭이 가장 컸어요." },
+        { h:"연차 약속은 두 회차 모두 높은 실천율을 지켰습니다.",
+          p:"세 역할 평균 <b>90.0%</b>. 서로의 배려가 만든 결과입니다." }
+      ],
+      outro: "이제 마지막 3차가 열려 있습니다.<br>10월 31일까지, 올해의 마지막 점검에서 만나요."
+    },
+    roles: {
+      "공통":       { best:"C1", next:"C3",
+                      rates:{ C1:88.5, C2:84.2, C3:78.8 } },
+      "팀장":       { best:"R2", next:"R3",
+                      rates:{ R2:91.7, R5:83.3, R4:58.3, R1:50.0, R3:41.7 } },
+      "중간관리자": { best:"R5", next:"R2",
+                      rates:{ R5:90.9, R3:81.8, R4:77.3, R1:71.4, R2:59.1 } },
+      "실무자":     { best:"R5", next:"R4",
+                      rates:{ R5:95.7, R3:92.9, R2:92.6, R1:87.0, R4:81.4 } }
+    }
+  }
+};
+
+/* =========================================================
+   이하 로직 — 수정 불필요
+   ========================================================= */
+let user = null;      // {name, empNo, dept, role, roleCode, current, rounds, history, lastFocus}
+let answers = {};
+let focusKey = null;
+let freeFocusMode = false;   // 자유 입력 회차 여부
+let finalDone = false;       // 마지막 회차 마무리 화면 1회 연출
+let quizItems = [];
+let testMode = false;
+let pledgeTarget = '';
+let pledgeOk = false;
+let prevRound = null;   // 직전 회차 기록(비교·요약용)
+
+function go(id, originEl){
+  const el = document.getElementById(id);
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active','zoomin'));
+  el.style.removeProperty('--ox'); el.style.removeProperty('--oy');
+  document.querySelector('.wrap').classList.toggle('wide', id === 's-dash');
+  el.classList.add('active');                     // 먼저 표시해야 위치 계산 가능
+
+  if(originEl && !reduceMotion && originEl.getBoundingClientRect){
+    const r  = originEl.getBoundingClientRect();
+    const er = el.getBoundingClientRect();
+    if(er.width > 0 && er.height > 0 && (r.width > 0 || r.height > 0)){
+      const clamp = v => Math.max(0, Math.min(100, v));
+      el.style.setProperty('--ox', clamp((r.left + r.width/2 - er.left) / er.width * 100).toFixed(1) + '%');
+      el.style.setProperty('--oy', clamp((r.top + r.height/2 - er.top) / er.height * 100).toFixed(1) + '%');
+      el.classList.add('zoomin');                 // 누른 카드 위치에서 커지도록
+    }
+  }
+  window.scrollTo({top:0});
+}
+
+/* 카드를 누르면 살짝 확대된 뒤 다음 화면으로 이어짐 */
+function launchFrom(el, fn){
+  if(reduceMotion || !el){ fn(); return; }
+  el.classList.add('launching');
+  setTimeout(()=>{ el.classList.remove('launching'); fn(); }, 285);
+}
+function esc(s){const d=document.createElement('div');d.textContent=s??'';return d.innerHTML;}
+
+/* 초기 문구 주입 */
+document.getElementById('intro-title').innerHTML = esc(TEXTS.intro_title).replace(/\n/g,'<br>');
+document.getElementById('intro-desc').innerHTML = esc(TEXTS.intro_desc).replace(/\n/g,'<br>');
+document.getElementById('pledge-title').textContent = TEXTS.pledge_title;
+document.getElementById('pledge-main').textContent = TEXTS.pledge_main;
+document.getElementById('pledge-list').innerHTML = TEXTS.pledges.map(p=>`<li>${esc(p)}</li>`).join('');
+document.getElementById('auth-label').innerHTML = esc(TEXTS.auth_label).replace(/\n/g,'<br>');
+
+/* 테스트 역할 목록 */
+const trl = document.getElementById('test-role-list');
+Object.entries(ROLE_CODE).forEach(([roleName, code])=>{
+  const b = document.createElement('button');
+  b.className = 'role-card';
+  b.innerHTML = `<div class="rn">${esc(roleName)}</div><div class="rp">${esc(pj(PRINCIPLES[code]))}</div>`;
+  b.onclick = ()=>startTest(roleName, code);
+  trl.appendChild(b);
+});
+
+/* 메인 슬라이딩 약속 카드 (본부장 제외) */
+const PROMO_ROLES = ["팀장","중간관리자","실무자","공통"];
+const codeOf = r => r === "공통" ? "COMMON" : ROLE_CODE[r];
+let peekReturnTo = 's-result';
+function openPeek(from){ peekReturnTo = from; go('s-peek'); }
+let promoIdx = 0, promoTimer = null;
+const promoCard = document.getElementById('promo-card');
+const promoDots = document.getElementById('promo-dots');
+promoDots.innerHTML = PROMO_ROLES.map((r,i)=>
+  `<button type="button" data-i="${i}" aria-label="${esc(r)} 약속 보기"></button>`).join('');
+promoDots.querySelectorAll('button').forEach(btn=>{
+  btn.onclick = ()=>{
+    promoIdx = Number(btn.dataset.i);
+    renderPromo();
+    clearInterval(promoTimer);                 // 직접 고른 카드에 잠시 머물도록 타이머 재시작
+    promoTimer = setInterval(nextPromo, 5500);
+  };
+});
+const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+function renderPromo(){
+  const roleName = PROMO_ROLES[promoIdx];
+  const code = codeOf(roleName);
+  promoCard.className = 'promo-card ' + (THEME_CLASS[roleName] || '');
+  promoCard.innerHTML =
+    `<div class="pr">${esc(roleName)}</div>
+     <div class="pp">${esc(pj(PRINCIPLES[code]))}</div>
+     <div class="pgo">약속과 문항 보러 가기 ›</div>`;
+  promoDots.querySelectorAll('button').forEach((d,i)=>d.classList.toggle('on', i===promoIdx));
+}
+function nextPromo(){
+  if(reduceMotion){
+    promoIdx = (promoIdx+1) % PROMO_ROLES.length; renderPromo(); return;
+  }
+  promoCard.classList.add('fading');
+  setTimeout(()=>{
+    promoIdx = (promoIdx+1) % PROMO_ROLES.length;
+    renderPromo();
+    promoCard.classList.remove('fading');
+  }, 350);
+}
+renderPromo();
+promoTimer = setInterval(nextPromo, 5500);
+function promoClick(){
+  clearInterval(promoTimer);
+  showBrowse(PROMO_ROLES[promoIdx], 's-intro');
+}
+
+/* 역할별 문항 구경 */
+let browseReturnTo = 's-intro';
+function showBrowse(roleName, returnTo){
+  browseReturnTo = returnTo || 's-intro';
+  const code = codeOf(roleName);
+  document.getElementById('browse-title').textContent = roleName === '공통' ? '공통 행동 약속' : `${roleName}의 행동 약속`;
+  const bp = document.getElementById('browse-promise');
+  bp.className = 'browse-promise ' + (THEME_CLASS[roleName] || '');
+  bp.textContent = pj(PRINCIPLES[code]);
+  const items = roleName === '공통'
+    ? ITEMS.COMMON.map(it=>({...it, tag:'공통'}))
+    : ITEMS[code].map(it=>({...it, tag:roleName}));
+  document.getElementById('browse-body').innerHTML = items.map((it,i)=>
+    `<div class="browse-item">
+       <p class="q"><span class="num">${String(i+1).padStart(2,'0')}</span>${esc(it.q)} <span style="font-size:.75rem;color:var(--sub);font-weight:600">· ${esc(it.tag)}</span></p>
+       <div class="bt"><b>이렇게 해볼까요?</b>${esc(it.tip)}</div>
+     </div>`).join('');
+  go('s-browse');
+}
+function browseBack(){
+  go(browseReturnTo);
+  if(browseReturnTo === 's-intro'){
+    clearInterval(promoTimer);
+    promoTimer = setInterval(nextPromo, 5500);
+  }
+}
+
+/* 구경용 역할 목록 (본부장 제외) */
+const peekList = document.getElementById('peek-role-list');
+PROMO_ROLES.forEach(roleName=>{
+  const code = codeOf(roleName);
+  const b = document.createElement('button');
+  b.className = 'role-card ' + (THEME_CLASS[roleName] || '');
+  b.innerHTML = `<div class="rn">${esc(roleName)}</div><div class="rp">${esc(pj(PRINCIPLES[code]))}</div>`;
+  b.onclick = ()=>showBrowse(roleName, 's-peek');
+  peekList.appendChild(b);
+});
+
+/* 시작하기 → 인증 입력란 노출 */
+function revealAuth(){
+  document.getElementById('btn-start').style.display = 'none';
+  document.getElementById('auth-box').classList.add('show');
+  let saved = null;
+  try{ saved = JSON.parse(localStorage.getItem('sto_auth') || 'null'); }catch(e){}
+  if(saved){
+    document.getElementById('in-name').value = saved.name || '';
+    document.getElementById('in-empno').value = saved.empNo || '';
+  }
+  ['in-name','in-empno'].forEach(id=>{
+    const el = document.getElementById(id);
+    el.addEventListener('keydown', e=>{ if(e.key==='Enter') doAuth(); });
+    el.addEventListener('blur', prefetchAuth);
+    let pauseTimer = null;
+    el.addEventListener('input', ()=>{
+      clearTimeout(pauseTimer);
+      pauseTimer = setTimeout(prefetchAuth, 800);  // 입력 멈춤 0.8초 후 미리 조회
+    });
+  });
+  prefetchAuth();  // 저장된 이름·사번이 자동 입력된 경우 즉시 선요청
+  (saved && saved.name && saved.empNo
+    ? document.getElementById('btn-auth')
+    : document.getElementById('in-name')).focus();
+}
+
+/* API */
+async function api(payload, retry = 1){
+  const ctrl = new AbortController();
+  const timer = setTimeout(()=>ctrl.abort(), 25000);
+  try{
+    const res = await fetch(GAS_URL, {
+      method:'POST',
+      headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body: JSON.stringify(payload),
+      signal: ctrl.signal
+    });
+    return await res.json();
+  }catch(e){
+    if(retry > 0) return api(payload, retry - 1);  // 지연·유실 시 자동 재시도
+    throw e;
+  }finally{
+    clearTimeout(timer);
+  }
+}
+
+/* 메인 참여 일정 카드 + 시작 버튼 문구 */
+function renderSchedule(rounds, currentName){
+  const box = document.getElementById('sched');
+  const cur = currentName || DEFAULT_CURRENT;
+  const cards = SCHEDULE.map(sc=>{
+    const srv = (rounds||[]).find(r=>r.name===sc.name);
+    let state = srv ? srv.state : (sc.name===cur ? 'open' : '');
+    if(!srv && !state){
+      const idx = SCHEDULE.findIndex(x=>x.name===cur);
+      const my = SCHEDULE.findIndex(x=>x.name===sc.name);
+      state = my < idx ? 'past' : 'future';
+    }
+    const hasResult = !!ROUND_RESULTS[sc.name];
+    const cls = (state==='open' ? ' now' : (state==='past' ? ' done' : ''))
+              + (hasResult ? ' hasresult' : '');
+    const stx = state==='open'
+      ? [...'진행 중'].map((ch,i)=>
+          ch===' ' ? ' ' : `<span class="wv" style="animation-delay:${(i*0.12).toFixed(2)}s">${ch}</span>`
+        ).join('')
+      : (state==='past' ? '종료' : '예정');
+    const inner = `<div class="sched-r">${esc(sc.name)} 점검</div>
+      <div class="sched-d">${esc(sc.period)}</div>
+      <div class="sched-foot">
+        <span class="sched-s">${stx}</span>
+        ${hasResult ? '<span class="sched-sep">·</span><span class="sched-more">결과 보기 ›</span>' : ''}
+      </div>`;
+    return hasResult
+      ? `<button type="button" class="sched-card${cls}" onclick="openRoundResult('${esc(sc.name)}', this)">${inner}</button>`
+      : `<div class="sched-card${cls}">${inner}</div>`;
+  }).join('');
+  box.innerHTML = `<div class="sched-label"><span class="sq"></span>2026 점검 일정</div>` + cards;
+}
+/* 회차 결과 모달 */
+const RT_LETTER = "이번 달 이야기";
+const RT_ROLES = ["공통","팀장","중간관리자","실무자"];   // 본부장 제외
+let rtRound = null;
+
+function openRoundResult(roundName, originEl){
+  const data = ROUND_RESULTS[roundName];
+  if(!data) return;
+  const modalBox = document.querySelector('.modal-box');
+  modalBox.style.removeProperty('--mox');
+  modalBox.style.removeProperty('--moy');
+  const setModalOrigin = ()=>{
+    if(!originEl || reduceMotion || !originEl.getBoundingClientRect) return;
+    const r  = originEl.getBoundingClientRect();
+    const br = modalBox.getBoundingClientRect();
+    if(!(br.width > 0 && br.height > 0)) return;
+    const clamp = v => Math.max(-20, Math.min(120, v));
+    modalBox.style.setProperty('--mox', clamp((r.left + r.width/2 - br.left) / br.width * 100).toFixed(1) + '%');
+    modalBox.style.setProperty('--moy', clamp((r.top + r.height/2 - br.top) / br.height * 100).toFixed(1) + '%');
+  };
+  rtRound = roundName;
+  const sc = SCHEDULE.find(s=>s.name===roundName);
+  document.getElementById('rt-title').textContent =
+    `${roundName} 점검 결과${sc ? ' (' + sc.period.split(' ')[0] + ')' : ''}`;
+  document.getElementById('rt-join').textContent = data.join || '';
+  const jb = document.getElementById('rt-join-btn');
+  const openRound = (SCHEDULE.find(s=>s.name === currentRoundName) ? currentRoundName : null);
+  if(openRound){
+    jb.textContent = `${openRound} 점검 참여하기`;
+    jb.style.display = 'block';
+  } else {
+    jb.style.display = 'none';
+  }
+
+  const tabs = document.getElementById('rt-tabs');
+  const names = (data.letter ? [RT_LETTER] : []).concat(RT_ROLES.filter(r=>data.roles[r]));
+  tabs.innerHTML = names.map((r,i)=>
+    `<button type="button" class="rt-tab ${r===RT_LETTER ? 'rt-tab-letter' : (THEME_CLASS[r]||'')}${i===0?' on':''}" data-role="${esc(r)}">${esc(r)}</button>`
+  ).join('');
+  tabs.querySelectorAll('.rt-tab').forEach(btn=>{
+    btn.onclick = ()=>{
+      tabs.querySelectorAll('.rt-tab').forEach(b=>b.classList.remove('on'));
+      btn.classList.add('on');
+      renderRoundRole(btn.dataset.role);
+    };
+  });
+  const first = tabs.querySelector('.rt-tab');
+  renderRoundRole(first ? first.dataset.role : RT_ROLES[0]);
+
+  const modalEl = document.getElementById('rt-modal');
+  modalEl.classList.add('show');
+  setModalOrigin();                                // 표시 후 위치 계산 → 카드 지점에서 확대
+  modalBox.style.animation = 'none';               // 원점 적용 후 애니메이션 재시작
+  void modalBox.offsetWidth;
+  modalBox.style.animation = '';
+  document.body.style.overflow = 'hidden';
+}
+
+/* 직전 결과 회차 (3차에서는 2차, 2차에서는 1차) */
+function prevResultRound(name){
+  const idx = SCHEDULE.findIndex(s=>s.name === name);
+  for(let i = idx - 1; i >= 0; i--){
+    const n = SCHEDULE[i].name;
+    if(ROUND_RESULTS[n]) return n;
+  }
+  return null;
+}
+
+function renderRoundRole(roleName){
+  const data = ROUND_RESULTS[rtRound];
+  const body0 = document.getElementById('rt-body');
+
+  if(roleName === RT_LETTER){                       // 뉴스레터 탭
+    const lt = data && data.letter;
+    if(!lt){ body0.innerHTML = ''; return; }
+    body0.innerHTML = `
+      <div class="rt-letter">
+        <div class="lt-icon">📮</div>
+        <p class="lt-title">${esc(lt.title)}</p>
+        <p class="lt-intro">${lt.intro}</p>
+        ${(lt.blocks||[]).map(b=>`
+          <div class="lt-block">
+            <p class="lt-h">${esc(b.h)}</p>
+            <p class="lt-p">${b.p}</p>
+          </div>`).join('')}
+        ${lt.outro ? `<p class="lt-outro">${lt.outro}</p>` : ''}
+      </div>`;
+    return;
+  }
+
+  const conf = data && data.roles[roleName];
+  const body = document.getElementById('rt-body');
+  if(!conf){ body.innerHTML = '<p class="rt-foot">결과 정보가 없습니다.</p>'; return; }
+
+  const code = roleName === '공통' ? 'COMMON' : ROLE_CODE[roleName];
+  const pool = ITEMS[code] || [];
+  const qOf = key => (pool.find(it=>it.key===key) || {}).q || '(문항 정보 없음)';
+  const rate = v => (typeof v === 'number' ? v.toFixed(1) + '%' : '');
+  const theme = THEME_CLASS[roleName] || '';
+  const rates = conf.rates || {};
+  const block = (type, label, icon, key) => `
+    <div class="rt-block ${type} ${theme}">
+      ${label ? `<div class="rt-label">${icon} ${label}</div>` : ''}
+      <div class="rt-q">${esc(qOf(key))}</div>
+      <div class="rt-rate">
+        <span class="rt-bar"><i style="width:${Math.max(0,Math.min(100,rates[key]||0))}%"></i></span>
+        <span class="rt-num">실천 ${rate(rates[key])}</span>
+      </div>
+    </div>`;
+
+  // 나머지 문항: 실천율 높은 순
+  const rest = pool.map(it=>it.key)
+    .filter(k => k !== conf.best && k !== conf.next && rates[k] !== undefined)
+    .sort((a,b) => (rates[b]||0) - (rates[a]||0));
+
+  // 직전 회차 대비 변화 (오른 약속 위주)
+  let chgHtml = '';
+  const pName = prevResultRound(rtRound);
+  const pConf = pName && ROUND_RESULTS[pName] && ROUND_RESULTS[pName].roles[roleName];
+  if(pConf && pConf.rates){
+    const diffs = Object.keys(rates)
+      .filter(k => typeof pConf.rates[k] === 'number' && qOf(k) !== '(문항 정보 없음)')
+      .map(k => ({ k, from: pConf.rates[k], to: rates[k], d: Math.round((rates[k] - pConf.rates[k]) * 10) / 10 }))
+      .sort((a,b) => b.d - a.d);
+
+    const row = (c, cls, badge) => `
+      <div class="rt-chg ${cls}">
+        <div class="chg-q">${esc(qOf(c.k))}</div>
+        <div class="chg-row">
+          <span class="chg-from">${pName} ${c.from.toFixed(1)}%</span>
+          <span class="chg-ar">→</span>
+          <span class="chg-to">${rtRound} ${c.to.toFixed(1)}%</span>
+          <span class="chg-badge">${badge}</span>
+        </div>
+      </div>`;
+
+    const ups = diffs.filter(x => x.d > 0).slice(0, 2);
+    if(ups.length){
+      chgHtml = `<p class="rt-chglabel">📈 ${pName}보다 올라간 약속</p>`
+              + ups.map(c => row(c, '', '+' + c.d.toFixed(1) + '%p')).join('');
+    } else if(diffs.length){
+      const steady = diffs.slice().sort((a,b) => b.to - a.to)[0];   // 가장 잘 지켜진 약속
+      chgHtml = `<p class="rt-chglabel" style="color:var(--trust)">💙 변함없이 지켜온 약속</p>`
+              + row(steady, 'flat', '유지');
+    }
+  }
+
+  body.innerHTML =
+      block('best','가장 많이 실천한 약속','🏆',conf.best)
+    + block('next','함께 더 해볼 약속','💪',conf.next)
+    + (rest.length
+        ? `<p class="rt-restlabel">함께 지켜온 약속</p>` + rest.map(k=>block('rest','','',k)).join('')
+        : '')
+    + chgHtml;
+}
+
+function closeRoundResult(){
+  document.getElementById('rt-modal').classList.remove('show');
+  document.body.style.overflow = '';
+}
+
+/* 접속 시 지난 회차 결과를 한 번 자동으로 보여줌 */
+let autoResultDone = false;
+function maybeAutoResult(){
+  if(autoResultDone) return;
+  // 결과가 등록된 가장 최근 회차 (결과는 회차 종료 후 입력되므로 항상 직전 회차)
+  const names = SCHEDULE.map(s=>s.name).filter(n => ROUND_RESULTS[n]);
+  const srcName = names.length ? names[names.length-1] : null;
+  if(!srcName) return;
+  autoResultDone = true;                         // 접속할 때마다 1회 노출
+
+  const show = ()=>{
+    const onIntro = document.getElementById('s-intro').classList.contains('active');
+    const authOpen = document.getElementById('auth-box').classList.contains('show');
+    if(!onIntro || authOpen) return;             // 이미 참여를 시작했으면 방해하지 않음
+    openRoundResult(srcName, document.querySelector('.sched-card.hasresult'));
+  };
+  requestAnimationFrame(()=>requestAnimationFrame(show));   // 화면이 그려지는 즉시
+}
+document.addEventListener('keydown', e=>{
+  if(e.key === 'Escape') closeRoundResult();
+});
+
+function setStartLabel(roundName){
+  if(roundName) currentRoundName = roundName;
+  document.getElementById('btn-start').textContent =
+    (roundName ? roundName + ' 점검 참여하기' : '점검 참여하기');
+}
+
+/* 모달에서 바로 참여 — 저장된 정보가 있으면 입력 없이 바로 진행 */
+function joinFromResult(){
+  closeRoundResult();
+  if(document.getElementById('btn-start').style.display !== 'none') revealAuth();
+
+  const nameEl = document.getElementById('in-name');
+  const noEl = document.getElementById('in-empno');
+  let saved = null;
+  try{ saved = JSON.parse(localStorage.getItem('sto_auth') || 'null'); }catch(e){}
+
+  if(saved && saved.name && saved.empNo){        // 기억된 이름·사번으로 바로 입장
+    if(!nameEl.value) nameEl.value = saved.name;
+    if(!noEl.value)   noEl.value = saved.empNo;
+    doAuth();
+    return;
+  }
+
+  setTimeout(()=>{                                // 저장된 정보가 없으면 입력란으로
+    document.getElementById('auth-box')
+      .scrollIntoView({behavior: reduceMotion ? 'auto' : 'smooth', block:'center'});
+    nameEl.focus();
+  }, 120);
+}
+renderSchedule(null, DEFAULT_CURRENT);
+setStartLabel(DEFAULT_CURRENT);
+maybeAutoResult();                   // 로딩 즉시 노출
+
+/* 인증 선요청: 이름·사번 입력이 끝나는 순간 백그라운드로 미리 조회 */
+let prefetchKey = '';
+let prefetchPromise = null;
+function prefetchAuth(){
+  const name = document.getElementById('in-name').value.trim().replace(/\s+/g,'');
+  const empNo = document.getElementById('in-empno').value.trim().toUpperCase();
+  if(!name || !empNo) return;
+  const key = name + '|' + empNo;
+  if(key === prefetchKey && prefetchPromise) return;  // 동일 입력이면 재사용
+  prefetchKey = key;
+  prefetchPromise = api({action:'auth', name, empNo}).catch(e=>{ prefetchPromise = null; throw e; });
+}
+
+/* 페이지 진입 즉시 서버 예열 (콜드 스타트 대비, 실패해도 무시) */
+if(GAS_URL.startsWith('http')){
+  fetch(GAS_URL, {method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
+    body: JSON.stringify({action:'ping'})})
+    .then(res=>res.json())
+    .then(d=>{
+      if(d && d.ok && d.rounds){          // 서버 기준으로 일정·버튼 문구 보정
+        renderSchedule(d.rounds, d.current);
+        setStartLabel(d.current);
+        maybeAutoResult();
+      }
+    }).catch(()=>{});                     // 실패해도 기본 표시 유지
+}
+
+/* 본인 확인 → 대시보드 */
+async function doAuth(){
+  const name = document.getElementById('in-name').value.trim().replace(/\s+/g,'');
+  const empNo = document.getElementById('in-empno').value.trim().toUpperCase();
+  const err = document.getElementById('auth-err');
+  err.classList.remove('show');
+  if(!name || !empNo){ err.textContent="이름과 사번을 모두 입력해 주세요."; err.classList.add('show'); return; }
+
+  document.getElementById('btn-auth').disabled = true;
+  const loadEl = document.getElementById('auth-loading');
+  loadEl.textContent = '확인 중입니다…';
+  loadEl.classList.add('show');
+  const slowTimer = setTimeout(()=>{
+    loadEl.textContent = '확인 중입니다… 오래 걸리면 새로고침 한 번 해주세요!';
+  }, 4000);
+  try{
+    const key = name + '|' + empNo;
+    const r = (key === prefetchKey && prefetchPromise)
+      ? await prefetchPromise
+      : await api({action:'auth', name, empNo});
+    prefetchPromise = null; prefetchKey = '';
+    if(!r.ok){
+      if(r.reason === 'server_error'){
+        err.textContent = "서버 처리 중 오류가 발생했습니다. (시트 연결 문제일 수 있습니다 — 관리자 확인 필요)" + (r.detail ? " [" + r.detail + "]" : "");
+      } else {
+        err.textContent = TEXTS.auth_fail;
+      }
+      err.classList.add('show'); return;
+    }
+    user = {
+      name, empNo, dept:r.dept, role:r.role, roleCode:ROLE_CODE[r.role],
+      current:r.current || null,             // 현재 열려 있는 회차명 또는 null
+      rounds:r.rounds || FALLBACK_ROUNDS.map(x=>({...x, state:'future'})),
+      history:r.history || [],
+      lastFocus:r.lastFocus || null,
+      nextOpenText:r.nextOpenText || ''
+    };
+    if(!user.roleCode){ err.textContent="역할 정보를 확인할 수 없습니다. 인사팀으로 문의해 주세요."; err.classList.add('show'); return; }
+    try{ localStorage.setItem('sto_auth', JSON.stringify({name, empNo})); }catch(e){}
+    renderDash();
+    go('s-dash', document.getElementById('auth-box'));
+  }catch(e){
+    err.textContent = "연결에 실패했습니다. 잠시 후 다시 시도해 주세요."; err.classList.add('show');
+  }finally{
+    clearTimeout(slowTimer);
+    document.getElementById('btn-auth').disabled = false;
+    document.getElementById('auth-loading').classList.remove('show');
+  }
+}
+
+/* 참여 현황 대시보드 */
+function submittedRounds(){ return new Set(user.history.map(h=>h.round)); }
+
+function renderDash(){
+  document.getElementById('dash-name').textContent = user.name;
+  document.getElementById('dash-meta').textContent = `${user.dept} · ${user.role}`;
+  const ni = document.getElementById('next-info');
+  ni.textContent = user.nextOpenText || '';
+  ni.style.display = user.nextOpenText ? 'block' : 'none';
+
+  const done = submittedRounds();
+  const list = document.getElementById('round-list');
+  list.className = 'round-grid';
+  list.innerHTML = '';
+
+  user.rounds.forEach(rd=>{
+    const isDone = done.has(rd.name);
+    const canClick = isDone || rd.state === 'open';
+    const el = document.createElement(canClick ? 'button' : 'div');
+    el.className = 'rd-card' + (canClick ? ' clickable' : ' disabled');
+
+    let stateHtml, body;
+    if(isDone){
+      const rec = user.history.filter(x=>x.round===rd.name).pop();
+      const s = summarize(rec.answers);
+      stateHtml = '<span class="state done">참여 완료</span>';
+      body = `<div class="rd-date">${esc(rec.date||'')}</div>
+        <div class="rd-mini">
+          <div><b style="color:var(--done)">${s.nDid}</b><span>실천</span></div>
+          <div><b style="color:var(--trying)">${s.nTry}</b><span>노력</span></div>
+          <div><b style="color:var(--na)">${s.nNa}</b><span>상황 없음</span></div>
+        </div>
+        ${rec.focus ? `<div class="rd-focus"><b>이달의 다짐</b>${esc(rec.focus)}</div>` : ''}
+        <div class="rd-more">문항별 응답 보기 ›</div>`;
+      el.onclick = ()=>launchFrom(el, ()=>showRoundView(rd.name, el));
+    } else if(rd.state === 'open'){
+      stateHtml = '<span class="state open">진행 중</span>';
+      body = `<div class="rd-date">${esc(rd.desc||'지금 참여 가능')}</div>
+        <div class="rd-more">지금 참여하기 ›</div>`;
+      el.onclick = ()=>launchFrom(el, ()=>startQuiz(el));
+    } else if(rd.state === 'past'){
+      stateHtml = '<span class="state miss">미참여</span>';
+      body = `<div class="rd-date">${esc(rd.desc||'종료')}</div>
+        <div class="rd-empty">참여 기록이 없습니다.</div>`;
+    } else {
+      stateHtml = '<span class="state wait">예정</span>';
+      body = `<div class="rd-date">${esc(rd.desc||'')}</div>
+        <div class="rd-empty">아직 열리지 않았습니다.</div>`;
+    }
+    el.innerHTML = `<div class="rd-top"><span class="rd-name">${esc(rd.name)} 점검</span>${stateHtml}</div>${body}`;
+    el.style.animationDelay = (list.children.length * 0.105).toFixed(3) + 's';   // 순차 등장
+    list.appendChild(el);
+  });
+}
+
+/* 회차별 결과 요약 */
+function summarize(ans){
+  const vals = Object.values(ans).filter(Boolean);
+  const nDid = vals.filter(v=>v==="실천했다").length;
+  const nTry = vals.filter(v=>v==="노력 중이다").length;
+  const nNa  = vals.filter(v=>v==="상황이 없었다").length;
+  let title, sub;
+  if(nDid >= 6){ title="약속이 습관이 되어가고 있습니다"; sub="이 달의 실천이 동료에게는 '믿을 구석'이 됩니다. 지금의 방식 그대로면 충분합니다."; }
+  else if(nDid >= 4){ title="절반 이상, 약속대로 움직였습니다"; sub="완벽보다 방향이 중요합니다. 노력 중인 항목 하나가 다음 달의 실천이 됩니다."; }
+  else if(nDid + nTry >= 5){ title="시작하는 데 의미가 있는 한 달이었습니다"; sub="돌아봤다는 것 자체가 변화의 첫 단계입니다. 다음 달엔 하나만 골라 집중해 보세요."; }
+  else { title="바쁜 한 달을 보내셨군요"; sub="상황이 없었던 항목이 많다면 그 또한 기록입니다. 점검을 마친 것만으로 충분합니다."; }
+  return {nDid, nTry, nNa, title, sub};
+}
+
+function showRoundView(roundName, originEl){
+  const h = user.history.filter(x=>x.round===roundName).pop();
+  if(!h) return;
+  const s = summarize(h.answers);
+  document.getElementById('rv-eyebrow').textContent = `${roundName} 점검 결과${h.date ? ' · ' + h.date : ''}`;
+  document.getElementById('rv-title').textContent = s.title;
+  document.getElementById('rv-sub').textContent = s.sub;
+  document.getElementById('rv-did').textContent = s.nDid;
+  document.getElementById('rv-try').textContent = s.nTry;
+  document.getElementById('rv-na').textContent = s.nNa;
+
+  const rc = ROLE_CODE[h.role] || user.roleCode;
+  const items = [...ITEMS.COMMON, ...(ITEMS[rc]||[])];
+  document.getElementById('rv-list').innerHTML = items.map(it=>{
+    const a = h.answers[it.key];
+    if(!a) return '';
+    return `<div class="hist-item">
+      <div class="hist-q"><span class="qt">${esc(it.q)}</span><span class="chip ${CHIP_CLASS[a]||'na'}">${esc(a)}</span></div>
+      <div class="hist-tip"><b>이렇게 해볼까요?</b>${esc(it.tip)}</div>
+    </div>`;
+  }).join('');
+  document.querySelectorAll('#rv-list .hist-item').forEach(el=>{
+    el.querySelector('.hist-q').onclick = ()=> el.classList.toggle('open');
+  });
+
+  const fx = document.getElementById('rv-focus');
+  if(h.focus){ fx.innerHTML = `<b>이달의 다짐</b> · ${esc(h.focus)}`; fx.style.display='block'; }
+  else fx.style.display='none';
+  go('s-roundview', originEl);
+}
+
+/* 체크리스트 */
+function startTest(roleName, code){
+  testMode = true;
+  user = { name:roleName+" 체험", role:roleName, roleCode:code, current:"체험판", history:[], lastFocus:null };
+  startQuiz();
+}
+
+/* 지난 회차 요약 카드 (클릭 시 문항별 응답 펼침) */
+function renderLastCard(){
+  const lc = document.getElementById('lastcard');
+  if(!prevRound){ lc.style.display = 'none'; return; }
+
+  const s = summarize(prevRound.answers);
+  document.getElementById('lc-round').textContent = `${prevRound.round} 점검 결과`;
+  document.getElementById('lc-counts').innerHTML =
+    `<span class="chip did">실천 ${s.nDid}</span>` +
+    `<span class="chip try">노력 ${s.nTry}</span>` +
+    `<span class="chip na">없음 ${s.nNa}</span>`;
+
+  const lf = document.getElementById('lc-focus');
+  if(prevRound.focus){
+    lf.innerHTML = `<b>지난 회차 나의 다짐</b>${esc(prevRound.focus)}`;
+    lf.style.display = 'block';
+  } else lf.style.display = 'none';
+
+  const rc = ROLE_CODE[prevRound.role] || user.roleCode;
+  const pitems = [...ITEMS.COMMON, ...(ITEMS[rc]||[])];
+  document.getElementById('lc-body').innerHTML = pitems.map(it=>{
+    const a = prevRound.answers[it.key];
+    if(!a) return '';
+    return `<div class="hist-q"><span class="qt">${esc(it.q)}</span>` +
+           `<span class="chip ${CHIP_CLASS[a]||'na'}">${esc(a)}</span></div>`;
+  }).join('');
+
+  lc.classList.remove('open');
+  document.getElementById('lc-toggle').textContent = '문항별 응답 보기 ▾';
+  const head = document.getElementById('lc-head');
+  if(!head.dataset.bound){
+    head.dataset.bound = '1';
+    head.onclick = ()=>{
+      const open = lc.classList.toggle('open');
+      document.getElementById('lc-toggle').textContent =
+        open ? '문항별 응답 접기 ▴' : '문항별 응답 보기 ▾';
+    };
+  }
+  lc.style.display = 'block';
+}
+
+/* 지난 회차에서 함께 더 해보기로 한 약속 따라 적기 */
+function renderTrace(){
+  const card = document.getElementById('trace-card');
+  const rows = document.getElementById('tc-rows');
+  if(testMode || !user){ card.style.display = 'none'; return; }
+
+  // 현재 회차가 아닌 가장 최근 결과 회차를 사용
+  const names = SCHEDULE.map(s=>s.name).filter(n=>ROUND_RESULTS[n] && n !== user.current);
+  const srcName = names.length ? names[names.length-1] : null;
+  const src = srcName ? ROUND_RESULTS[srcName] : null;
+  if(!src){ card.style.display = 'none'; return; }
+
+  const lines = [];
+  const keyOf = v => (v && typeof v === 'object') ? v.key : v;   // 구·신 데이터 구조 모두 지원
+  const pick = (roleName, code)=>{
+    const conf = src.roles[roleName];
+    if(!conf || !conf.next) return;
+    const pool = (code === 'COMMON') ? ITEMS.COMMON : (ITEMS[code] || []);
+    const item = pool.find(it=>it.key === keyOf(conf.next));
+    if(item) lines.push({tag:roleName, theme:THEME_CLASS[roleName]||'', text:item.q});
+  };
+  pick('공통', 'COMMON');
+  pick(user.role, user.roleCode);
+  if(!lines.length){ card.style.display = 'none'; return; }
+
+  document.getElementById('tc-sub').textContent =
+    `${srcName} 점검에서 우리가 가장 어려워했던 약속입니다. 한 번 적어보며 시작해 보세요.`;
+
+  rows.innerHTML = lines.map((ln,i)=>`
+    <div class="tc-row">
+      <div class="tc-line">
+        <span class="tc-tag ${ln.theme}">${esc(ln.tag)}</span>
+        <span class="tc-ref">${esc(ln.text)}</span>
+      </div>
+      <input class="tc-input" id="tc-in-${i}" autocomplete="off" spellcheck="false"
+             aria-label="${esc(ln.tag)} 약속 따라 적기" placeholder="위 문장을 그대로 적어보세요">
+      <p class="tc-msg" id="tc-msg-${i}"></p>
+    </div>`).join('');
+
+  const norm = s => String(s||'').trim().replace(/\s+/g,' ');
+  const update = ()=>{
+    const okCount = lines.filter((ln,i)=>
+      norm(document.getElementById('tc-in-'+i).value) === norm(ln.text)).length;
+    const all = document.getElementById('tc-all');
+    if(okCount === lines.length){
+      all.textContent = '두 줄 모두 새겼습니다. 이제 점검을 시작해 볼까요?';
+      all.classList.add('ok');
+    } else {
+      all.textContent = `${okCount} / ${lines.length} 줄 완료`;
+      all.classList.remove('ok');
+    }
+  };
+
+  lines.forEach((ln,i)=>{
+    const el = document.getElementById('tc-in-'+i);
+    const msg = document.getElementById('tc-msg-'+i);
+    el.addEventListener('input', ()=>{
+      const ok = norm(el.value) === norm(ln.text);
+      el.classList.toggle('ok', ok);
+      msg.classList.toggle('ok', ok);
+      msg.textContent = ok ? '좋아요, 약속이 새겨졌어요!' : '';
+      update();
+    });
+  });
+  update();
+  card.style.display = 'block';
+}
+
+function startQuiz(originEl){
+  answers = {}; focusKey = null;
+  const freeCfg = (!testMode && user && FREE_FOCUS[user.current]) || null;
+  freeFocusMode = !!freeCfg;
+  const pwBox = document.querySelector('.pw-box');
+  const pwFree = document.getElementById('pw-free');
+  const pwHintEl = document.getElementById('pw-hint');
+  if(freeFocusMode){                                  // 마지막 회차 — 자유 입력
+    document.getElementById('pw-title').textContent = freeCfg.title;
+    document.getElementById('pw-free-sub').textContent = freeCfg.sub;
+    const ta = document.getElementById('focus-free');
+    ta.placeholder = freeCfg.placeholder || '';
+    ta.value = '';
+    pwBox.style.display = 'none';
+    pwHintEl.style.display = 'none';
+    pwFree.style.display = 'block';
+  } else {
+    pwBox.style.display = '';
+    pwHintEl.style.display = '';
+    pwFree.style.display = 'none';
+  }
+
+  pledgeTarget = PRINCIPLES.COMMON[0] || '';   // 공통 약속을 직접 새기기
+  pledgeOk = false;
+  document.getElementById('pw-ghost').textContent = pledgeTarget;
+  document.getElementById('pw-sizer').textContent = pledgeTarget;
+  const pwInput = document.getElementById('pw-input');
+  pwInput.value = '';
+  document.querySelector('.pw-box').classList.remove('ok');
+  const pwHint = document.getElementById('pw-hint');
+  pwHint.classList.remove('ok');
+  pwHint.textContent = '위 약속 문구를 그대로 입력하면 결과를 확인할 수 있습니다.';
+  if(!pwInput.dataset.bound){
+    pwInput.dataset.bound = '1';
+    pwInput.addEventListener('input', ()=>{
+      pledgeOk = pwInput.value.trim() === pledgeTarget;
+      document.querySelector('.pw-box').classList.toggle('ok', pledgeOk);
+      const hint = document.getElementById('pw-hint');
+      hint.classList.toggle('ok', pledgeOk);
+      hint.textContent = pledgeOk
+        ? '이달의 다짐이 완성되었습니다!'
+        : '위 약속 문구를 그대로 입력하면 결과를 확인할 수 있습니다.';
+      updateProgress();
+    });
+  }
+  const sq = document.getElementById('s-quiz');
+  sq.classList.remove('qt-hq','qt-leader','qt-middle','qt-member','qt-common');
+  const themeCls = THEME_CLASS[user.role];
+  if(themeCls) sq.classList.add('q' + themeCls);
+  document.getElementById('quiz-name').textContent = testMode ? user.role + " (체험)" : user.name + "님";
+  document.getElementById('quiz-round').textContent = testMode ? "체험판" : `${user.current} 점검`;
+  document.getElementById('quiz-exit').textContent = testMode ? "체험 그만두기" : "그만두기";
+
+  prevRound = testMode ? null
+    : (user.history.filter(x=>x.round !== user.current).pop() || null);
+  renderLastCard();
+  renderTrace();
+
+  quizItems = [
+    ...ITEMS.COMMON.map(it=>({...it, section:"공통 약속", principle:pj(PRINCIPLES.COMMON), theme:'t-common'})),
+    ...ITEMS[user.roleCode].map(it=>({...it, section:`${user.role} 약속`, principle:pj(PRINCIPLES[user.roleCode]), theme:THEME_CLASS[user.role]||''}))
+  ];
+
+  const body = document.getElementById('quiz-body');
+  body.innerHTML = '';
+  let lastSection = '';
+  quizItems.forEach((it,i)=>{
+    if(it.section !== lastSection){
+      lastSection = it.section;
+      const tagCls = (it.theme && it.theme !== 't-common') ? ' q' + it.theme : '';
+      body.insertAdjacentHTML('beforeend',
+        `<div class="section-tag${tagCls}"><span class="sq"></span>${esc(it.section)}</div>
+         <div class="browse-promise quiz-promise ${it.theme||''}">${esc(it.principle)}</div>`);
+    }
+    body.insertAdjacentHTML('beforeend', `
+      <div class="item" data-key="${it.key}">
+        <p class="q"><span class="num">${String(i+1).padStart(2,'0')}</span>${esc(it.q)}</p>
+        <div class="opts">${SCALE.map(s=>`<button class="opt" data-v="${s}">${s}</button>`).join('')}</div>
+        <div class="tip"><b class="tip-label"></b><span class="tip-text"></span></div>
+      </div>`);
+  });
+
+  body.querySelectorAll('.item').forEach(item=>{
+    const key = item.dataset.key;
+    const it = quizItems.find(x=>x.key===key);
+    const tip = item.querySelector('.tip');
+    const tipLabel = tip.querySelector('.tip-label');
+    const tipText = tip.querySelector('.tip-text');
+    item.querySelectorAll('.opt').forEach(btn=>{
+      btn.onclick = ()=>{
+        item.querySelectorAll('.opt').forEach(o=>o.classList.remove('on'));
+        btn.classList.add('on');
+        const v = btn.dataset.v;
+        answers[key] = v;
+        tip.classList.remove('v-did','v-na');
+        if(v === "실천했다"){
+          tip.classList.add('v-did');
+          tipLabel.textContent = '최고예요👍 이렇게도 해보세요!';
+          tipText.textContent = it.tip;
+        } else if(v === TIP_TRIGGER){
+          tipLabel.textContent = TEXTS.tip_label;
+          tipText.textContent = it.tip;
+        } else {
+          tip.classList.add('v-na');
+          tipLabel.textContent = '상황이 생기면 이렇게 해보세요!';
+          tipText.textContent = it.tip;
+        }
+        tip.classList.add('show');
+        updateProgress();
+        const idx = quizItems.findIndex(x=>x.key===key);
+        setTimeout(()=>{
+          const nextEl = idx < quizItems.length - 1
+            ? document.querySelector(`.item[data-key="${quizItems[idx+1].key}"]`)
+            : document.getElementById('btn-result');
+          if(nextEl) nextEl.scrollIntoView({behavior: reduceMotion ? 'auto' : 'smooth', block:'center'});
+        }, 250);
+      };
+    });
+  });
+  Array.from(body.children).forEach((el, i)=>{
+    el.style.animationDelay = Math.min(i * 0.045, 0.55) + 's';
+  });
+  updateProgress();
+  go('s-quiz', originEl);
+  // 대원칙 카드 고정 위치를 진행 바 블록 실제 높이에 맞춤
+  requestAnimationFrame(()=>{
+    const sh = document.querySelector('.quiz-sticky').offsetHeight;
+    document.querySelectorAll('.quiz-promise').forEach(el=>{ el.style.top = sh + 'px'; });
+  });
+}
+
+function updateProgress(){
+  const n = Object.keys(answers).length;
+  document.getElementById('answered').textContent = n;
+  document.getElementById('bar').style.width = (n/quizItems.length*100)+'%';
+  document.getElementById('btn-result').disabled =
+    (n < quizItems.length) || (!freeFocusMode && !pledgeOk);
+}
+
+/* 제출에 담길 다짐/의견 텍스트 */
+function getFocusText(){
+  if(freeFocusMode){
+    const el = document.getElementById('focus-free');
+    return (el.value || '').trim().slice(0, 200);
+  }
+  return focusKey ? quizItems.find(it=>it.key===focusKey).q : "";
+}
+
+/* 자동 저장 (결과 확인 시점에 1차 저장, 제출하기로 다짐 포함 갱신) */
+let lastSavedSig = '';
+function upsertLocalHistory(focusText){
+  const nd = new Date(), pad = n=>String(n).padStart(2,'0');
+  const entry = {
+    round:user.current,
+    date:`${nd.getFullYear()}-${pad(nd.getMonth()+1)}-${pad(nd.getDate())} ${pad(nd.getHours())}:${pad(nd.getMinutes())}`,
+    role:user.role, answers:{...answers}, focus:focusText
+  };
+  user.history = user.history.filter(x=>x.round !== user.current);
+  user.history.push(entry);
+}
+async function autoSave(){
+  if(testMode || !user || !user.empNo) return;
+  const focusText = getFocusText();
+  const sig = JSON.stringify([answers, focusText]);
+  if(sig === lastSavedSig) return;
+  try{
+    const r = await api({action:'submit', name:user.name, empNo:user.empNo, answers, focus:focusText});
+    if(r && r.ok){ lastSavedSig = sig; upsertLocalHistory(focusText); }
+  }catch(e){ /* 최종 제출에서 재시도됨 */ }
+}
+
+/* 지난 회차와 항목별 비교 */
+function renderCompare(){
+  const box = document.getElementById('cmp-block');
+  if(testMode || !user){ box.style.display = 'none'; return; }
+
+  // 참여 기록이 있는 회차 + 현재 회차 (일정 순서대로)
+  const rounds = SCHEDULE.map(s=>s.name)
+    .filter(n => n === user.current || user.history.some(x=>x.round === n));
+  if(rounds.length < 2){ box.style.display = 'none'; return; }
+
+  const answerOf = (roundName, key) => {
+    if(roundName === user.current) return answers[key];
+    const rec = user.history.filter(x=>x.round === roundName).pop();
+    return rec && rec.answers ? rec.answers[key] : null;
+  };
+
+  const rows = quizItems.map(it=>{
+    const vals = rounds.map(rn => ({ rn, v: answerOf(rn, it.key) }));
+    if(!vals.some(x=>x.v)) return '';
+    const seq = vals.filter(x=>x.v);
+    const last = seq[seq.length-1], prev = seq.length > 1 ? seq[seq.length-2] : null;
+    const up = prev && prev.v !== "실천했다" && last.v === "실천했다";
+    const chips = seq.map((x,i)=>
+      `${i ? '<span class="cmp-ar">→</span>' : ''}` +
+      `<span class="chip ${CHIP_CLASS[x.v]||'na'}">${esc(x.rn)} ${esc(x.v)}</span>`
+    ).join('');
+    return `<div class="cmp-row">
+      <div class="cmp-q">${esc(it.q)}${up ? '<span class="cmp-up">좋아졌어요</span>' : ''}</div>
+      <div class="cmp-chips">${chips}</div>
+    </div>`;
+  }).join('');
+
+  if(!rows){ box.style.display = 'none'; return; }
+  document.getElementById('cmp-title').textContent = rounds.join(' → ') + ' 비교';
+  document.getElementById('cmp-list').innerHTML = rows;
+  box.style.display = 'block';
+}
+
+/* 결과 + 다짐 */
+function showResult(){
+  const s = summarize(answers);
+  document.getElementById('n-did').textContent = s.nDid;
+  document.getElementById('n-try').textContent = s.nTry;
+  document.getElementById('n-na').textContent = s.nNa;
+  document.getElementById('result-title').textContent = s.title;
+  document.getElementById('result-sub').textContent = s.sub;
+  document.getElementById('btn-submit').textContent = testMode ? "체험 마치기" : "제출하기";
+
+  renderCompare();
+
+  const fb = document.querySelector('.focus-block');
+  const fh = document.getElementById('final-head');
+  const rc = document.getElementById('result-card');
+  if(freeFocusMode){                         // 마지막 회차 — 이 화면 진입이 곧 제출
+    fb.style.display = 'none';
+    rc.style.display = 'none';
+    fh.style.display = 'block';
+    document.getElementById('result-eyebrow').textContent = '2026 행동약속 체크리스트';
+    document.getElementById('final-title').innerHTML =
+      esc(TEXTS.done_title_final).replace(/\n/g,'<br>');
+    document.getElementById('final-desc').textContent = TEXTS.done_desc_final;
+
+    upsertLocalHistory(getFocusText());      // 화면에 이번 회차를 먼저 반영
+    renderDoneSummary('final-sum');
+    renderCompare();
+
+    document.getElementById('btn-submit').style.display = 'none';   // 제출 버튼 불필요
+    document.getElementById('submit-loading').style.display = 'none';
+
+    go('s-result');
+    autoSave().then(()=>renderDoneSummary('final-sum'));            // 서버 저장 후 날짜 갱신
+    if(!finalDone){ finalDone = true; launchFireworks(); }
+    return;
+  }
+  document.getElementById('btn-submit').style.display = '';
+  fb.style.display = ''; rc.style.display = ''; fh.style.display = 'none';
+  document.getElementById('result-eyebrow').textContent = '이달의 점검 결과';
+
+  const fl = document.getElementById('focus-list');
+  fl.innerHTML = '';
+  quizItems.filter(it=>answers[it.key] !== "실천했다").forEach(it=>{
+    const b = document.createElement('button');
+    b.className = 'focus-item'; b.textContent = it.q;
+    b.onclick = ()=>{
+      fl.querySelectorAll('.focus-item').forEach(x=>x.classList.remove('on'));
+      b.classList.add('on'); focusKey = it.key;
+    };
+    fl.appendChild(b);
+  });
+  if(!fl.children.length) fl.innerHTML = '<p style="font-size:.88rem;color:var(--sub)">모든 항목을 실천하셨습니다. 다음 달도 같은 리듬으로!</p>';
+  autoSave();
+  go('s-result');
+}
+
+/* 제출 */
+/* 완료 화면 — 불꽃놀이 (초반 몇 초만) */
+function launchFireworks(duration = 4200){
+  if(reduceMotion) return;
+  const cv = document.getElementById('fireworks');
+  if(!cv || !cv.getContext) return;
+  const ctx = cv.getContext('2d');
+  if(!ctx) return;
+
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const W = ()=>window.innerWidth, H = ()=>window.innerHeight;
+  const resize = ()=>{
+    cv.width = Math.floor(W() * dpr);
+    cv.height = Math.floor(H() * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  };
+  resize();
+  window.addEventListener('resize', resize);
+  cv.classList.add('on');
+
+  const COLORS = ['#2C4C99','#2F8A63','#C08A2D','#CE7F35','#6E9E45','#96C2E6','#E3CD75'];
+  let parts = [];
+  const burst = (x, y)=>{
+    const color = COLORS[Math.floor(Math.random()*COLORS.length)];
+    const n = 42 + Math.floor(Math.random()*22);
+    for(let i=0;i<n;i++){
+      const a = (Math.PI*2*i)/n + Math.random()*0.2;
+      const sp = 1.8 + Math.random()*3.6;
+      parts.push({x, y, vx:Math.cos(a)*sp, vy:Math.sin(a)*sp,
+                  life:1, decay:0.009 + Math.random()*0.012, color,
+                  size:1.6 + Math.random()*1.8});
+    }
+  };
+
+  const start = Date.now();
+  let timer = setInterval(()=>{
+    if(Date.now() - start > duration - 900){ clearInterval(timer); return; }
+    burst(W()*(0.15 + Math.random()*0.7), H()*(0.15 + Math.random()*0.42));
+  }, 420);
+  burst(W()*0.5, H()*0.3);                    // 첫 발은 즉시
+
+  let raf;
+  const tick = ()=>{
+    ctx.clearRect(0, 0, W(), H());
+    parts.forEach(p=>{
+      p.x += p.vx; p.y += p.vy;
+      p.vy += 0.045;                           // 중력
+      p.vx *= 0.985; p.vy *= 0.985;
+      p.life -= p.decay;
+      if(p.life > 0){
+        ctx.globalAlpha = Math.max(p.life, 0);
+        ctx.fillStyle = p.color;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI*2);
+        ctx.fill();
+      }
+    });
+    parts = parts.filter(p=>p.life > 0);
+    ctx.globalAlpha = 1;
+
+    if(Date.now() - start < duration || parts.length){
+      raf = requestAnimationFrame(tick);
+    } else {
+      cancelAnimationFrame(raf);
+      clearInterval(timer);
+      window.removeEventListener('resize', resize);
+      ctx.clearRect(0, 0, W(), H());
+      cv.classList.remove('on');               // 끝나면 레이어 제거
+    }
+  };
+  tick();
+}
+
+/* 완료 화면 — 올해 참여 기록 요약 */
+function renderDoneSummary(boxId = 'done-sum'){
+  const box = document.getElementById(boxId);
+  if(!box) return;
+  if(testMode || !user || !user.history){ box.style.display = 'none'; return; }
+  const done = new Set(user.history.map(x=>x.round));
+  box.innerHTML = SCHEDULE.map(sc=>{
+    if(!done.has(sc.name)){
+      return `<div class="ds-card none">
+        <div class="ds-round">${esc(sc.name)} 점검</div>
+        <div class="ds-empty">미참여</div>
+      </div>`;
+    }
+    const rec = user.history.filter(x=>x.round===sc.name).pop();
+    const s = summarize(rec.answers);
+    return `<div class="ds-card">
+      <div class="ds-round">${esc(sc.name)} 점검</div>
+      <div class="ds-date">${esc((rec.date||'').slice(0,10))}</div>
+      <div class="ds-counts">
+        <div><b style="color:var(--done)">${s.nDid}</b><span>실천</span></div>
+        <div><b style="color:var(--trying)">${s.nTry}</b><span>노력</span></div>
+        <div><b style="color:var(--na)">${s.nNa}</b><span>없음</span></div>
+      </div>
+    </div>`;
+  }).join('');
+  box.style.display = 'grid';
+}
+
+async function doSubmit(){
+  if(testMode){
+    document.getElementById('done-title').textContent = TEXTS.test_done_title;
+    document.getElementById('done-desc').textContent = TEXTS.test_done_desc;
+    document.querySelector('#s-done .btn.ghost').style.display = 'none';
+    document.getElementById('done-sum').style.display = 'none';
+    go('s-done');
+    launchFireworks(2600);
+    return;
+  }
+  const isFinal = !!(user && FREE_FOCUS[user.current]);
+  document.getElementById('done-title').innerHTML =
+    esc(isFinal ? TEXTS.done_title_final : TEXTS.done_title).replace(/\n/g,'<br>');
+  document.getElementById('done-desc').textContent =
+    isFinal ? TEXTS.done_desc_final : TEXTS.done_desc;
+
+  const btn = document.getElementById('btn-submit');
+  btn.disabled = true;
+  document.getElementById('submit-loading').classList.add('show');
+  try{
+    const focusText = getFocusText();
+    const r = await api({action:'submit', name:user.name, empNo:user.empNo, answers, focus:focusText});
+    if(!r.ok){
+      if(r.reason==='duplicate'){ alert("이번 회차는 이미 참여를 완료하셨습니다."); renderDash(); go('s-dash'); return; }
+      alert(r.message || "제출에 실패했습니다. 잠시 후 다시 시도해 주세요."); btn.disabled=false; return;
+    }
+    lastSavedSig = JSON.stringify([answers, focusText]);
+    upsertLocalHistory(focusText);
+
+    if(freeFocusMode){                        // 마지막 회차 — 같은 화면에서 마무리
+      renderDoneSummary('final-sum');
+      btn.textContent = '제출이 완료되었습니다';
+      btn.disabled = true;
+      const edit = document.getElementById('btn-edit');
+      edit.textContent = '처음으로';
+      edit.onclick = ()=>location.reload();
+      launchFireworks();
+      window.scrollTo({top:0, behavior: reduceMotion ? 'auto' : 'smooth'});
+      return;
+    }
+
+    renderDoneSummary();
+    go('s-done');
+    launchFireworks();
+  }catch(e){
+    alert("연결에 실패했습니다. 잠시 후 다시 시도해 주세요."); btn.disabled=false;
+  }finally{
+    document.getElementById('submit-loading').classList.remove('show');
+  }
+}
+</script>
+</body>
+</html>
