@@ -92,6 +92,11 @@ i.neg{font-style:normal;font-weight:900;color:#C62828}
 .back{margin-top:24px;background:none;color:#A2A9B6;font-size:.85em;font-weight:700;padding:4px 0}
 .back:hover{color:var(--sub)}
 .back[disabled]{opacity:0;pointer-events:none}
+.navrow{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:24px}
+.navrow .back{margin-top:0}
+.back.restart{color:#C2C7D0}
+.back.restart:hover{color:var(--accent)}
+.back.arm{color:var(--orange)}
 
 /* ─── 결과 ─── */
 .score{text-align:center;padding:16px 0 30px}
@@ -181,6 +186,7 @@ i.neg{font-style:normal;font-weight:900;color:#C62828}
     <p id="gate-d"></p>
   </div>
   <button class="btn" id="gate-go">계속하기</button>
+  <button class="btn ghost" id="gate-back">← 이전</button>
 </section>
 
 <section id="s-quiz" class="screen">
@@ -188,7 +194,10 @@ i.neg{font-style:normal;font-weight:900;color:#C62828}
   <p class="rchip" id="rchip"></p>
   <p class="qtext" id="qtext"></p>
   <div class="opts" id="opts"></div>
-  <button class="back" id="btn-back">← 이전 문항</button>
+  <div class="navrow">
+    <button class="back" id="btn-back">← 이전 문항</button>
+    <button class="back restart" id="btn-restart">처음으로</button>
+  </div>
 </section>
 
 <section id="s-result" class="screen">
@@ -205,6 +214,10 @@ i.neg{font-style:normal;font-weight:900;color:#C62828}
   </div>
   <button class="btn" id="btn-submit">제출하기</button>
   <p class="err" id="sub-err" style="text-align:center"></p>
+  <div class="navrow">
+    <button class="back" id="btn-reback">← 문항 다시 보기</button>
+    <button class="back restart" id="btn-restart2">처음으로</button>
+  </div>
 </section>
 
 <section id="s-done" class="screen">
@@ -258,10 +271,11 @@ function buildList(role){
 }
 
 /* ───────── 파트 전환 ───────── */
-function openGate(part, after){
+function openGate(part, after, back){
   const [no,t,d] = GATE[part];
   $('gate-no').textContent = no; $('gate-t').innerHTML = t; $('gate-d').innerHTML = d;
   $('gate-go').onclick = after;
+  $('gate-back').onclick = back;
   show('s-gate');
 }
 
@@ -297,7 +311,11 @@ function renderQ(){
 function goTo(i){
   const prev = S.list[S.idx], nx = S.list[i];
   S.idx = i;
-  if(prev && nx && prev.part !== nx.part){ openGate(nx.part, ()=>{ show('s-quiz'); renderQ(); }); }
+  if(prev && nx && prev.part !== nx.part){
+    openGate(nx.part,
+      ()=>{ show('s-quiz'); renderQ(); },
+      ()=>{ S.idx = i-1; show('s-quiz'); renderQ(); });
+  }
   else { renderQ(); }
 }
 function next(){
@@ -306,9 +324,27 @@ function next(){
 }
 function start(){
   S.idx = 0;
-  openGate(S.list[0].part, ()=>{ show('s-quiz'); renderQ(); });
+  openGate(S.list[0].part,
+    ()=>{ show('s-quiz'); renderQ(); },
+    ()=> show(S.test ? 's-intro' : 's-auth'));
 }
 $('btn-back').onclick = ()=>{ clearHint(); if(S.idx>0){ S.idx--; renderQ(); } };
+$('btn-reback').onclick = ()=>{ S.idx = S.list.length-1; show('s-quiz'); renderQ(); };
+
+/* ───────── 처음으로 (두 번 눌러야 초기화) ───────── */
+function armRestart(btn){
+  let armed=false, t=null;
+  const off=()=>{ armed=false; btn.classList.remove('arm'); btn.textContent='처음으로'; };
+  btn.onclick=()=>{
+    if(!armed){ armed=true; btn.classList.add('arm'); btn.textContent='한 번 더 누르면 초기화';
+      clearTimeout(t); t=setTimeout(off,3000); return; }
+    clearTimeout(t); off(); clearHint();
+    S={name:'',emp:'',dept:'',role:'',group:'',list:[],idx:0,picks:[],test:false};
+    $('auth-err').className='err'; $('sub-err').className='err';
+    show('s-intro');
+  };
+}
+armRestart($('btn-restart')); armRestart($('btn-restart2'));
 
 /* ───────── 결과 ───────── */
 function result(){
