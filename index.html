@@ -98,6 +98,26 @@ i.neg{font-style:normal;font-weight:900;color:#C62828}
 .back.restart:hover{color:var(--accent)}
 .back.arm{color:var(--orange)}
 
+/* ─── 만족도조사 ─── */
+.svh{margin-top:14px;font-size:2.05em;font-weight:900;line-height:1.24}
+.sv{margin-top:30px}
+.sv .q{font-size:1.02em;font-weight:800;line-height:1.55}
+.lik{margin-top:14px;display:flex;gap:7px}
+.lik button{flex:1;padding:15px 0;border:1.5px solid var(--line);border-radius:11px;background:#fff;
+  font-size:1em;font-weight:800;color:var(--ink);font-variant-numeric:tabular-nums;
+  transition:border-color .15s,background .25s,color .25s}
+.lik button:hover{border-color:var(--accent)}
+.lik button.picked{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+.anch{margin-top:9px;display:flex;justify-content:space-between;font-size:.76em;font-weight:700;color:#A2A9B6}
+.sv textarea{margin-top:14px;width:100%;min-height:94px;padding:14px 15px;border:1.5px solid var(--line);
+  border-radius:11px;font-size:.97em;font-family:inherit;line-height:1.65;outline:0;background:#fff;
+  resize:vertical;letter-spacing:inherit;color:var(--ink);transition:border-color .15s}
+.sv textarea:focus{border-color:var(--accent)}
+.sv textarea::placeholder{color:#C2C7D0}
+.svnote{margin-top:9px;padding:11px 13px;border-radius:9px;background:#F5F6F8;
+  font-size:.82em;font-weight:600;line-height:1.7;color:var(--sub)}
+.svnote b{font-weight:800;color:var(--ink)}
+
 /* ─── 결과 ─── */
 .score{text-align:center;padding:16px 0 30px}
 .score .num{font-size:4.4em;font-weight:900;line-height:1;letter-spacing:-.05em;color:var(--accent)}
@@ -105,17 +125,69 @@ i.neg{font-style:normal;font-weight:900;color:#C62828}
 .score .grade{margin-top:16px;font-size:1.1em;font-weight:800;line-height:1.5}
 .sec{margin-top:34px}
 .sec h3{font-size:.78em;font-weight:800;color:#A2A9B6;letter-spacing:.04em;margin-bottom:14px}
-.tip{padding:20px 0}
-.tip + .tip{border-top:1px solid var(--line)}
-.tip .tq{font-size:1em;font-weight:800;line-height:1.6;color:var(--ink)}
-.tip .ans{display:flex;gap:11px;align-items:baseline;margin-top:11px;font-size:.93em;line-height:1.6}
-.tip .ans u{text-decoration:none;flex:none;width:74px;font-size:.78em;font-weight:800;
-  color:#A2A9B6;letter-spacing:.01em;padding-top:1px}
-.tip .ans span{font-weight:600;color:var(--sub)}
+.tip{padding:20px;background:#fff;border:1px solid var(--line);border-radius:14px}
+.tip + .tip{margin-top:12px}
+.tip .tq{display:flex;gap:11px;align-items:flex-start;font-size:1em;font-weight:800;
+  line-height:1.55;color:var(--ink)}
+.tip .tq > i{flex:none;font-style:normal;width:23px;height:23px;margin-top:2px;border-radius:7px;
+  background:var(--accent);color:#fff;font-size:.72em;font-weight:900;
+  display:flex;align-items:center;justify-content:center;font-variant-numeric:tabular-nums}
+.tip .ans{margin-top:12px;padding:11px 14px;border-radius:10px;
+  background:#F5F6F8;border-left:3px solid #C2C7D0}
+.tip .ans u{display:block;text-decoration:none;font-size:.73em;font-weight:800;
+  color:#A2A9B6;letter-spacing:.03em}
+.tip .ans span{display:block;margin-top:5px;font-size:.93em;font-weight:600;
+  line-height:1.55;color:var(--sub)}
+.tip .ans.ok{background:var(--accent-soft);border-left-color:var(--accent)}
 .tip .ans.ok u{color:var(--accent)}
-.tip .ans.ok span{font-weight:700;color:var(--ink);
-  background:var(--accent-soft);border-radius:5px;padding:2px 7px;margin:-2px -3px}
-.tip .say{margin-top:14px;font-size:.92em;font-weight:600;line-height:1.7;color:var(--sub)}
+.tip .ans.ok span{color:var(--ink);font-weight:700}
+/* 한마디 — 다시 보이게 하려면 아래 display:none 한 줄만 지우면 됩니다 */
+.tip .say{display:none;margin-top:15px;padding-top:14px;border-top:1px dashed var(--line);
+  font-size:.9em;font-weight:600;line-height:1.7;color:var(--sub)}
+.tip .say b{display:block;font-size:.8em;font-weight:800;color:#C2C7D0;
+  letter-spacing:.03em;margin-bottom:5px}
+
+/* ─── 쪽지벽 ─── */
+#wall{display:none;margin-top:40px;padding-top:30px;border-top:1px solid var(--line)}
+#wall.on{display:block}
+.wall-h{display:flex;align-items:baseline;gap:9px}
+.wall-h b{font-size:1.02em;font-weight:900;color:var(--ink)}
+.wall-h s{text-decoration:none;font-size:.8em;font-weight:800;color:var(--accent);
+  font-variant-numeric:tabular-nums}
+.wall-s{margin-top:7px;font-size:.84em;font-weight:600;line-height:1.65;color:#A2A9B6}
+.notes{margin-top:18px;columns:2;column-gap:11px}
+@media (max-width:420px){ .notes{columns:1} }
+.notes .pn{break-inside:avoid;margin-bottom:11px;padding:16px 15px 17px;border-radius:3px 12px 3px 12px;
+  font-size:.89em;font-weight:600;line-height:1.72;color:#3B3326;
+  box-shadow:0 1px 2px rgba(22,35,63,.07),0 7px 16px rgba(22,35,63,.05);
+  animation:noteIn .5s cubic-bezier(.22,1,.36,1) both}
+.notes .pn:nth-child(4n+1){background:#FFF6D6;transform:rotate(-1.1deg)}
+.notes .pn:nth-child(4n+2){background:#E4F1FF;transform:rotate(.9deg);color:#1F3048}
+.notes .pn:nth-child(4n+3){background:#FFE9DC;transform:rotate(1.3deg);color:#4A2E1E}
+.notes .pn:nth-child(4n+4){background:#E6F6EA;transform:rotate(-.7deg);color:#23402C}
+@keyframes noteIn{from{opacity:0;transform:translateY(9px) rotate(0)}}
+.notes .pn p{margin:0}
+.notes .pn .lk{margin-top:12px;display:inline-flex;align-items:center;gap:6px;
+  padding:5px 11px;border:0;border-radius:999px;background:rgba(255,255,255,.7);
+  font-size:.82em;font-weight:800;color:#8A8578;font-family:inherit;
+  font-variant-numeric:tabular-nums;transition:color .15s,background .2s}
+.notes .pn .lk:hover{background:#fff}
+.notes .pn .lk.on{color:#D9433F;background:#fff}
+.notes .pn .lk i{font-style:normal;font-size:1.06em;line-height:1}
+.notes .pn.demo{opacity:.8}
+.wall-demo{display:inline-block;margin-left:7px;padding:2px 8px;border-radius:999px;
+  background:#EEF0F4;font-size:.72em;font-weight:800;color:#8A91A0;vertical-align:2px}
+.wall-more{margin-top:4px;width:100%;padding:12px;border:1.5px dashed var(--line);border-radius:11px;
+  background:transparent;font-size:.84em;font-weight:800;color:var(--sub)}
+.wall-more:hover{border-color:var(--accent);color:var(--accent)}
+
+/* ─── 공유 ─── */
+.share{display:flex;gap:9px;margin-top:2px}
+.shb{flex:1;padding:13px 10px;border:1.5px solid var(--line);border-radius:11px;background:#fff;
+  font-size:.88em;font-weight:800;color:var(--accent);transition:border-color .15s,background .2s}
+.shb:hover{border-color:var(--accent);background:var(--accent-soft)}
+.shb:active{transform:scale(.99)}
+.shmsg{margin-top:11px;text-align:center;font-size:.8em;font-weight:700;color:var(--sub);min-height:1.1em}
 .plist{border-top:1px solid var(--line)}
 .plist dt{font-size:.74em;font-weight:900;letter-spacing:.03em;color:var(--orange);padding:16px 0 2px}
 .plist dd{display:flex;gap:10px;padding:7px 0;font-size:.93em;font-weight:600;line-height:1.6}
@@ -150,10 +222,10 @@ i.neg{font-style:normal;font-weight:900;color:#C62828}
   <h1>체크리스트<br>실전고사</h1>
   <p class="lead">올 한 해 우리가 약속했던 것들을<br>가볍게 한 번 짚어봐요.</p>
   <div class="parts">
-    <div><i>1부</i><b>우리 약속, 기억하시나요</b><s>3문항</s></div>
-    <div><i>2부</i><b>이럴 땐 어떻게 할까요</b><s>7문항</s></div>
+    <div><i>1부</i><b>우리 약속, 기억하시나요</b><s>2문항</s></div>
+    <div><i>2부</i><b>이럴 땐 어떻게 할까요</b><s>5문항</s></div>
   </div>
-  <p class="dots"><b>모두 10문항</b> · 약 2분 · 정답 공개</p>
+  <p class="dots"><b>모두 7문항</b> · 약 2분 · 정답 공개</p>
   <button class="btn" id="go-auth">시작하기</button>
   <div class="tm"><b>사번 없이 둘러보기</b>
     <div>
@@ -162,6 +234,13 @@ i.neg{font-style:normal;font-weight:900;color:#C62828}
       <button data-t="실무자">실무자</button>
       <button data-t="본부장">본부장</button>
     </div>
+  </div>
+
+  <div id="wall">
+    <div class="wall-h"><b>내년 약속 한 줄</b><s id="wall-n"></s></div>
+    <p class="wall-s" id="wall-sub">실전고사 마지막에 동료들이 남긴 제안입니다.<br class="w"> 이름 없이 문장만 붙고, 공감 가는 쪽지에 좋아요를 남길 수 있어요.</p>
+    <div class="notes" id="notes"></div>
+    <button class="wall-more" id="wall-more" style="display:none">더 보기</button>
   </div>
 </section>
 
@@ -190,7 +269,7 @@ i.neg{font-style:normal;font-weight:900;color:#C62828}
 </section>
 
 <section id="s-quiz" class="screen">
-  <div class="top"><div class="bar"><i id="bar"></i></div><span class="cnt" id="cnt">1 / 10</span></div>
+  <div class="top"><div class="bar"><i id="bar"></i></div><span class="cnt" id="cnt">1 / 7</span></div>
   <p class="rchip" id="rchip"></p>
   <p class="qtext" id="qtext"></p>
   <div class="opts" id="opts"></div>
@@ -200,19 +279,44 @@ i.neg{font-style:normal;font-weight:900;color:#C62828}
   </div>
 </section>
 
+<section id="s-survey" class="screen">
+  <p class="eyebrow">2026 우리들의 행동약속</p>
+  <h2 class="svh">조직문화 체크리스트<br>만족도조사</h2>
+  <p class="lead">올 한 해 운영한 체크리스트에 대한 의견을 들려주세요.<br class="w"> 답변은 개인이 드러나지 않게 모아서만 확인합니다.</p>
+  <div id="sv-list"></div>
+  <div class="sv">
+    <p class="q">4. 내년 행동약속에 한 줄을 더한다면, 어떤 문장이면 좋을까요?</p>
+    <p class="svnote">남겨주신 의견은 <b>메인페이지에 게시되어 모두가 볼 수 있으며, 비공개 처리될 수 있습니다.</b>
+      이름·부서·역할은 함께 올라가지 않고 문장만 올라갑니다. 비워 두셔도 괜찮아요.</p>
+    <textarea id="sv-open" maxlength="300" placeholder="예) 자료를 요청할 때 마감일을 꼭 같이 적어주기"></textarea>
+  </div>
+  <button class="btn" id="sv-next">제출하기</button>
+  <p class="err" id="sv-err" style="text-align:center"></p>
+  <div class="navrow">
+    <button class="back" id="sv-back">← 결과 다시 보기</button>
+    <button class="back restart" id="btn-restart3">처음으로</button>
+  </div>
+</section>
+
 <section id="s-result" class="screen">
   <div class="score">
-    <p class="num"><span id="r-score">0</span><small> / 50</small></p>
+    <p class="num"><span id="r-score">0</span><small> / 35</small></p>
     <p class="grade" id="r-grade"></p>
   </div>
+  <div class="share">
+    <button class="shb" id="sh-img">결과 이미지 저장</button>
+    <button class="shb" id="sh-txt">결과 복사</button>
+  </div>
+  <p class="shmsg" id="sh-msg"></p>
   <div class="sec" id="sec-tips"><h3>한 번 더 보면 좋은 장면</h3><div id="tips"></div></div>
-  <div class="sec"><h3>올해 나의 약속</h3><dl class="plist" id="plist"></dl></div>
+  <!-- 다시 보이게 하려면 style="display:none" 만 지우면 됩니다 -->
+  <div class="sec" id="sec-prom" style="display:none"><h3>올해 나의 약속</h3><dl class="plist" id="plist"></dl></div>
   <div class="sec">
     <h3>마지막으로</h3>
     <p class="pick-q">올해 나에게 가장 자주 있었던 장면은 무엇이었나요?</p>
     <div class="opts" id="pick"></div>
   </div>
-  <button class="btn" id="btn-submit">제출하기</button>
+  <button class="btn" id="btn-submit">제출하고 만족도조사 참여하기</button>
   <p class="err" id="sub-err" style="text-align:center"></p>
   <div class="navrow">
     <button class="back" id="btn-reback">← 문항 다시 보기</button>
@@ -226,6 +330,7 @@ i.neg{font-style:normal;font-weight:900;color:#C62828}
     <h2>참여해 주셔서 감사합니다.</h2>
     <p id="done-msg">올해 세 번의 점검, 그리고 오늘 한 번 더.<br>내년 약속은 여러분이 고른 장면에서 시작됩니다.</p>
   </div>
+  <button class="btn" id="go-wall">메인으로 돌아가서 내년 약속 보기</button>
   <p class="foot">2026 우리들의 행동약속 · 헤일메리 조직문화 파트</p>
 </section>
 
@@ -233,19 +338,19 @@ i.neg{font-style:normal;font-weight:900;color:#C62828}
 <script>
 /* ───────── 설정 ───────── */
 const GAS_URL = '여기에_웹앱_배포_URL을_붙여넣으세요';
-const ITEMS = [{"part": "약속", "g": "공통", "k": "A1", "q": "다음 중 2026 우리들의 행동약속 <b>공통 약속</b>은?", "typ": "물음표형", "o": [{"t": "지킬 건 지키고, 애매한 건 함께", "s": 5}, {"t": "일은 직급만큼, 책임은 함께, 의견은 존중", "s": 2}, {"t": "후배에게는 업무적 방향을, 팀장에게는 팀의 목소리를", "s": 2}, {"t": "내 몫이 힘든 만큼, 다른 이의 몫도 이해", "s": 2}], "tip": "공통 약속은 「지킬 건 지키고, 애매한 건 함께」. 나머지 셋은 각 역할의 약속이었어요.", "lab": "공통 약속 3가지"}, {"part": "약속", "g": "관리자", "k": "A2", "q": "다음 중 2026 우리들의 행동약속 <b>관리자 부문 약속</b>은?", "typ": "물음표형", "o": [{"t": "일은 직급만큼, 책임은 함께, 의견은 존중", "s": 5}, {"t": "후배에게는 업무적 방향을, 팀장에게는 팀의 목소리를", "s": 2}, {"t": "내 몫이 힘든 만큼, 다른 이의 몫도 이해", "s": 2}, {"t": "지킬 건 지키고, 애매한 건 함께", "s": 2}], "tip": "관리자 약속은 「일은 직급만큼, 책임은 함께, 의견은 존중」. 업무 편차·상급 보고·방향 제시·제때 결정·연차 사유 다섯 가지로 풀어 두었어요.", "lab": "내 역할의 약속"}, {"part": "약속", "g": "중간관리자", "k": "A2", "q": "다음 중 2026 우리들의 행동약속 <b>중간관리자 부문 약속</b>은?", "typ": "물음표형", "o": [{"t": "후배에게는 업무적 방향을, 팀장에게는 팀의 목소리를", "s": 5}, {"t": "일은 직급만큼, 책임은 함께, 의견은 존중", "s": 2}, {"t": "내 몫이 힘든 만큼, 다른 이의 몫도 이해", "s": 2}, {"t": "지킬 건 지키고, 애매한 건 함께", "s": 2}], "tip": "중간관리자 약속은 「후배에게는 업무적 방향을, 팀장에게는 팀의 목소리를」. 후배 질문·어려움 전달·취합 안내·팀 전체 파악·연차 공유 다섯 가지입니다.", "lab": "내 역할의 약속"}, {"part": "약속", "g": "실무자", "k": "A2", "q": "다음 중 2026 우리들의 행동약속 <b>실무자 부문 약속</b>은?", "typ": "물음표형", "o": [{"t": "내 몫이 힘든 만큼, 다른 이의 몫도 이해", "s": 5}, {"t": "후배에게는 업무적 방향을, 팀장에게는 팀의 목소리를", "s": 2}, {"t": "일은 직급만큼, 책임은 함께, 의견은 존중", "s": 2}, {"t": "지킬 건 지키고, 애매한 건 함께", "s": 2}], "tip": "실무자 약속은 「내 몫이 힘든 만큼, 다른 이의 몫도 이해」. 먼저 확인·폄하 않기·성의 있는 응답·회신·연차 공유 다섯 가지입니다.", "lab": "내 역할의 약속"}, {"part": "약속", "g": "공통", "k": "A3", "q": "다음 중 2026 우리들의 행동약속 <b>공통 약속 실천문항이 <r>아닌</r> 것</b>은?", "typ": "물음표형", "o": [{"t": "연차 일정은 팀에 알리지 않았다", "s": 5}, {"t": "마주치는 동료에게 직급·친분과 관계없이 인사를 건넸다", "s": 2}, {"t": "다른 팀(본부)의 요청에 거절할 사유부터 찾지 않았다", "s": 2}, {"t": "나의 말과 행동이 동료에게 상처가 되지 않았는지 돌아봤다", "s": 2}], "tip": "공통 실천문항은 인사·요청·돌아보기 세 가지입니다. 나머지 하나는 약속을 거꾸로 뒤집어 둔 말이었어요.", "lab": "공통 약속 3가지"}, {"part": "실천", "g": "공통", "k": "C1", "q": "엘리베이터에서 다른 본부 분이 먼저 인사를 건넸다. 얼굴은 아는데 이름이 떠오르지 않는다.", "typ": "서술형", "o": [{"t": "웃는 얼굴로 같이 인사한다", "s": 5}, {"t": "이름이 생각나지 않아 인사를 건너뛴다", "s": 4}, {"t": "어색하게 웃고 휴대폰을 본다", "s": 3}, {"t": "엘리베이터에서 내린다", "s": 2}], "tip": "내일 출근길, 엘리베이터에서 처음 만나는 사람에게 목례부터 해보는 건 어떨까요? 하루 한 명이면 충분합니다.", "lab": "이름이 기억 안 나는 인사"}, {"part": "실천", "g": "공통", "k": "C2", "q": "금요일 오후, 다른 팀에서 다음 주까지 자료를 부탁했다. 우리 팀도 그 주에 마감이 있다.", "typ": "서술형", "o": [{"t": "언제까지 왜 필요한지 먼저 물어보고, 가능한 범위와 시점을 알려준다", "s": 5}, {"t": "\"저희도 마감이라 어려울 것 같아요\"로 답을 마친다", "s": 4}, {"t": "일단 다 해드리겠다고 하고 우리 일정을 미룬다", "s": 3}, {"t": "메신저를 로그아웃한다", "s": 2}], "tip": "요청을 받으면 '안 되는 이유' 대신 '되는 범위'부터 적어보는 건 어떨까요? 전부는 어려워도 일부는 도울 수 있는 경우가 대부분입니다.", "lab": "마감이 겹친 타 팀 요청"}, {"part": "실천", "g": "공통", "k": "C3", "q": "회의 중 의견을 세게 말한 부분이 있는 것 같다.", "typ": "서술형", "o": [{"t": "자연스럽게 만나 어떤 점이 걱정이었는지 설명하고, 표현이 셌다면 가볍게 사과한다", "s": 5}, {"t": "회의 자리에서 한 피드백이니 그냥 넘어간다", "s": 4}, {"t": "전체 메신저방에 긴 사과문을 올린다", "s": 3}, {"t": "사과의 커피 기프티콘을 말없이 보낸다", "s": 2}], "tip": "퇴근길에 오늘 했던 말 중 다시 담고 싶은 말이 있었는지 하나만 떠올려보는 건 어떨까요? 있었다면, 내일 만회할 기회가 있습니다.", "lab": "세게 말한 회의"}, {"part": "실천", "g": "관리자", "k": "R1", "q": "요즘 한 팀원이 필요 이상으로 야근을 하는 것 같다. 물어보니 \"괜찮습니다\"라고만 한다.", "typ": "서술형", "o": [{"t": "팀 업무분장과 현안을 다시 점검해보고, 필요시 면담을 통해 본인 의견을 물어본다", "s": 5}, {"t": "본인이 괜찮다고 하니 조금 더 지켜본다", "s": 4}, {"t": "다른 팀원에게 \"좀 도와주세요\"라고 부탁한다", "s": 3}, {"t": "괜찮은지만 다시 물어본다", "s": 2}], "tip": "팀원별 담당 업무를 한 줄씩만 적어보는 건 어떨까요? 목록을 만들다 보면 몰린 사람이 보이고, 보이는 순간이 조정의 시작입니다.", "lab": "\"괜찮습니다\" 하는 야근", "hq": {"q": "요즘 한 팀의 야근이 눈에 띄게 늘었다. 팀장에게 물어보니 \"괜찮습니다\"라고만 한다.", "o": [{"t": "본부 업무분장과 현안을 다시 점검해보고, 필요시 면담을 통해 팀장 의견을 물어본다", "s": 5}, {"t": "팀장이 괜찮다고 하니 조금 더 지켜본다", "s": 4}, {"t": "다른 팀에 \"좀 도와주세요\"라고 부탁한다", "s": 3}, {"t": "괜찮은지만 다시 물어본다", "s": 2}], "tip": "팀별 사업 수와 인원 현황을 한 장에 놓고 보는 시간을 가져보는 건 어떨까요? 숫자로 나란히 보면 조정할 지점이 눈에 들어옵니다."}}, {"part": "실천", "g": "관리자", "k": "R2", "q": "본부장님께 보고를 가야 하는데 설명은 들었지만 이해가 어려운 부분이 있다.", "typ": "서술형", "o": [{"t": "담당자에게 추가 설명을 요청한 뒤 보고에 들어간다", "s": 5}, {"t": "팀원이 더 잘 아니 대신 보낸다", "s": 4}, {"t": "나를 믿고 기억나는 대로 들어간다", "s": 3}, {"t": "보고를 가지 않는다", "s": 2}], "tip": "'내용은 담당자가 제일 잘 아니까' 대신, 다음 보고 전에 실무자에게 10분 브리핑을 요청해 보는 건 어떨까요? 팀장의 목소리로 팀을 대표해 전하는 보고는 같은 내용도 한층 힘 있게 전달될 수 있습니다.", "lab": "이해 못 한 채 가는 보고", "hq": {"q": "대표이사님께 보고를 가야 하는데 설명은 들었지만 이해가 어려운 부분이 있다.", "o": [{"t": "담당 팀장에게 추가 설명을 요청한 뒤 보고에 들어간다", "s": 5}, {"t": "팀장이 더 잘 아니 대신 보낸다", "s": 4}, {"t": "나를 믿고 기억나는 대로 들어간다", "s": 3}, {"t": "보고를 가지 않는다", "s": 2}], "tip": "'내용은 담당팀이 제일 잘 아니까' 대신, 다음 보고 전에 담당팀에게 10분 브리핑을 요청해 보는 건 어떨까요? 본부장의 목소리로 본부를 대표해 전하는 보고는 같은 내용도 한층 힘 있게 전달될 수 있습니다."}}, {"part": "실천", "g": "관리자", "k": "R3", "q": "초안 단계의 보고서를 받았다. 완성본까지는 아직 시간이 있다.", "typ": "서술형", "o": [{"t": "지금은 방향만 짚고, 서식은 마지막에 한 번 같이 본다", "s": 5}, {"t": "방향과 서식을 한꺼번에 적어서 돌려준다", "s": 4}, {"t": "서식부터 정리해 달라고 하고 방향은 다음에 본다", "s": 3}, {"t": "완성본을 기대하며 다른 일을 먼저 한다", "s": 2}], "tip": "피드백을 하기 전에 '이건 방향의 문제인가, 취향의 문제인가' 한 번만 자문해 보는 건 어떨까요? 취향이면 담당자를 믿고 넘어가는 것도 좋은 방법입니다.", "lab": "초안 보고서 피드백", "hq": {"tip": "보고를 받을 때 문구 수정 대신 '이 일의 목표가 뭐였죠?'를 먼저 물어보는 건 어떨까요? 방향이 맞으면 표현은 맡겨도 됩니다."}}, {"part": "실천", "g": "관리자", "k": "R4", "q": "팀원이 두 가지 안을 올린 지 일주일인데 윗선에서 결정이 나지 않는다", "typ": "서술형", "o": [{"t": "현재 상황을 공유해주고, 바뀔 수 있는 조건도 함께 알려준다", "s": 5}, {"t": "분명해질 때까지 기다린다", "s": 4}, {"t": "팀원에게 먼저 진행해 보라고 한다", "s": 3}, {"t": "윗선 표정의 해석 결과를 공유한다", "s": 2}], "tip": "회의를 마칠 때 '결정된 것 / 미결인 것 / 결정 기한' 세 줄로 정리해 공유해 보는 건 어떨까요? 미룬 결정도 기한이 생기면 약속이 됩니다.", "lab": "미뤄지는 결정", "hq": {"q": "팀에서 두 가지 안을 올린 지 일주일인데 윗선에서 결정이 나지 않는다", "o": [{"t": "현재 상황을 공유해주고, 바뀔 수 있는 조건도 함께 알려준다", "s": 5}, {"t": "분명해질 때까지 기다린다", "s": 4}, {"t": "팀에 먼저 진행해 보라고 한다", "s": 3}, {"t": "윗선 표정의 해석 결과를 공유한다", "s": 2}], "tip": "판단이 어려운 사안이라면 '○일까지 결정해서 알려주겠다'는 기한이라도 먼저 제시해보는 건 어떨까요? 기다리는 쪽은 기한만 있어도 움직일 수 있습니다."}}, {"part": "실천", "g": "중간관리자", "k": "R1", "q": "PM이 처음인 후배가 고민이 있다고 찾아왔다.", "typ": "서술형", "o": [{"t": "내 경험을 바탕으로 같이 고민할 수 있는 부분을 논의해본다", "s": 5}, {"t": "내가 했던 파일을 찾아서 보내준다", "s": 4}, {"t": "\"작년에 한 대로 하면 될 거예요\"라고 답한다", "s": 3}, {"t": "11층에 숨겨진 비법서를 갖다준다", "s": 2}], "tip": "후배의 질문에 바로 답이 어려우면 '어디까지 해봤어요?'부터 물어보는 건 어떨까요? 그리고 그때의 내 경험은 정답이 아니라 참고자료로 건네면 충분합니다.", "lab": "처음 맡은 일로 찾아온 후배"}, {"part": "실천", "g": "중간관리자", "k": "R2", "q": "팀장님은 아직 모르는 팀 내부 어려움을 알게 되었다.", "typ": "서술형", "o": [{"t": "기회가 될 때 상황을 정리해 팀장님께 전달해 본다", "s": 5}, {"t": "내 선에서 정리하고 후배들을 다독인다", "s": 4}, {"t": "후배가 직접 이야기하도록 팀장님과 약속을 잡아준다", "s": 3}, {"t": "오늘의 운세를 함께 확인한다", "s": 2}], "tip": "팀원이 직접 말하기 어려운 이야기일수록, 선배의 입을 거치면 한결 가볍게 올라갑니다. '요즘 ○○님이 좀 버거워 보여요'도, '요즘 분위기 좋아요'도 팀장님께는 가장 귀한 정보입니다. 지나가는 말로도 충분해요.", "lab": "팀장이 모르는 팀 내 어려움"}, {"part": "실천", "g": "중간관리자", "k": "R3", "q": "다음 중 자료 취합 요청 시 가장 효과적인 전달 방법은?", "typ": "물음표형", "o": [{"t": "어디에 쓰는 자료인지와 작성 기한, 작성 기준을 함께 공지한다", "s": 5}, {"t": "양식 파일만 보낸다", "s": 2}, {"t": "옆자리 사람에게 말하고 전달해달라고 한다", "s": 2}, {"t": "각 자리에 자료 작성 요청 포스트잇을 붙인다", "s": 2}], "tip": "취합 요청을 보낼 때 '왜 필요한지 / 언제까지 / 어떤 형식으로' 세 가지를 넣어보는 건 어떨까요? 받는 사람의 시간이 절반으로 줄어듭니다.", "lab": "자료 취합 요청"}, {"part": "실천", "g": "중간관리자", "k": "R4", "q": "팀장이 자리를 비운 사이, 다른 팀에서 \"그 사업 어떻게 돼가요?\"라는 질문을 받았다.", "typ": "서술형", "o": [{"t": "공유받은 범위에서 아는 만큼 답하고, 담당자를 연결해준다", "s": 5}, {"t": "\"제 담당이 아니라서요\"라고 답한다", "s": 4}, {"t": "확실하지 않은데 기억나는 대로 답한다", "s": 3}, {"t": "팀장님 복귀 예정일을 안내하고 대화를 마친다", "s": 2}], "tip": "회의에서 내 담당 외 안건 하나에 질문이나 의견을 보태보는 건 어떨까요? 팀 전체가 보이기 시작하는 가장 쉬운 방법입니다.", "lab": "담당 아닌 사업 문의"}, {"part": "실천", "g": "실무자", "k": "R1", "q": "이전에 올라온 프로그램을 신청하고 싶은데 이해가 안 가는 부분이 있다.", "typ": "서술형", "o": [{"t": "게시판을 한 번 검색해본 뒤 담당자에게 물어본다", "s": 5}, {"t": "바로 담당자에게 물어본다", "s": 4}, {"t": "팀원들과 머리를 맞대고 해석해본다", "s": 3}, {"t": "모르겠어서 신청을 포기한다", "s": 2}], "tip": "질문을 보내기 전, 그룹웨어 검색창에 키워드 두 개만 먼저 쳐보는 건 어떨까요? 3분의 검색이 서로의 30분을 아껴줍니다. 또, 요청 메시지에 '무슨 일 때문에, 언제까지' 두 가지만 붙이면 받는 쪽의 첫 마음이 달라집니다.", "lab": "이해 안 되는 공지"}, {"part": "실천", "g": "실무자", "k": "R2", "q": "다음 다른 팀 업무에 대한 평가 중 <b>가장 바람직하지 <r>않은</r> 의견</b>은?", "typ": "물음표형", "o": [{"t": "\"거기 팀이 바쁠 일이 뭐가 있어요?\"", "s": 5}, {"t": "\"지난번에 올리신 이벤트 재밌게 잘 참여했습니다!\"", "s": 2}, {"t": "\"새로 올라온 캠페인 영상 멋있어요!\"", "s": 2}, {"t": "\"요즘 많이 바쁘시죠, 조금만 더 힘내세요!\"", "s": 2}], "tip": "다른 팀 업무 이야기가 나오면 '그 팀도 사정이 있겠지' 한 박자만. 내 일이 존중받고 싶은 만큼, 그 한 박자가 나를 지켜줍니다.", "lab": "타 팀 업무 이야기"}, {"part": "실천", "g": "실무자", "k": "R3", "q": "얼마 전에 올린 공지에 적혀 있는 내용을 그대로 물어보는 문의가 왔다.", "typ": "서술형", "o": [{"t": "확인 결과를 전달해 주면서, 다음에 찾아볼 수 있게 자료 위치도 알려준다", "s": 5}, {"t": "공지문 링크만 보내준다", "s": 4}, {"t": "찾아가서 말해준다", "s": 3}, {"t": "답장을 안 한다", "s": 2}], "tip": "바로 처리하기 어려운 요청에는 '확인했습니다, ○일까지 답드릴게요' 한 줄이라도 먼저 보내보는 건 어떨까요? 기다림은 무소식일 때 가장 깁니다.", "lab": "공지에 있는 내용 문의"}, {"part": "실천", "g": "실무자", "k": "R4", "q": "바쁜 오후, 확인하는 데 시간이 좀 걸리는 메일을 받았다.", "typ": "서술형", "o": [{"t": "확인에 며칠 걸린다고 먼저 알리고, 소관이 아니면 담당자를 찾아 연결한다", "s": 5}, {"t": "확실해지면 답하려고 남겨둔다", "s": 4}, {"t": "말없이 다른 팀으로 전달한다", "s": 3}, {"t": "2주 뒤 \"메일이 스팸함에 있었네요\"로 시작하는 답장을 쓴다", "s": 2}], "tip": "당장 답하기 어려우면 이모지 반응이라도 남겨보는 건 어떨까요? '읽었다'는 신호 하나로도 단절감이 줄어듭니다.", "lab": "시간이 걸리는 메일"}];
+const ITEMS = [{"part": "약속", "g": "공통", "k": "A1", "q": "다음 중 2026 우리들의 행동약속 <b>공통 약속</b>은?", "typ": "물음표형", "o": [{"t": "지킬 건 지키고, 애매한 건 함께", "s": 5}, {"t": "일은 직급만큼, 책임은 함께, 의견은 존중", "s": 2}, {"t": "후배에게는 업무적 방향을, 팀장에게는 팀의 목소리를", "s": 2}, {"t": "내 몫이 힘든 만큼, 다른 이의 몫도 이해", "s": 2}], "tip": "공통 약속은 「지킬 건 지키고, 애매한 건 함께」. 나머지 셋은 각 역할의 약속이었어요.", "lab": "공통 약속 3가지"}, {"part": "약속", "g": "관리자", "k": "A2", "q": "다음 중 2026 우리들의 행동약속 <b>관리자 부문 약속</b>은?", "typ": "물음표형", "o": [{"t": "일은 직급만큼, 책임은 함께, 의견은 존중", "s": 5}, {"t": "후배에게는 업무적 방향을, 팀장에게는 팀의 목소리를", "s": 2}, {"t": "내 몫이 힘든 만큼, 다른 이의 몫도 이해", "s": 2}, {"t": "지킬 건 지키고, 애매한 건 함께", "s": 2}], "tip": "관리자 약속은 「일은 직급만큼, 책임은 함께, 의견은 존중」. 업무 편차·상급 보고·방향 제시·제때 결정·연차 사유 다섯 가지로 풀어 두었어요.", "lab": "내 역할의 약속"}, {"part": "약속", "g": "중간관리자", "k": "A2", "q": "다음 중 2026 우리들의 행동약속 <b>중간관리자 부문 약속</b>은?", "typ": "물음표형", "o": [{"t": "후배에게는 업무적 방향을, 팀장에게는 팀의 목소리를", "s": 5}, {"t": "일은 직급만큼, 책임은 함께, 의견은 존중", "s": 2}, {"t": "내 몫이 힘든 만큼, 다른 이의 몫도 이해", "s": 2}, {"t": "지킬 건 지키고, 애매한 건 함께", "s": 2}], "tip": "중간관리자 약속은 「후배에게는 업무적 방향을, 팀장에게는 팀의 목소리를」. 후배 질문·어려움 전달·취합 안내·팀 전체 파악·연차 공유 다섯 가지입니다.", "lab": "내 역할의 약속"}, {"part": "약속", "g": "실무자", "k": "A2", "q": "다음 중 2026 우리들의 행동약속 <b>실무자 부문 약속</b>은?", "typ": "물음표형", "o": [{"t": "내 몫이 힘든 만큼, 다른 이의 몫도 이해", "s": 5}, {"t": "후배에게는 업무적 방향을, 팀장에게는 팀의 목소리를", "s": 2}, {"t": "일은 직급만큼, 책임은 함께, 의견은 존중", "s": 2}, {"t": "지킬 건 지키고, 애매한 건 함께", "s": 2}], "tip": "실무자 약속은 「내 몫이 힘든 만큼, 다른 이의 몫도 이해」. 먼저 확인·폄하 않기·성의 있는 응답·회신·연차 공유 다섯 가지입니다.", "lab": "내 역할의 약속"}, {"part": "실천", "g": "공통", "k": "C1", "q": "엘리베이터에서 다른 본부 분이 먼저 인사를 건넸다. 얼굴은 아는데 이름이 떠오르지 않는다.", "typ": "서술형", "o": [{"t": "웃으며 같이 인사한다", "s": 5}, {"t": "이름이 생각나지 않아 인사를 건너뛴다", "s": 4}, {"t": "어색하게 웃고 휴대폰을 본다", "s": 3}, {"t": "엘리베이터에서 내린다", "s": 2}], "tip": "이름이 기억나지 않아도 괜찮아요. 인사는 아는 사이라서 하는 게 아니니까요", "lab": "이름이 기억 안 나는 인사"}, {"part": "실천", "g": "공통", "k": "C2", "q": "금요일 오후, 다른 팀에서 다음 주까지 자료를 부탁했다. 우리 팀도 그 주에 마감이 있다.", "typ": "서술형", "o": [{"t": "언제까지 왜 필요한지 먼저 물어보고, 가능한 범위와 시점을 알려준다", "s": 5}, {"t": "\"저희도 마감이라 어려울 것 같아요\"로 답을 마친다", "s": 4}, {"t": "일단 다 해드리겠다고 하고 우리 일정을 미룬다", "s": 3}, {"t": "메신저를 로그아웃한다", "s": 2}], "tip": "못 하겠으면 못 하겠다고 해도 괜찮아요. 되는 선부터 알려주면 상대도 계획을 세울 수 있고요", "lab": "마감이 겹친 타 팀 요청"}, {"part": "실천", "g": "관리자", "k": "R1", "q": "요즘 한 팀원이 필요 이상으로 야근을 하는 것 같다. 물어보니 \"괜찮습니다\"라고만 한다.", "typ": "서술형", "o": [{"t": "팀 업무분장과 현안을 다시 점검해보고, 필요시 면담을 통해 본인 의견을 물어본다", "s": 5}, {"t": "본인이 괜찮다고 하니 조금 더 지켜본다", "s": 4}, {"t": "다른 팀원에게 \"좀 도와주세요\"라고 부탁한다", "s": 3}, {"t": "괜찮은지만 다시 물어본다", "s": 2}], "tip": "\"괜찮다\"는 대답은 받기 쉬워요. 업무분장을 다시 펼쳐보면 눈에 보이는 것도 있고요", "lab": "\"괜찮습니다\" 하는 야근", "hq": {"q": "요즘 한 팀의 야근이 눈에 띄게 늘었다. 팀장에게 물어보니 \"괜찮습니다\"라고만 한다.", "o": [{"t": "본부 업무분장과 현안을 다시 점검해보고, 필요시 면담을 통해 팀장 의견을 물어본다", "s": 5}, {"t": "팀장이 괜찮다고 하니 조금 더 지켜본다", "s": 4}, {"t": "다른 팀에 \"좀 도와주세요\"라고 부탁한다", "s": 3}, {"t": "괜찮은지만 다시 물어본다", "s": 2}]}}, {"part": "실천", "g": "관리자", "k": "R2", "q": "본부장님께 보고를 가야 하는데 설명은 들었지만 이해가 어려운 부분이 있다.", "typ": "서술형", "o": [{"t": "담당자에게 추가 설명을 요청한 뒤 보고에 들어간다", "s": 5}, {"t": "팀원이 더 잘 아니 대신 보낸다", "s": 4}, {"t": "나를 믿고 기억나는 대로 들어간다", "s": 3}, {"t": "보고를 가지 않는다", "s": 2}], "tip": "자료는 팀원 몫, 설명은 관리자 몫으로 나누면 서로 편하더라고요", "lab": "이해 못 한 채 가는 보고", "hq": {"q": "대표이사님께 보고를 가야 하는데 설명은 들었지만 이해가 어려운 부분이 있다.", "o": [{"t": "담당 팀장에게 추가 설명을 요청한 뒤 보고에 들어간다", "s": 5}, {"t": "팀장이 더 잘 아니 대신 보낸다", "s": 4}, {"t": "나를 믿고 기억나는 대로 들어간다", "s": 3}, {"t": "보고를 가지 않는다", "s": 2}]}}, {"part": "실천", "g": "관리자", "k": "R3", "q": "초안 단계의 보고서를 받았다. 완성본까지는 아직 시간이 있다.", "typ": "서술형", "o": [{"t": "지금은 방향만 짚고, 서식은 마지막에 한 번 같이 본다", "s": 5}, {"t": "방향과 서식을 한꺼번에 적어서 돌려준다", "s": 4}, {"t": "서식부터 정리해 달라고 하고 방향은 다음에 본다", "s": 3}, {"t": "완성본을 기대하며 다른 일을 먼저 한다", "s": 2}], "tip": "서식은 마지막에 몰아서 봐도 늦지 않아요. 방향이 먼저면 고칠 일도 줄고요", "lab": "초안 보고서 피드백"}, {"part": "실천", "g": "중간관리자", "k": "R1", "q": "PM이 처음인 후배가 고민이 있다고 찾아왔다.", "typ": "서술형", "o": [{"t": "내 경험을 바탕으로 같이 고민할 수 있는 부분을 논의해본다", "s": 5}, {"t": "내가 했던 파일을 찾아서 보내준다", "s": 4}, {"t": "\"작년에 한 대로 하면 될거에요\"라고 답한다", "s": 3}, {"t": "11층에 숨겨진 비법서를 갖다준다", "s": 2}], "tip": "경험은 참고가 되지만 상황은 매번 다르더라고요. 같이 한 번 짚어보는 걸로 충분합니다", "lab": "처음 맡은 일로 찾아온 후배"}, {"part": "실천", "g": "중간관리자", "k": "R2", "q": "팀장님은 아직 모르는 팀 내부 어려움을 알게 되었다.", "typ": "서술형", "o": [{"t": "기회가 될 때 정리해 팀장님께 전달해본다", "s": 5}, {"t": "내 선에서 정리하고 후배들을 다독인다", "s": 4}, {"t": "후배가 직접 이야기하도록 팀장님과 약속을 잡아준다", "s": 3}, {"t": "오늘의 운세를 함께 확인한다", "s": 2}], "tip": "전해주는 건 중간에서 해주시면 고마운 일이에요", "lab": "팀장이 모르는 팀 내 어려움"}, {"part": "실천", "g": "중간관리자", "k": "R3", "q": "다음 중 자료 취합 요청 시 가장 효과적인 전달 방법은?", "typ": "물음표형", "o": [{"t": "어디에 쓰는 자료인지와 작성 기한, 작성 기준을 함께 공지한다", "s": 5}, {"t": "양식 파일만 보낸다", "s": 2}, {"t": "옆자리 사람에게 말하고 전달해달라고 한다", "s": 2}, {"t": "각 자리에 자료 작성 요청 포스트잇을 붙인다", "s": 2}], "tip": "목적을 알면 한 번에 끝나요. 모르면 다들 조금씩 다른 걸 적어 오고요", "lab": "자료 취합 요청"}, {"part": "실천", "g": "실무자", "k": "R1", "q": "이전에 올라온 프로그램을 신청하고 싶은데 이해가 안 가는 부분이 있다.", "typ": "서술형", "o": [{"t": "게시판을 한 번 검색해본 뒤 담당자에게 물어본다", "s": 5}, {"t": "바로 담당자에게 물어본다", "s": 4}, {"t": "팀원들과 머리를 맞대고 해석해본다", "s": 3}, {"t": "모르겠어서 신청을 포기한다", "s": 2}], "tip": "한 번 더 읽어보는 걸로 풀리는 것도 많더라고요. 그래도 모르면 물어보는 게 맞고요", "lab": "이해 안 되는 공지"}, {"part": "실천", "g": "실무자", "k": "R2", "q": "다음 다른 팀 업무에 대한 평가 중 <b>가장 바람직하지 <r>않은</r> 의견</b>은?", "typ": "물음표형", "o": [{"t": "\"거기 팀이 바쁠 일이 뭐가 있어요?\"", "s": 5}, {"t": "\"지난번에 올리신 이벤트 재밌게 잘 참여했습니다!\"", "s": 2}, {"t": "\"새로 올라온 캠페인 영상 멋있어요!\"", "s": 2}, {"t": "\"요즘 많이 바쁘시죠, 조금만 더 힘내세요!\"", "s": 2}], "tip": "내가 듣기 싫은 말은 남도 듣기 싫더라고요. 무슨 일을 하는 팀인지 한 줄만 알아도 말이 달라집니다", "lab": "타 팀 업무 이야기"}, {"part": "실천", "g": "실무자", "k": "R4", "q": "바쁜 오후, 확인하는 데 시간이 좀 걸리는 메일을 받았다.", "typ": "서술형", "o": [{"t": "확인에 며칠 걸린다고 먼저 알리고, 소관이 아니면 담당자를 찾아 연결한다", "s": 5}, {"t": "확실해지면 답하려고 남겨둔다", "s": 4}, {"t": "말없이 다른 팀으로 전달한다", "s": 3}, {"t": "2주 뒤 \"메일이 스팸함에 있었네요\"로 시작하는 답장을 쓴다", "s": 2}], "tip": "답을 못 줘도 '언제쯤 드릴게요' 한 줄이면 상대는 기다릴 수 있어요", "lab": "시간이 걸리는 메일"}];
 const PROMISES = {"공통": ["마주치는 동료에게 직급·친분과 관계없이 인사를 건넸다", "다른 팀(본부)의 요청에 거절할 사유부터 찾지 않았다", "나의 말과 행동이 동료에게 상처가 되지 않았는지 돌아봤다"], "관리자": ["팀원 간 업무의 난이도와 양에 편차가 없는지 확인했다", "팀 업무의 상급 보고를 실무자에게 맡기지 않고 내 단계에서 직접 수행했다", "문서 양식이나 세부 표현보다, 업무의 방향과 기준을 제시하는 데 집중했다", "팀원의 의견을 들은 사안에 대해, 결정을 미루지 않고 제때 내려주었다", "팀원의 연차에 사유를 묻지 않았다"], "중간관리자": ["후배의 질문에 경험은 참고로 보태고, 방향은 함께 고민했다", "다른 팀원들이 겪는 어려움이나 분위기를 팀장에게 알렸다", "취합이나 자료 요청 시, 목적과 기준을 함께 안내했다", "담당 사업 외에도 팀 전체 업무의 진행 상황을 파악하려 했다", "연차 일정을 팀에 미리 알렸다"], "실무자": ["요청하기 전, 스스로 확인할 수 있는 부분을 먼저 확인했다", "다른 팀의 업무를 가볍게 말하거나 폄하하지 않았다", "나에게 온 요청도 상대가 고민 끝에 보낸 것으로 여기고 성의 있게 응답했다", "메일·단체 메신저의 확인과 회신을 미루지 않았다", "연차 일정을 팀에 미리 알렸다"]};
 const HEADS = {"공통": "지킬 건 지키고, 애매한 건 함께", "관리자": "일은 직급만큼, 책임은 함께, 의견은 존중", "중간관리자": "후배에게는 업무적 방향을, 팀장에게는 팀의 목소리를", "실무자": "내 몫이 힘든 만큼, 다른 이의 몫도 이해"};
 const GRADE = [
-  [48,'완벽합니다. 올 한 해 내내 이러셨을 것 같아요 👏'],
-  [38,'거의 다 맞히셨어요. 이미 잘 하고 계십니다'],
-  [27,'절반 넘게 맞히셨어요. 충분히 잘 하고 계세요'],
+  [33,'완벽합니다. 올 한 해 내내 이러셨을 것 같아요 👏'],
+  [27,'거의 다 맞히셨어요. 이미 잘 하고 계십니다'],
+  [19,'절반 넘게 맞히셨어요. 충분히 잘 하고 계세요'],
   [0 ,'끝까지 풀어주신 것만으로 충분합니다. 한 문장만 챙겨 가셔도 돼요']
 ];
 const GROUP_OF = { '본부장':'관리자', '팀장':'관리자', '중간관리자':'중간관리자', '실무자':'실무자' };
 const GATE = {
-  '약속': ['1부','우리 약속,<br>기억하시나요?','먼저 올해 우리가 적어둔 약속부터.<br>3문항입니다.'],
-  '실천': ['2부','이럴 땐<br>어떻게 할까요?','여기서부터는 실제로 벌어질 법한 장면입니다.<br>7문항 남았어요.']
+  '약속': ['1부','우리 약속,<br>기억하시나요?','먼저 올해 우리가 적어둔 약속부터.<br>2문항입니다.'],
+  '실천': ['2부','이럴 땐<br>어떻게 할까요?','여기서부터는 실제로 벌어질 법한 장면입니다.<br>5문항 남았어요.']
 };
 
 /* ───────── 상태 ───────── */
@@ -265,10 +370,8 @@ function buildList(role){
   const g = GROUP_OF[role] || '실무자';
   const pick = part => ITEMS.filter(x=>x.part===part && (x.g==='공통' || x.g===g));
   return pick('약속').concat(pick('실천')).map(it=>{
-    // 본부장은 hq에 있는 항목만 치환 (발문·선지·한마디 중 일부만 바뀔 수 있음)
-    const h = (role==='본부장' && it.hq) ? it.hq : {};
-    return { k:it.k, g:it.g, part:it.part, typ:it.typ, lab:it.lab,
-             tip: h.tip || it.tip, q: h.q || it.q, o: shuffle(h.o || it.o) };
+    const use = (role==='본부장' && it.hq) ? it.hq : it;
+    return { k:it.k, g:it.g, part:it.part, typ:it.typ, tip:it.tip, lab:it.lab, q:use.q, o:shuffle(use.o) };
   });
 }
 
@@ -340,13 +443,59 @@ function armRestart(btn){
   btn.onclick=()=>{
     if(!armed){ armed=true; btn.classList.add('arm'); btn.textContent='한 번 더 누르면 초기화';
       clearTimeout(t); t=setTimeout(off,3000); return; }
-    clearTimeout(t); off(); clearHint();
+    clearTimeout(t); off(); clearHint(); resetSV();
     S={name:'',emp:'',dept:'',role:'',group:'',list:[],idx:0,picks:[],test:false};
-    $('auth-err').className='err'; $('sub-err').className='err';
+    $('auth-err').className='err'; $('sub-err').className='err'; $('sv-err').className='err';
     show('s-intro');
   };
 }
-armRestart($('btn-restart')); armRestart($('btn-restart2'));
+armRestart($('btn-restart')); armRestart($('btn-restart2')); armRestart($('btn-restart3'));
+
+/* ───────── 조직문화 체크리스트 만족도조사 ───────── */
+const SV_Q = [
+  ['q1','올해 「우리들의 행동약속」이 우리 조직문화에 도움이 되었다고 생각하시나요?'],
+  ['q2','월 1회 자율 점검 방식은 참여하기에 부담 없었나요?'],
+  ['q3','내년에도 비슷한 방식으로 이어가면 좋겠다고 생각하시나요?']
+];
+let SV = { q1:null, q2:null, q3:null, open:'' };
+
+function buildSurvey(){
+  const box=$('sv-list'); box.innerHTML='';
+  SV_Q.forEach(([k,q],n)=>{
+    const d=document.createElement('div'); d.className='sv';
+    d.innerHTML='<p class="q">'+(n+1)+'. '+esc(q)+'</p><div class="lik"></div>'+
+      '<div class="anch"><span>전혀 아니다</span><span>매우 그렇다</span></div>';
+    const lik=d.querySelector('.lik');
+    for(let v=1; v<=5; v++){
+      const b=document.createElement('button'); b.type='button'; b.textContent=v;
+      if(SV[k]===v) b.classList.add('picked');
+      b.onclick=()=>{ lik.querySelectorAll('button').forEach(e=>e.classList.remove('picked'));
+        b.classList.add('picked'); SV[k]=v; $('sv-err').className='err'; };
+      lik.appendChild(b);
+    }
+    box.appendChild(d);
+  });
+}
+function resetSV(){ SV={q1:null,q2:null,q3:null,open:''}; $('sv-open').value=''; }
+function openSurvey(){ buildSurvey(); $('sv-open').value=SV.open||''; show('s-survey'); }
+
+$('sv-open').oninput = e => { SV.open = e.target.value; };
+$('sv-next').onclick = async ()=>{
+  const err=$('sv-err'); err.className='err';
+  if(!SV.q1 || !SV.q2 || !SV.q3){
+    err.textContent='1~3번은 모두 골라주세요.'; err.className='err on'; return; }
+  if(S.test){ show('s-done'); return; }
+  const btn=$('sv-next');
+  btn.innerHTML='<span class="spin"></span>제출 중...'; btn.disabled=true;
+  try{
+    const res = await call({action:'survey', name:S.name, empNo:S.emp,
+      survey:{q1:SV.q1, q2:SV.q2, q3:SV.q3, open:SV.open}});
+    if(!res || !res.ok){ err.textContent='저장에 실패했습니다. 다시 시도해 주세요.'; err.className='err on'; return; }
+    show('s-done');
+  }catch(e){ err.textContent='연결에 실패했습니다. 다시 시도해 주세요.'; err.className='err on'; }
+  finally{ btn.textContent='제출하기'; btn.disabled=false; }
+};
+$('sv-back').onclick = ()=> show('s-result');
 
 /* ───────── 결과 ───────── */
 function result(){
@@ -362,15 +511,15 @@ function result(){
     $('sec-tips').querySelector('h3').textContent='한 번 더 보면 좋은 장면';
     tips.innerHTML='<div class="tip"><p class="say">한 문항도 빠짐없이 고르셨어요. 더 보실 게 없네요 👏</p></div>';
   } else {
-    miss.forEach(({it,p})=>{
+    miss.forEach(({it,p},n)=>{
       const best = it.o.find(o=>o.s===5) || {t:''};
       const lab  = it.typ==='물음표형' ? '정답' : '이렇게 해보면';
       const d=document.createElement('div'); d.className='tip';
       d.innerHTML =
-        '<p class="tq">'+nl(it.q)+'</p>'+
+        '<p class="tq"><i>'+(n+1)+'</i><span>'+nl(it.q)+'</span></p>'+
         '<div class="ans"><u>내가 고른 답</u><span>'+nl(p.t)+'</span></div>'+
         '<div class="ans ok"><u>'+lab+'</u><span>'+nl(best.t)+'</span></div>'+
-        '<p class="say">'+nl(it.tip)+'</p>';
+        '<p class="say"><b>한마디</b>'+nl(it.tip)+'</p>';
       tips.appendChild(d);
     });
   }
@@ -397,6 +546,135 @@ function result(){
   });
   show('s-result');
 }
+
+/* ───────── 결과 공유 ───────── */
+const FF = '"Pretendard Variable",Pretendard,-apple-system,"Apple SD Gothic Neo",sans-serif';
+const RES = () => {
+  const total = S.picks.reduce((a,b)=>a+(b?b.s:0),0);
+  const max = S.list.length*5;
+  return { total, max, grade:(GRADE.find(g=>total>=g[0])||GRADE[GRADE.length-1])[1] };
+};
+
+// 어절 단위로 끊어 줄바꿈 (한 어절이 너무 길면 글자 단위로)
+function wrapText(x, text, maxW){
+  const out=[];
+  String(text).split('\n').forEach(para=>{
+    let line='';
+    para.split(' ').forEach(w=>{
+      const t = line ? line+' '+w : w;
+      if(x.measureText(t).width <= maxW){ line=t; return; }
+      if(line){ out.push(line); line=''; }
+      if(x.measureText(w).width <= maxW){ line=w; return; }
+      let part='';
+      for(const ch of w){
+        if(x.measureText(part+ch).width > maxW && part){ out.push(part); part=ch; }
+        else part+=ch;
+      }
+      line=part;
+    });
+    out.push(line);
+  });
+  return out;
+}
+
+function drawCard(){
+  const W=1080, H=1080, PAD=96;
+  const c=document.createElement('canvas'); c.width=W; c.height=H;
+  const x=c.getContext('2d');
+  const F=(w,s)=> w+' '+s+'px '+FF;
+  const { total, max, grade } = RES();
+
+  x.fillStyle='#FBFBF9'; x.fillRect(0,0,W,H);
+  x.fillStyle='#2C4C99'; x.fillRect(0,0,W,16);
+
+  x.textAlign='center'; x.textBaseline='alphabetic';
+  x.fillStyle='#D9631A'; x.font=F(800,34); x.fillText('2026 우리들의 행동약속', W/2, 168);
+  x.fillStyle='#16233F'; x.font=F(900,78); x.fillText('체크리스트 실전고사', W/2, 268);
+
+  // 점수
+  const big=String(total), small=' / '+max;
+  x.font=F(900,228); const wb=x.measureText(big).width;
+  x.font=F(800,72);  const ws=x.measureText(small).width;
+  let sx=(W-(wb+ws))/2;
+  x.textAlign='left';
+  x.font=F(900,228); x.fillStyle='#2C4C99'; x.fillText(big, sx, 530);
+  x.font=F(800,72);  x.fillStyle='#7A8396'; x.fillText(small, sx+wb, 530);
+
+  // 등급
+  x.textAlign='center'; x.fillStyle='#16233F'; x.font=F(800,38);
+  let y=610;
+  wrapText(x, grade, W-PAD*2).forEach(l=>{ x.fillText(l, W/2, y); y+=54; });
+
+  // 구분선
+  y += 26;
+  x.strokeStyle='#E6E8EE'; x.lineWidth=2;
+  x.beginPath(); x.moveTo(PAD, y); x.lineTo(W-PAD, y); x.stroke();
+
+  // 내 역할의 약속
+  y += 76;
+  x.fillStyle='#A2A9B6'; x.font=F(800,28);
+  x.fillText('내 역할 · '+(S.group||'실무자'), W/2, y);
+  y += 62;
+  x.fillStyle='#16233F'; x.font=F(900,44);
+  const pl = wrapText(x, HEADS[S.group]||'', W-PAD*2-70);
+  pl.forEach((l,i)=>{
+    x.fillText((i===0?'「':'')+l+(i===pl.length-1?'」':''), W/2, y); y+=60;
+  });
+
+  x.fillStyle='#C2C7D0'; x.font=F(700,26);
+  x.fillText('서울관광재단 · 헤일메리 조직문화 파트', W/2, H-72);
+  return c;
+}
+
+function sayShare(t){
+  ['sh-msg','sh-msg2'].forEach(id=>{
+    const m=$(id); if(!m) return; m.textContent=t;
+    if(t) setTimeout(()=>{ if(m.textContent===t) m.textContent=''; }, 3200);
+  });
+}
+
+async function shareImage(btn){
+  const old=btn.textContent;
+  btn.disabled=true; btn.textContent='만드는 중...';
+  try{
+    if(document.fonts && document.fonts.ready) await document.fonts.ready;
+    const blob = await new Promise(r=>drawCard().toBlob(r,'image/png'));
+    const file = new File([blob],'실전고사_결과.png',{type:'image/png'});
+    if(navigator.canShare && navigator.canShare({files:[file]})){
+      try{ await navigator.share({files:[file], title:'체크리스트 실전고사 결과'}); sayShare('공유했어요'); return; }
+      catch(e){ if(e && e.name==='AbortError'){ sayShare(''); return; } }
+    }
+    const a=document.createElement('a'); const u=URL.createObjectURL(blob);
+    a.href=u; a.download='실전고사_결과.png'; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(u), 4000);
+    sayShare('이미지를 저장했어요');
+  }catch(e){ sayShare('이미지를 만들지 못했어요'); }
+  finally{ btn.disabled=false; btn.textContent=old; }
+}
+
+async function shareText(){
+  const { total, max, grade } = RES();
+  const txt = '2026 우리들의 행동약속 · 체크리스트 실전고사\n'
+            + total + ' / ' + max + '점\n' + grade + '\n\n'
+            + '내 역할 · ' + (S.group||'실무자') + '\n「' + (HEADS[S.group]||'') + '」';
+  let ok=false;
+  try{ if(navigator.clipboard){ await navigator.clipboard.writeText(txt); ok=true; } }catch(e){}
+  if(!ok){
+    try{
+      const ta=document.createElement('textarea'); ta.value=txt; ta.readOnly=true;
+      ta.style.cssText='position:fixed;top:0;left:0;opacity:0'; document.body.appendChild(ta);
+      ta.select(); ta.setSelectionRange(0, txt.length);
+      ok=document.execCommand('copy'); ta.remove();
+    }catch(e){}
+  }
+  if(!ok && navigator.share){
+    try{ await navigator.share({text:txt}); ok=true; }catch(e){ if(e&&e.name==='AbortError'){ sayShare(''); return; } }
+  }
+  sayShare(ok ? '결과를 복사했어요' : '복사하지 못했어요');
+}
+
+$('sh-img').onclick = e => shareImage(e.currentTarget);
+$('sh-txt').onclick = shareText;
 
 /* ───────── 통신 ───────── */
 async function call(payload, ms){
@@ -440,20 +718,109 @@ $('btn-submit').onclick = async ()=>{
   const err=$('sub-err'); err.className='err';
   if(!S.focus){ err.textContent='마지막 질문도 하나 골라주세요.'; err.className='err on'; return; }
   if(S.test){ $('done-msg').innerHTML='테스트 모드라 저장하지 않았습니다.<br>실제 참여는 메인에서 사번을 입력해 주세요.';
-    show('s-done'); return; }
+    openSurvey(); return; }
   const btn=$('btn-submit'); btn.innerHTML='<span class="spin"></span>제출 중...'; btn.disabled=true;
   const answers={}; S.list.forEach((it,i)=>{ answers[it.k]=S.picks[i]?S.picks[i].t:''; });
   try{
     const res=await call({action:'submit',name:S.name,empNo:S.emp,role:S.role,
       score:S.picks.reduce((a,b)=>a+(b?b.s:0),0), answers:answers, focus:S.focus});
     if(!res.ok){ err.textContent='저장에 실패했습니다. 다시 시도해 주세요.'; err.className='err on'; return; }
-    show('s-done');
+    openSurvey();
   }catch(e){ err.textContent='연결에 실패했습니다. 다시 시도해 주세요.'; err.className='err on'; }
-  finally{ btn.textContent='제출하기'; btn.disabled=false; }
+  finally{ btn.textContent='제출하고 만족도조사 참여하기'; btn.disabled=false; }
 };
 
 try{ const w=JSON.parse(localStorage.getItem('quizWho')||'null');
   if(w){ $('in-name').value=w.n; $('in-emp').value=w.e; } }catch(e){}
+
+/* ───────── 내년 약속 한 줄 (쪽지벽) ───────── */
+const WALL_STEP = 12;
+let WALL = [], wallShown = 0, wallDemo = false;
+
+// 아직 올라온 쪽지가 없을 때 보여줄 예시
+const WALL_SAMPLE = [
+  '자료를 요청할 때 마감일을 꼭 같이 적어주기',
+  '회의 끝에 누가 무엇을 언제까지 하는지 한 줄로 정리하고 끝내기',
+  '모르면 모른다고 먼저 말하기',
+  '다른 팀 요청에 「언제까지면 가능하다」로 답하기',
+  '메신저는 읽었으면 한 줄이라도 남기기',
+  '센터 근무자도 같은 날 들을 수 있게 공지하기'
+];
+
+const LIKED = new Set((()=>{ try{ return JSON.parse(localStorage.getItem('wallLiked')||'[]'); }catch(e){ return []; } })());
+const saveLiked = ()=>{ try{ localStorage.setItem('wallLiked', JSON.stringify([...LIKED])); }catch(e){} };
+
+async function toggleLike(btn){
+  const id=btn.dataset.i, on=!LIKED.has(id), num=btn.querySelector('b');
+  btn.classList.toggle('on', on);
+  num.textContent = Math.max(0, (parseInt(num.textContent,10)||0) + (on?1:-1));
+  on ? LIKED.add(id) : LIKED.delete(id); saveLiked();
+  const me = WALL.find(x=>x.i===id); if(me) me.n = parseInt(num.textContent,10)||0;
+  if(wallDemo) return;                           // 예시 쪽지는 화면에서만 반응
+  btn.disabled=true;
+  try{
+    const r = await call({action:'like', id:id, on:on}, 10000);
+    if(r && r.ok && typeof r.n==='number'){ num.textContent=r.n; if(me) me.n=r.n; }
+  }catch(e){}
+  finally{ btn.disabled=false; }
+}
+
+function paintWall(){
+  const box=$('notes');
+  WALL.slice(wallShown, wallShown+WALL_STEP).forEach((x,i)=>{
+    const d=document.createElement('div');
+    d.className = 'pn' + (wallDemo ? ' demo' : '');
+    d.style.animationDelay=(i*45)+'ms';
+    const p=document.createElement('p'); p.textContent=x.t; d.appendChild(p);
+    const b=document.createElement('button');
+    b.className='lk'+(LIKED.has(x.i)?' on':''); b.type='button'; b.dataset.i=x.i;
+    b.innerHTML='<i>♥</i><b>'+(x.n||0)+'</b>';
+    b.setAttribute('aria-label','좋아요');
+    b.onclick=()=>toggleLike(b);
+    d.appendChild(b);
+    box.appendChild(d);
+  });
+  wallShown = Math.min(wallShown+WALL_STEP, WALL.length);
+  const more=$('wall-more');
+  if(wallShown < WALL.length){
+    more.style.display='block';
+    more.textContent='더 보기 ('+(WALL.length-wallShown)+'개 남음)';
+  } else more.style.display='none';
+}
+
+function showWall(list, demo){
+  WALL=list; wallShown=0; wallDemo=!!demo;
+  $('notes').innerHTML='';
+  $('wall-n').innerHTML = demo ? '<span class="wall-demo">예시</span>' : WALL.length+'개';
+  if(demo) $('wall-sub').textContent='아직 올라온 쪽지가 없어 예시를 띄워 두었어요. 첫 쪽지가 올라오면 이 자리에 바로 붙습니다.';
+  paintWall();
+  $('wall').classList.add('on');
+}
+
+async function loadWall(){
+  const demo = WALL_SAMPLE.map((t,i)=>({i:'s'+i, t:t, n:0}));
+  if(!/^https?:/.test(GAS_URL)){ showWall(demo, true); return; }   // 배포 전에도 화면은 보이게
+  try{
+    const res = await call({action:'wall'}, 12000);
+    if(res && res.ok && Array.isArray(res.notes) && res.notes.length) showWall(res.notes, false);
+    else showWall(demo, true);
+  }catch(e){ showWall(demo, true); }               // 실패해도 시험 흐름은 그대로
+}
+$('wall-more').onclick = paintWall;
+loadWall();
+
+// 제출 후 — 메인으로 돌아가 방금 남긴 쪽지까지 다시 불러옵니다
+$('go-wall').onclick = async ()=>{
+  const b=$('go-wall'), old=b.textContent;
+  b.disabled=true; b.innerHTML='<span class="spin"></span>불러오는 중...';
+  try{ await loadWall(); }catch(e){}
+  b.disabled=false; b.textContent=old;
+  show('s-intro');
+  setTimeout(()=>{
+    const w=$('wall');
+    if(w.classList.contains('on')) w.scrollIntoView({behavior:'smooth',block:'start'});
+  }, 450);
+};
 
 </script>
 </body>
