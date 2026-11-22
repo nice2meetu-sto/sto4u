@@ -1012,7 +1012,8 @@ function paintStats(){
     }).join('');
 
   // 부서별 참여율
-  const rows = RES_DATA.dept.map(x=>{
+  // 본부(1인 조직)와 전문위원은 참여율 비교 대상이 아니라 목록에서 뺍니다
+  const rows = RES_DATA.dept.filter(x=> !/본부$/.test(x.d) && x.d.indexOf('전문위원') < 0).map(x=>{
     const [t, p] = ALLM ? x.r.reduce((a,b)=>[a[0]+b[0], a[1]+b[1]], [0,0]) : x.r[RD];
     return { d:x.d, t:t, p:p, v:t ? 100 * p / t : 0, avg:x.avg };
   }).sort((a,b)=> b.v - a.v || b.avg - a.avg);
