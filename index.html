@@ -48,6 +48,12 @@ button{font-family:inherit;letter-spacing:inherit;cursor:pointer;border:0}
 .btn:hover{filter:brightness(1.1)} .btn:active{transform:scale(.99)}
 .btn.ghost{background:transparent;color:var(--sub);font-weight:700;margin-top:6px;padding:13px}
 .btn.ghost:hover{color:var(--accent);filter:none}
+.h1row{display:flex;align-items:flex-end;flex-wrap:wrap;gap:6px 12px}
+.pill{display:inline-flex;align-items:center;margin-left:auto;margin-bottom:10px;padding:8px 14px;
+  border:1.5px solid var(--line);border-radius:999px;background:#fff;
+  font-size:.76em;font-weight:800;color:var(--sub);text-decoration:none;white-space:nowrap;
+  transition:border-color .15s,color .15s}
+.pill:hover{border-color:var(--accent);color:var(--accent)}
 
 /* ─── 입력 ─── */
 .field{margin-top:26px;display:flex;gap:12px}
@@ -414,7 +420,10 @@ i.neg{font-style:normal;font-weight:900;color:#C62828}
 
 <section id="s-intro" class="screen active">
   <p class="eyebrow">2026 우리들의 행동약속</p>
-  <h1>체크리스트<br>실전고사</h1>
+  <div class="h1row">
+    <h1>체크리스트<br>실전고사</h1>
+    <a class="pill" href="https://hr.sto.or.kr/checklist.html" target="_blank" rel="noopener">체크리스트 보러가기 ↗</a>
+  </div>
   <p class="lead">올 한 해 우리가 약속했던 것들을<br>가볍게 한 번 짚어봐요.</p>
   <div class="parts">
     <div><i>1부</i><b>우리 약속, 기억하시나요</b><s>2문항</s></div>
